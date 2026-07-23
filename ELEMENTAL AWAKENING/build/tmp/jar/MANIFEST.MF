@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: examplemod
-Specification-Vendor: YourNameHere, OtherNameHere
-Specification-Version: 1
-Implementation-Title: ELEMENTAL AWAKENING
-Implementation-Version: 1.0.0
-Implementation-Vendor: YourNameHere, OtherNameHere
-Implementation-Timestamp: 2026-07-24T00:05:15+0300
-
