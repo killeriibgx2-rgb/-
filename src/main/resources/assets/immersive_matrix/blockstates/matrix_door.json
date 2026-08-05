@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,half=lower": { "model": "immersive_matrix:block/matrix_door_bottom" },
+    "facing=south,half=lower": { "model": "immersive_matrix:block/matrix_door_bottom", "y": 180 },
+    "facing=east,half=lower": { "model": "immersive_matrix:block/matrix_door_bottom", "y": 90 },
+    "facing=west,half=lower": { "model": "immersive_matrix:block/matrix_door_bottom", "y": 270 },
+    "facing=north,half=upper": { "model": "immersive_matrix:block/matrix_door_top" },
+    "facing=south,half=upper": { "model": "immersive_matrix:block/matrix_door_top", "y": 180 },
+    "facing=east,half=upper": { "model": "immersive_matrix:block/matrix_door_top", "y": 90 },
+    "facing=west,half=upper": { "model": "immersive_matrix:block/matrix_door_top", "y": 270 }
+  }
+}
