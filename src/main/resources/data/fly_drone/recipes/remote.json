@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "W W",
+    "IMI",
+    "III"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "W": { "item": "fly_drone:copper_wire" },
+    "M": { "item": "fly_drone:microcontrooler" }
+  },
+  "result": {
+    "item": "fly_drone:remote",
+    "count": 1
+  }
+}
