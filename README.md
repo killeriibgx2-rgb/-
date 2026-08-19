@@ -1,174 +1,168 @@
-давай я заного опишу всю физику и что хочу:
-у нас будет 1 дрон, он должен имень физику полетов как в реале, тоесть тангажи, бочки, и перевороты, он должен иметь максимальный реализм, тоесть когда нажимеш газ, управление резкое, он взмывыет в воздух, при отпускинии газа, тяга уменьшавется и вместо зависания он падает.
-управление на w a s d 
-WS- ГАЗ + И -
-A D- ОН ЛЕТИТ В БОК, камера намертво привязанна в дрону, и не поворавиватеся, при полете в бок он наклонаяется на ту сторону в которую летит, но камера и дрон смотрит в 1 сторону
-управление в основнем мышкой, повороты и перевороты производятся за счет движений мышки, тоесть клавиатиура это чито газ тормоз и право лево
+---- Minecraft Crash Report ----
+// Hey, that tickles! Hehehe!
 
-скорость примерно 75 км ч
+Time: 2026-08-19 04:00:40
+Description: Rendering overlay
 
-так же у нас будет пульт, когда подходиш к дрону шифт+лкм по дрону пульт становится вкл вместо выкл, когда ты управляеш дроном прогрузка чанков переходит от игрока к дрону, и рузит на расстояние прорисовки игрока, в этот момент игрок стоит на земле и вокруг него чанки не прогружются
-
-так же у нас будут зарды взрывчаток ci4 и rpg-74 они также цепляются на дрон шифт + лкм по дрону с взрывчаткой в руке, взрывчатка забираетсмя, у дрона нету инвентаря, его нельзя открыть, только так устанавливать, у дрона 5 хп, и при разрушении чем угодно хоть об стену, ходь рукой, он взрывается сразу
-
-надо сделать синхранизатор  клиентов и сервера, чтиобы дрон летел красиво без задиров, чтобы у другох он так же отображался, максимально плавно, надо выровнять задержку, чтобы небыло такого что его сбили а ты уже попал, и появляется такой рссинхрон, надо чтобы при попадании или уничтожении или сбитии дрона, показывалось меню лост сигнал
-при полето от лица дрона будет показыватся меню с крестиком и значекуом батареи, пож этой батареей рассположи заряд оставшийсся в прпоцеентах, а сбоку скорость в км ч, по середине сверху будет тип снаряда
-
-а вот, точно, про заряд, у нас будет батарея, и так же шифт+ лкм по ддрону с батареей в руке она заменяется на ту которую ты поставил, а выпадает та которая стояла там, с остатком заряда, под иконкой батареи в инвентаре сделай  полоску прочности, примерная дальность полета на батареи 200 блоков, при этом она тратится в зависимрсти от мощьности винтов, типо на земле без мощьности она не тратится
-
-так же дрон может разрушится буквально от всего, от несильного влета в стену, от падения, и от руки и пули, а буз заряда он не наносит урон, и взрыв, а с зарядом уже наносит взрыв, рпг снаряд делает мащьный взроыв, а с4 есще сельнее 
-
-МЕХАНИКА ВЗРЫВОВ:
-при полете дрона (скорее всего он будет использовать векторы) можно будет сбросить на лкм рпг снаряд, с4 нельзя, рпг снярад должен иметь ту же скорость что и дрон, тоесть красиво падать, сохраняя инерцию
-на пкм при управлении дрона он самоуничтожается, типо взрывается взависимроти от мощьности взрпывчаки
-а теперь сами взрывы: 
-при попадании в цель дроном/снарядом, он берет мленький кусок вектора, и продлевает его под тем же углом на 7 блоков в противоположную сторону, и делает взрыв частицами, и делает пробивающиий взрыв внутрь обьекта куда попал, вне зависимости от угла попадания, он типо делает курасивый взрыв с грибочком под углом попадания. если взрыв произошел внутри здания, или вектиор не смог проложитсчя на 7 блоков  без припятствий, он делает обьемный заполняющий взрыв сферической формы, или при самоуничтожении взрыв тоже долэен быть обьемный тоже
-
-так же я бы хоетл дабавить крафты, но для начала разберем все обозначения:
-
-модели для маинкрафт джава эд: создавал в блокбенч, предметы в 3 д, в джисон, снач я пишу название 3д модели а потом назв текстуцры
-в качестве предмета\брони
-battery_cell- ячейка батареи, текстура так жа называется, обозначение яб
-camera_fpv- камера фпв, текстура так же, обозн км
-copper_plate-медная пластина, везде текстура так же назывется, обозн кп
-iron_plate-железная пластина, жп
-lithium_ingot-литиевый слиток, лс
-lithium_ore-блок литиевой руды- блр
-lithium_plate-литиевая пластина, лп
-microcontrooler-микроконтроллер, мк
-motor_casing-корпус мотора фпв, кмф
-motor_fpv-мотор фпв, мф
-motor_shaft-вал мотора фпв, вмф
-motor_winding-обмотка мотора фпв, омф
-propeller_fpv-пропеллер фпв, пф
-sendvich_panel-сендвич панель, сп
-stal_molot-стальной молот, см
-lithium_rud-литиевая руда- лр
-*обозначения только для обьяснения, названия для использования в моде
-это были предметы в качетсве айтема
-
-ТЕПЕРЬ ПОШЛИ ОБОЗНАЧЕНИЯ модовых СУЩЬНОСТЕЙ
-ci4- с4, джава, не сбрасываемая, прицеплыяется на дрон кубиком ci4_snar, он находится в папке bone
-ci4_texture название  текстуры, уменьшить при рендере в 2 раза надо сдеклать красивую  3 д модель для инвентаря, и чтобы она была в качетсве  айтема, при шифт+ лкм по дрону вешается на кубик дрона, я его укажу
-
-rpg_snar, рпг-74 снаряд, назв текстуры тоже, может сбрасываться, на лкм в дроне, либо таран, 
-там тоже есть папка rpg в ней rpg_snar точка крепления, поведение тожже что и у с4, тока может сбрасываться, пока в качествые айтема, а после сброса в качестве ссущьности
-
-fpv_drone- ФПВ ДРОН, название тьекстуры fpv_drone_texture, 
-есть гл папка body, в ней есть точка snar, у нее смещен центр, как и у других точек, к ней крепить все снаряды намертво, токже в этой папке есть camera, у нее тоже смещен центр, к ней намертво крепить камеру
-так же там есть 4 папки с винтами
-propeller_lb
-propeller_rb
-propeller_lf
-propeller_rf
-их вращять надо вокруг оси прям всю папку
-центральная точка дпрона выраввнена ровно по середине, а сама точна находится на кордах 0 0 0
-*все тестуры в .пнг, тут просто не указано
-текстуры некеторыех предметов
-battery- Li-Ion battery-тоже пнг предмет для замены акбю в фпв, шифт +лкм замегна, обознач батт
-connectinon_lost- пнг, после взрыва показывать, 512 на 512
-copper_wire-провод-медный пнг, 32 на 32, обозначение пм
-owerlay полупрозрачный вид от лимца дрона, координаты батареи ближе к нижнему правому углу, размер иконки 256 на 256
-remote_connected-пульт- уж подключенный
-remote_disconnected тот же пульт, но есще не подключеный
+java.lang.IllegalArgumentException: Failed to create model for fly_drone:fpv_drone
+	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:164) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at java.util.HashMap.forEach(Unknown Source) ~[?:?] {}
+	at net.minecraft.client.renderer.entity.EntityRenderers.m_174049_(EntityRenderers.java:160) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.renderer.entity.EntityRenderDispatcher.m_6213_(EntityRenderDispatcher.java:360) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.server.packs.resources.ResourceManagerReloadListener.m_10759_(ResourceManagerReloadListener.java:15) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(Unknown Source) ~[?:?] {}
+	at java.util.concurrent.CompletableFuture$Completion.run(Unknown Source) ~[?:?] {}
+	at net.minecraft.server.packs.resources.SimpleReloadInstance.m_143940_(SimpleReloadInstance.java:69) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.m_6367_(BlockableEventLoop.java:156) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.util.thread.ReentrantBlockableEventLoop.m_6367_(ReentrantBlockableEventLoop.java:23) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.m_7245_(BlockableEventLoop.java:130) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.util.thread.BlockableEventLoop.m_18699_(BlockableEventLoop.java:115) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1106) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.main.Main.main(Main.java:218) ~[1.20.1-47.4.20.jar:?] {re:classloading}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source) ~[?:?] {}
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source) ~[?:?] {}
+	at java.lang.reflect.Method.invoke(Unknown Source) ~[?:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?] {}
+Caused by: java.lang.IllegalArgumentException: No model for layer fly_drone:fpv_drone#main
+	at net.minecraft.client.model.geom.EntityModelSet.m_171103_(EntityModelSet.java:17) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.renderer.entity.EntityRendererProvider$Context.m_174023_(EntityRendererProvider.java:63) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at com.zzynes.fly_drone.FPVDroneRenderer.<init>(FPVDroneRenderer.java:12) ~[fly_drone-1.0.0.jar%23157!/:1.0.0] {re:classloading}
+	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:162) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	... 29 more
 
 
-КРАФТ:
-будет изображен в виде 
-1 2 3
-4 5 6
-7 8 9 
-1-
-2-
-3-
-4-
-5-
-6-
------------------------------------------------------------------------------------------------
-крафты будут отделены черточками
-крафт дрона самого
-1,3,7,9-пф
-2-мф 4 шт
-5-сп
-4-батт
-6-мк
-8-км
----------------------------------------------------------------------------------------------------
-винты\пф крафт:
-1.2.3.7.8.9- кр краситель
-4.5.6- бревна любого типа
----------------------------------------------------------------------------------------------------
-крафт мотора\мф:
-1.3.4.6.7.9- нечего
-2-кмф
-5-вмф
-8-омф
------------------------------------------------------------------------------------------------------------
-корпус мотора\кмф:
-1.3.7.9- нечего
-2.4.5.6.8- железные слитки
------------------------------------------------------------------------------------------------------------
-вал мотора\вмф:
-1.3.4.6.7.9- нечего
-2.5.8-железные слитки
------------------------------------------------------------------------------------------------------------
-обмотка мотора\омф
-1.2.3.4.6.7.8.9-пм
-5-вмф
-------------------------------------------------------------------------------------------------------------
-литионная батарея\батт
-литиевая руда\блр, спавнится на высоте от 0 до 30
-при добыче выпадает литиевая руда лр
-ее надо переплавить и получится литиевый слиток\лс
-с помоью молота на верстаке получатеся пластина лития
-----------------------------------------------------------------------------------------------------------------
-1.2.3.4.7.8.9- пусто
-5- слоток лития
-6-молот
-------------------------------------------------------------------------------------------------------------------
-при создании пластьины он тратит -1 прочности, молот не забирается
-процность молота 300
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
 
-ячейка батареи\яб
---------------------------------------------------------------------------------------------------------------
-1.2.3.7.8.9- кварц
-4.5.6-лп
------------------------------------------------------------------------------------------------------------------
-крафт молота\см
-1.2.3.4.5.6.8- железо
-7.9- пусто
--------------------------------------------------------------------------------------------------------------------
-крафт провода медного\пм
-1.2.4.5.7.8-меднвый слиток
-6- молот
-=6 провода, -6 прочности мололта
-------------------------------------------------------------------------------------------------------------------------
-крафт самой батареи\батт
-1.3- медный слоток
-2- медный провод x4шт
-4.5.6.7.8.9- яб
----------------------------------------------------------------------------------------------------------------------------
-плата:
-1.2.3.7.8.9- медный провод\пм
-4.5.6- меднаня пластина
-----------------------------------------------------------------------------------------------------------------
-медная пластина\железная палстина   кп\жп
-1.2.3.4.7.8.9- пусто
-5- слоток меди\слиток железа
-6-молот
-------------------------------------------------------------------------------------------------------------------
-сендвич панель: сп
-1.2.3.7.8.9-жп
-4.5.6-пусто
-------------------------------------------------------------------------------------------------------------------
-камера:км
-1.3.7.9- серый бетон
-4- любая стеклянная панель
-2.5.8-пм
+-- Head --
+Thread: Render thread
+Suspected Mod: 
+	Fly Drone (fly_drone), Version: 1.0.0
+		at TRANSFORMER/fly_drone@1.0.0/com.zzynes.fly_drone.FPVDroneRenderer.<init>(FPVDroneRenderer.java:12)
+Stacktrace:
+	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:164) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at java.util.HashMap.forEach(Unknown Source) ~[?:?] {}
+	at net.minecraft.client.renderer.entity.EntityRenderers.m_174049_(EntityRenderers.java:160) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.renderer.entity.EntityRenderDispatcher.m_6213_(EntityRenderDispatcher.java:360) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.server.packs.resources.ResourceManagerReloadListener.m_10759_(ResourceManagerReloadListener.java:15) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(Unknown Source) ~[?:?] {}
+	at java.util.concurrent.CompletableFuture$Completion.run(Unknown Source) ~[?:?] {}
+	at net.minecraft.server.packs.resources.SimpleReloadInstance.m_143940_(SimpleReloadInstance.java:69) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.m_6367_(BlockableEventLoop.java:156) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.util.thread.ReentrantBlockableEventLoop.m_6367_(ReentrantBlockableEventLoop.java:23) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.m_7245_(BlockableEventLoop.java:130) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+-- Overlay render details --
+Details:
+	Overlay name: net.minecraftforge.client.loading.ForgeLoadingOverlay
+Stacktrace:
+	at net.minecraft.client.renderer.GameRenderer.m_109093_(GameRenderer.java:957) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1146) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.main.Main.main(Main.java:218) ~[1.20.1-47.4.20.jar:?] {re:classloading}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source) ~[?:?] {}
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source) ~[?:?] {}
+	at java.lang.reflect.Method.invoke(Unknown Source) ~[?:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?] {}
 
 
+-- Last reload --
+Details:
+	Reload number: 1
+	Reload reason: initial
+	Finished: No
+	Packs: vanilla, mod_resources
 
-
-
-
-
+-- System Details --
+Details:
+	Minecraft Version: 1.20.1
+	Minecraft Version ID: 1.20.1
+	Operating System: Windows 10 (amd64) version 10.0
+	Java Version: 17.0.18, Azul Systems, Inc.
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Azul Systems, Inc.
+	Memory: 125307040 bytes (119 MiB) / 499122176 bytes (476 MiB) up to 8388608000 bytes (8000 MiB)
+	CPUs: 24
+	Processor Vendor: GenuineIntel
+	Processor Name: Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz
+	Identifier: Intel64 Family 6 Model 63 Stepping 2
+	Microarchitecture: Haswell (Server)
+	Frequency (GHz): 2.49
+	Number of physical packages: 1
+	Number of physical CPUs: 12
+	Number of logical CPUs: 24
+	Graphics card #0 name: AMD Radeon RX 580 2048SP
+	Graphics card #0 vendor: Advanced Micro Devices, Inc. (0x1002)
+	Graphics card #0 VRAM (MB): 4095.00
+	Graphics card #0 deviceId: 0x6fdf
+	Graphics card #0 versionInfo: DriverVersion=31.0.21924.61
+	Memory slot #0 capacity (MB): 16384.00
+	Memory slot #0 clockSpeed (GHz): 2.40
+	Memory slot #0 type: DDR4
+	Memory slot #1 capacity (MB): 16384.00
+	Memory slot #1 clockSpeed (GHz): 2.40
+	Memory slot #1 type: DDR4
+	Virtual memory max (MB): 37473.13
+	Virtual memory used (MB): 15372.50
+	Swap memory total (MB): 4864.00
+	Swap memory used (MB): 0.00
+	JVM Flags: 2 total; -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx8000M
+	Launched Version: 1.20.1
+	Backend library: LWJGL version 3.3.1 build 7
+	Backend API: AMD Radeon RX 580 2048SP GL version 4.6.0 Core Profile Context 26.1.1.251211, ATI Technologies Inc.
+	Window size: 1920x1080
+	GL Caps: Using framebuffer using OpenGL 3.2
+	GL debug messages: 
+	Using VBOs: Yes
+	Is Modded: Definitely; Client brand changed to 'forge'
+	Type: Client (map_client.txt)
+	Graphics mode: fancy
+	Resource Packs: 
+	Current Language: ru_ru
+	CPU: 24x Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz
+	ModLauncher: 10.0.9+10.0.9+main.dcd20f30
+	ModLauncher launch target: forgeclient
+	ModLauncher naming: srg
+	ModLauncher services: 
+		mixin-0.8.5.jar mixin PLUGINSERVICE 
+		eventbus-6.2.33.jar eventbus PLUGINSERVICE 
+		fmlloader-1.20.1-47.4.20.jar slf4jfixer PLUGINSERVICE 
+		fmlloader-1.20.1-47.4.20.jar object_holder_definalize PLUGINSERVICE 
+		fmlloader-1.20.1-47.4.20.jar runtime_enum_extender PLUGINSERVICE 
+		fmlloader-1.20.1-47.4.20.jar capability_token_subclass PLUGINSERVICE 
+		accesstransformers-8.0.4.jar accesstransformer PLUGINSERVICE 
+		fmlloader-1.20.1-47.4.20.jar runtimedistcleaner PLUGINSERVICE 
+		modlauncher-10.0.9.jar mixin TRANSFORMATIONSERVICE 
+		modlauncher-10.0.9.jar fml TRANSFORMATIONSERVICE 
+	FML Language Providers: 
+		minecraft@1.0
+		lowcodefml@{MINECRAFT_ACCESS_TOKEN}
+		javafml@{MINECRAFT_ACCESS_TOKEN}
+	Mod List: 
+		client-1.20.1-20230612.114412-srg.jar             |Minecraft                     |minecraft                     |1.20.1              |DONE      |Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
+		fly_drone-1.0.0.jar                               |Fly Drone                     |fly_drone                     |1.0.0               |DONE      |Manifest: NOSIGNATURE
+		forge-1.20.1-47.4.20-universal.jar                |Forge                         |forge                         |47.4.20             |DONE      |Manifest: NOSIGNATURE
+	Crash Report UUID: 2b019777-5f25-4b5d-a1d4-9af58a9f2652
+	FML: 47.4
+	Forge: net.minecraftforge:47.4.20
