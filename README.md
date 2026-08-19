@@ -1,7 +1,7 @@
 ---- Minecraft Crash Report ----
-// Hey, that tickles! Hehehe!
+// Shall we play a game?
 
-Time: 2026-08-19 04:00:40
+Time: 2026-08-19 04:15:37
 Description: Rendering overlay
 
 java.lang.IllegalArgumentException: Failed to create model for fly_drone:fpv_drone
@@ -35,9 +35,9 @@ java.lang.IllegalArgumentException: Failed to create model for fly_drone:fpv_dro
 	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?] {}
 	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?] {}
 	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?] {}
-Caused by: java.lang.IllegalArgumentException: No model for layer fly_drone:fpv_drone#main
-	at net.minecraft.client.model.geom.EntityModelSet.m_171103_(EntityModelSet.java:17) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at net.minecraft.client.renderer.entity.EntityRendererProvider$Context.m_174023_(EntityRendererProvider.java:63) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+Caused by: java.util.NoSuchElementException: Can't find part propeller_lb
+	at net.minecraft.client.model.geom.ModelPart.m_171324_(ModelPart.java:91) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at com.zzynes.fly_drone.FPVDroneModel.<init>(FPVDroneModel.java:26) ~[fly_drone-1.0.0.jar%23157!/:1.0.0] {re:classloading}
 	at com.zzynes.fly_drone.FPVDroneRenderer.<init>(FPVDroneRenderer.java:12) ~[fly_drone-1.0.0.jar%23157!/:1.0.0] {re:classloading}
 	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:162) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	... 29 more
@@ -50,7 +50,7 @@ A detailed walkthrough of the error, its code path and all known details is as f
 Thread: Render thread
 Suspected Mod: 
 	Fly Drone (fly_drone), Version: 1.0.0
-		at TRANSFORMER/fly_drone@1.0.0/com.zzynes.fly_drone.FPVDroneRenderer.<init>(FPVDroneRenderer.java:12)
+		at TRANSFORMER/fly_drone@1.0.0/com.zzynes.fly_drone.FPVDroneModel.<init>(FPVDroneModel.java:26)
 Stacktrace:
 	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:164) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at java.util.HashMap.forEach(Unknown Source) ~[?:?] {}
@@ -102,7 +102,7 @@ Details:
 	Operating System: Windows 10 (amd64) version 10.0
 	Java Version: 17.0.18, Azul Systems, Inc.
 	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Azul Systems, Inc.
-	Memory: 125307040 bytes (119 MiB) / 499122176 bytes (476 MiB) up to 8388608000 bytes (8000 MiB)
+	Memory: 461198568 bytes (439 MiB) / 742391808 bytes (708 MiB) up to 8388608000 bytes (8000 MiB)
 	CPUs: 24
 	Processor Vendor: GenuineIntel
 	Processor Name: Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz
@@ -124,7 +124,7 @@ Details:
 	Memory slot #1 clockSpeed (GHz): 2.40
 	Memory slot #1 type: DDR4
 	Virtual memory max (MB): 37473.13
-	Virtual memory used (MB): 15372.50
+	Virtual memory used (MB): 15968.37
 	Swap memory total (MB): 4864.00
 	Swap memory used (MB): 0.00
 	JVM Flags: 2 total; -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx8000M
@@ -163,6 +163,6 @@ Details:
 		client-1.20.1-20230612.114412-srg.jar             |Minecraft                     |minecraft                     |1.20.1              |DONE      |Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
 		fly_drone-1.0.0.jar                               |Fly Drone                     |fly_drone                     |1.0.0               |DONE      |Manifest: NOSIGNATURE
 		forge-1.20.1-47.4.20-universal.jar                |Forge                         |forge                         |47.4.20             |DONE      |Manifest: NOSIGNATURE
-	Crash Report UUID: 2b019777-5f25-4b5d-a1d4-9af58a9f2652
+	Crash Report UUID: 56211aca-a6a1-472f-8380-a683ee6e4d06
 	FML: 47.4
 	Forge: net.minecraftforge:47.4.20
