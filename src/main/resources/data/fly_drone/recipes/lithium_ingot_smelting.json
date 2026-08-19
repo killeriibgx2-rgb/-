@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "cookingtime": 200,
+  "experience": 0.7,
+  "ingredient": {
+    "item": "fly_drone:lithium_rud"
+  },
+  "result": "fly_drone:lithium_ingot"
+}
