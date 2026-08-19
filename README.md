@@ -1,23 +1,31 @@
 ---- Minecraft Crash Report ----
-// Shall we play a game?
+// Uh... Did I do that?
 
-Time: 2026-08-19 04:15:37
-Description: Rendering overlay
+Time: 2026-08-19 04:21:01
+Description: mouseClicked event handler
 
-java.lang.IllegalArgumentException: Failed to create model for fly_drone:fpv_drone
-	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:164) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at java.util.HashMap.forEach(Unknown Source) ~[?:?] {}
-	at net.minecraft.client.renderer.entity.EntityRenderers.m_174049_(EntityRenderers.java:160) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.client.renderer.entity.EntityRenderDispatcher.m_6213_(EntityRenderDispatcher.java:360) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.server.packs.resources.ResourceManagerReloadListener.m_10759_(ResourceManagerReloadListener.java:15) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at java.util.concurrent.CompletableFuture$UniRun.tryFire(Unknown Source) ~[?:?] {}
-	at java.util.concurrent.CompletableFuture$Completion.run(Unknown Source) ~[?:?] {}
-	at net.minecraft.server.packs.resources.SimpleReloadInstance.m_143940_(SimpleReloadInstance.java:69) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at net.minecraft.util.thread.BlockableEventLoop.m_6367_(BlockableEventLoop.java:156) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.util.thread.ReentrantBlockableEventLoop.m_6367_(ReentrantBlockableEventLoop.java:23) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at net.minecraft.util.thread.BlockableEventLoop.m_7245_(BlockableEventLoop.java:130) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.util.thread.BlockableEventLoop.m_18699_(BlockableEventLoop.java:115) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1106) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+java.lang.IllegalStateException: Failed to load registries due to above errors
+	at net.minecraft.resources.RegistryDataLoader.m_247207_(RegistryDataLoader.java:77) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.server.WorldLoader.m_246152_(WorldLoader.java:54) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.server.WorldLoader.m_245736_(WorldLoader.java:58) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.server.WorldLoader.m_214362_(WorldLoader.java:31) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.screens.worldselection.CreateWorldScreen.m_232896_(CreateWorldScreen.java:125) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.screens.worldselection.SelectWorldScreen.m_279861_(SelectWorldScreen.java:60) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.Button.m_5691_(Button.java:38) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.AbstractButton.m_5716_(AbstractButton.java:55) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.AbstractWidget.m_6375_(AbstractWidget.java:175) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.events.ContainerEventHandler.m_6375_(ContainerEventHandler.java:38) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.MouseHandler.m_168084_(MouseHandler.java:92) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.screens.Screen.m_96579_(Screen.java:437) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.MouseHandler.m_91530_(MouseHandler.java:89) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.MouseHandler.m_168091_(MouseHandler.java:189) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.execute(BlockableEventLoop.java:102) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.MouseHandler.m_91565_(MouseHandler.java:188) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23152!/:build 7] {}
+	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23130!/:build 7] {}
+	at org.lwjgl.glfw.GLFW.glfwWaitEventsTimeout(GLFW.java:3474) ~[lwjgl-glfw-3.3.1.jar%23152!/:build 7] {}
+	at com.mojang.blaze3d.systems.RenderSystem.limitDisplayFPS(RenderSystem.java:237) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1173) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.main.Main.main(Main.java:218) ~[1.20.1-47.4.20.jar:?] {re:classloading}
 	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
@@ -35,12 +43,6 @@ java.lang.IllegalArgumentException: Failed to create model for fly_drone:fpv_dro
 	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?] {}
 	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?] {}
 	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?] {}
-Caused by: java.util.NoSuchElementException: Can't find part propeller_lb
-	at net.minecraft.client.model.geom.ModelPart.m_171324_(ModelPart.java:91) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at com.zzynes.fly_drone.FPVDroneModel.<init>(FPVDroneModel.java:26) ~[fly_drone-1.0.0.jar%23157!/:1.0.0] {re:classloading}
-	at com.zzynes.fly_drone.FPVDroneRenderer.<init>(FPVDroneRenderer.java:12) ~[fly_drone-1.0.0.jar%23157!/:1.0.0] {re:classloading}
-	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:162) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	... 29 more
 
 
 A detailed walkthrough of the error, its code path and all known details is as follows:
@@ -48,27 +50,41 @@ A detailed walkthrough of the error, its code path and all known details is as f
 
 -- Head --
 Thread: Render thread
-Suspected Mod: 
-	Fly Drone (fly_drone), Version: 1.0.0
-		at TRANSFORMER/fly_drone@1.0.0/com.zzynes.fly_drone.FPVDroneModel.<init>(FPVDroneModel.java:26)
+Suspected Mods: NONE
 Stacktrace:
-	at net.minecraft.client.renderer.entity.EntityRenderers.m_257087_(EntityRenderers.java:164) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at java.util.HashMap.forEach(Unknown Source) ~[?:?] {}
-	at net.minecraft.client.renderer.entity.EntityRenderers.m_174049_(EntityRenderers.java:160) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.client.renderer.entity.EntityRenderDispatcher.m_6213_(EntityRenderDispatcher.java:360) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.server.packs.resources.ResourceManagerReloadListener.m_10759_(ResourceManagerReloadListener.java:15) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at java.util.concurrent.CompletableFuture$UniRun.tryFire(Unknown Source) ~[?:?] {}
-	at java.util.concurrent.CompletableFuture$Completion.run(Unknown Source) ~[?:?] {}
-	at net.minecraft.server.packs.resources.SimpleReloadInstance.m_143940_(SimpleReloadInstance.java:69) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at net.minecraft.util.thread.BlockableEventLoop.m_6367_(BlockableEventLoop.java:156) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.util.thread.ReentrantBlockableEventLoop.m_6367_(ReentrantBlockableEventLoop.java:23) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at net.minecraft.util.thread.BlockableEventLoop.m_7245_(BlockableEventLoop.java:130) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
--- Overlay render details --
+	at net.minecraft.resources.RegistryDataLoader.m_247207_(RegistryDataLoader.java:77) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.server.WorldLoader.m_246152_(WorldLoader.java:54) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.server.WorldLoader.m_245736_(WorldLoader.java:58) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.server.WorldLoader.m_214362_(WorldLoader.java:31) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.screens.worldselection.CreateWorldScreen.m_232896_(CreateWorldScreen.java:125) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.screens.worldselection.SelectWorldScreen.m_279861_(SelectWorldScreen.java:60) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.Button.m_5691_(Button.java:38) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.AbstractButton.m_5716_(AbstractButton.java:55) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.AbstractWidget.m_6375_(AbstractWidget.java:175) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.components.events.ContainerEventHandler.m_6375_(ContainerEventHandler.java:38) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.MouseHandler.m_168084_(MouseHandler.java:92) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.gui.screens.Screen.m_96579_(Screen.java:437) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.MouseHandler.m_91530_(MouseHandler.java:89) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.MouseHandler.m_168091_(MouseHandler.java:189) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.execute(BlockableEventLoop.java:102) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.MouseHandler.m_91565_(MouseHandler.java:188) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23152!/:build 7] {}
+	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23130!/:build 7] {}
+	at org.lwjgl.glfw.GLFW.glfwWaitEventsTimeout(GLFW.java:3474) ~[lwjgl-glfw-3.3.1.jar%23152!/:build 7] {}
+-- Affected screen --
 Details:
-	Overlay name: net.minecraftforge.client.loading.ForgeLoadingOverlay
+	Screen name: net.minecraft.client.gui.screens.worldselection.SelectWorldScreen
 Stacktrace:
-	at net.minecraft.client.renderer.GameRenderer.m_109093_(GameRenderer.java:957) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
-	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1146) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.gui.screens.Screen.m_96579_(Screen.java:437) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.MouseHandler.m_91530_(MouseHandler.java:89) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.MouseHandler.m_168091_(MouseHandler.java:189) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.execute(BlockableEventLoop.java:102) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.MouseHandler.m_91565_(MouseHandler.java:188) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23152!/:build 7] {}
+	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23130!/:build 7] {}
+	at org.lwjgl.glfw.GLFW.glfwWaitEventsTimeout(GLFW.java:3474) ~[lwjgl-glfw-3.3.1.jar%23152!/:build 7] {}
+	at com.mojang.blaze3d.systems.RenderSystem.limitDisplayFPS(RenderSystem.java:237) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1173) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.main.Main.main(Main.java:218) ~[1.20.1-47.4.20.jar:?] {re:classloading}
 	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
@@ -92,8 +108,29 @@ Stacktrace:
 Details:
 	Reload number: 1
 	Reload reason: initial
-	Finished: No
+	Finished: Yes
 	Packs: vanilla, mod_resources
+Stacktrace:
+	at net.minecraft.client.ResourceLoadStateTracker.m_168562_(ResourceLoadStateTracker.java:49) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.Minecraft.m_91354_(Minecraft.java:2326) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:735) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.main.Main.main(Main.java:218) ~[1.20.1-47.4.20.jar:?] {re:classloading}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source) ~[?:?] {}
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source) ~[?:?] {}
+	at java.lang.reflect.Method.invoke(Unknown Source) ~[?:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?] {}
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?] {}
+
 
 -- System Details --
 Details:
@@ -102,7 +139,7 @@ Details:
 	Operating System: Windows 10 (amd64) version 10.0
 	Java Version: 17.0.18, Azul Systems, Inc.
 	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Azul Systems, Inc.
-	Memory: 461198568 bytes (439 MiB) / 742391808 bytes (708 MiB) up to 8388608000 bytes (8000 MiB)
+	Memory: 548132288 bytes (522 MiB) / 880803840 bytes (840 MiB) up to 8388608000 bytes (8000 MiB)
 	CPUs: 24
 	Processor Vendor: GenuineIntel
 	Processor Name: Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz
@@ -124,7 +161,7 @@ Details:
 	Memory slot #1 clockSpeed (GHz): 2.40
 	Memory slot #1 type: DDR4
 	Virtual memory max (MB): 37473.13
-	Virtual memory used (MB): 15968.37
+	Virtual memory used (MB): 16036.43
 	Swap memory total (MB): 4864.00
 	Swap memory used (MB): 0.00
 	JVM Flags: 2 total; -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx8000M
@@ -163,6 +200,6 @@ Details:
 		client-1.20.1-20230612.114412-srg.jar             |Minecraft                     |minecraft                     |1.20.1              |DONE      |Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
 		fly_drone-1.0.0.jar                               |Fly Drone                     |fly_drone                     |1.0.0               |DONE      |Manifest: NOSIGNATURE
 		forge-1.20.1-47.4.20-universal.jar                |Forge                         |forge                         |47.4.20             |DONE      |Manifest: NOSIGNATURE
-	Crash Report UUID: 56211aca-a6a1-472f-8380-a683ee6e4d06
+	Crash Report UUID: ce7b4d92-b9c6-4857-9ee5-813ea0bc0037
 	FML: 47.4
 	Forge: net.minecraftforge:47.4.20
