@@ -1,7 +1,7 @@
 ---- Minecraft Crash Report ----
-// Hi. I'm Minecraft, and I'm a crashaholic.
+// I bet Cylons wouldn't have this problem.
 
-Time: 2026-08-19 17:39:11
+Time: 2026-08-19 17:46:45
 Description: mouseClicked event handler
 
 java.lang.IllegalStateException: Failed to load registries due to above errors
@@ -21,11 +21,13 @@ java.lang.IllegalStateException: Failed to load registries due to above errors
 	at net.minecraft.client.MouseHandler.m_168091_(MouseHandler.java:189) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
 	at net.minecraft.util.thread.BlockableEventLoop.execute(BlockableEventLoop.java:102) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.MouseHandler.m_91565_(MouseHandler.java:188) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23140!/:build 7] {}
-	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23117!/:build 7] {}
-	at org.lwjgl.glfw.GLFW.glfwWaitEventsTimeout(GLFW.java:3474) ~[lwjgl-glfw-3.3.1.jar%23140!/:build 7] {}
-	at com.mojang.blaze3d.systems.RenderSystem.limitDisplayFPS(RenderSystem.java:237) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1173) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23109!/:build 7] {}
+	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23126!/:build 7] {}
+	at org.lwjgl.glfw.GLFW.glfwPollEvents(GLFW.java:3403) ~[lwjgl-glfw-3.3.1.jar%23109!/:build 7] {}
+	at com.mojang.blaze3d.systems.RenderSystem.pollEvents(RenderSystem.java:201) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at com.mojang.blaze3d.systems.RenderSystem.flipFrame(RenderSystem.java:212) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at com.mojang.blaze3d.platform.Window.m_85435_(Window.java:274) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1170) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.main.Main.main(Main.java:218) ~[1.20.1-47.4.20.jar:?] {re:classloading}
 	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
@@ -68,9 +70,11 @@ Stacktrace:
 	at net.minecraft.client.MouseHandler.m_168091_(MouseHandler.java:189) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
 	at net.minecraft.util.thread.BlockableEventLoop.execute(BlockableEventLoop.java:102) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.MouseHandler.m_91565_(MouseHandler.java:188) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23140!/:build 7] {}
-	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23117!/:build 7] {}
-	at org.lwjgl.glfw.GLFW.glfwWaitEventsTimeout(GLFW.java:3474) ~[lwjgl-glfw-3.3.1.jar%23140!/:build 7] {}
+	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23109!/:build 7] {}
+	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23126!/:build 7] {}
+	at org.lwjgl.glfw.GLFW.glfwPollEvents(GLFW.java:3403) ~[lwjgl-glfw-3.3.1.jar%23109!/:build 7] {}
+	at com.mojang.blaze3d.systems.RenderSystem.pollEvents(RenderSystem.java:201) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at com.mojang.blaze3d.systems.RenderSystem.flipFrame(RenderSystem.java:212) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
 -- Affected screen --
 Details:
 	Screen name: net.minecraft.client.gui.screens.worldselection.SelectWorldScreen
@@ -80,11 +84,13 @@ Stacktrace:
 	at net.minecraft.client.MouseHandler.m_168091_(MouseHandler.java:189) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
 	at net.minecraft.util.thread.BlockableEventLoop.execute(BlockableEventLoop.java:102) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.MouseHandler.m_91565_(MouseHandler.java:188) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23140!/:build 7] {}
-	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23117!/:build 7] {}
-	at org.lwjgl.glfw.GLFW.glfwWaitEventsTimeout(GLFW.java:3474) ~[lwjgl-glfw-3.3.1.jar%23140!/:build 7] {}
-	at com.mojang.blaze3d.systems.RenderSystem.limitDisplayFPS(RenderSystem.java:237) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
-	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1173) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
+	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar%23109!/:build 7] {}
+	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar%23126!/:build 7] {}
+	at org.lwjgl.glfw.GLFW.glfwPollEvents(GLFW.java:3403) ~[lwjgl-glfw-3.3.1.jar%23109!/:build 7] {}
+	at com.mojang.blaze3d.systems.RenderSystem.pollEvents(RenderSystem.java:201) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at com.mojang.blaze3d.systems.RenderSystem.flipFrame(RenderSystem.java:212) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at com.mojang.blaze3d.platform.Window.m_85435_(Window.java:274) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading}
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1170) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23158!/:?] {re:classloading,pl:accesstransformer:B}
 	at net.minecraft.client.main.Main.main(Main.java:218) ~[1.20.1-47.4.20.jar:?] {re:classloading}
 	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
@@ -139,7 +145,7 @@ Details:
 	Operating System: Windows 10 (amd64) version 10.0
 	Java Version: 17.0.18, Azul Systems, Inc.
 	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Azul Systems, Inc.
-	Memory: 568574640 bytes (542 MiB) / 872415232 bytes (832 MiB) up to 8388608000 bytes (8000 MiB)
+	Memory: 533472064 bytes (508 MiB) / 914358272 bytes (872 MiB) up to 8388608000 bytes (8000 MiB)
 	CPUs: 24
 	Processor Vendor: GenuineIntel
 	Processor Name: Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz
@@ -161,7 +167,7 @@ Details:
 	Memory slot #1 clockSpeed (GHz): 2.40
 	Memory slot #1 type: DDR4
 	Virtual memory max (MB): 37473.13
-	Virtual memory used (MB): 10976.27
+	Virtual memory used (MB): 13295.79
 	Swap memory total (MB): 4864.00
 	Swap memory used (MB): 0.00
 	JVM Flags: 2 total; -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx8000M
@@ -200,6 +206,6 @@ Details:
 		client-1.20.1-20230612.114412-srg.jar             |Minecraft                     |minecraft                     |1.20.1              |DONE      |Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
 		fly_drone-1.0.0.jar                               |Fly Drone                     |fly_drone                     |1.0.0               |DONE      |Manifest: NOSIGNATURE
 		forge-1.20.1-47.4.20-universal.jar                |Forge                         |forge                         |47.4.20             |DONE      |Manifest: NOSIGNATURE
-	Crash Report UUID: 4b64fe4d-40b9-4022-8db2-e74a2b9fb83f
+	Crash Report UUID: 67a78936-2d49-4548-bf8c-425832d7672d
 	FML: 47.4
 	Forge: net.minecraftforge:47.4.20
