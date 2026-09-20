@@ -1,0 +1,10 @@
+{
+  "item.air_siren": {
+    "sounds": [
+      {
+        "name": "fly_drone:item/air_siren",
+        "stream": true
+      }
+    ]
+  }
+}
