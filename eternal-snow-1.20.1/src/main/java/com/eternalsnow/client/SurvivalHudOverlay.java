@@ -192,7 +192,7 @@ public final class SurvivalHudOverlay {
 
         if (holdingThermometer) {
             String hereStr = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.clientLocalTempC);
-            String streetStr = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.worldAmbientTempC);
+            String streetStr = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.clientStreetTempC);
             Component title = Component.translatable("eternalsnow.hud.thermometer.title");
             Component hereLine = Component.translatable("eternalsnow.hud.thermometer.here", hereStr);
             Component streetLine = Component.translatable("eternalsnow.hud.thermometer.street", streetStr);
@@ -204,7 +204,7 @@ public final class SurvivalHudOverlay {
             guiGraphics.drawString(font, title, panelX + 6, panelY + 4, 0xFFF2E6D8, true);
 
             int hereCol = 0xFF000000 | HeatVisionRenderer.temperatureToRgb(EternalSnowState.clientLocalTempC);
-            int streetCol = 0xFF000000 | HeatVisionRenderer.temperatureToRgb(EternalSnowState.worldAmbientTempC);
+            int streetCol = 0xFF000000 | HeatVisionRenderer.temperatureToRgb(EternalSnowState.clientStreetTempC);
             guiGraphics.drawString(font, hereLine, panelX + 6, panelY + 15, hereCol, true);
             guiGraphics.drawString(font, streetLine, panelX + 6, panelY + 26, streetCol, true);
             panelY += boxH + 4;

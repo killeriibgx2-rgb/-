@@ -64,6 +64,9 @@ public final class ServerSnowSettings {
     public float heatLava = 115.0F;
 
     // 4. Per-Material Conductivity (0.01..1.00) & Capacity (0.2..15.0)
+    // v2.5.3: two GLOBAL multipliers (their own section in the general thermal settings page).
+    public float globalConductivityMultiplier = 1.0F;  // 0.2..3.0: scales EVERY material's heat flow
+    public float globalCapacityMultiplier = 1.0F;      // 0.2..3.0: scales EVERY material's thermal mass
     public final float[] blockConductivity = new float[BlockThermalCategory.VALUES.length];
     public final float[] blockCapacity = new float[BlockThermalCategory.VALUES.length];
 
@@ -172,6 +175,8 @@ public final class ServerSnowSettings {
         this.heatMagma = src.heatMagma;
         this.heatLava = src.heatLava;
 
+        this.globalConductivityMultiplier = src.globalConductivityMultiplier;
+        this.globalCapacityMultiplier = src.globalCapacityMultiplier;
         System.arraycopy(src.blockConductivity, 0, this.blockConductivity, 0, this.blockConductivity.length);
         System.arraycopy(src.blockCapacity, 0, this.blockCapacity, 0, this.blockCapacity.length);
 
@@ -213,6 +218,8 @@ public final class ServerSnowSettings {
         this.globalHeatingSpeedMultiplier = Mth.clamp(this.globalHeatingSpeedMultiplier, 0.2F, 4.0F);
         this.roomHeatingPowerPercent = Mth.clamp(this.roomHeatingPowerPercent, 0, 300);
         this.roomComfortCeilingC = Mth.clamp(this.roomComfortCeilingC, -5.0F, 60.0F);
+        this.globalConductivityMultiplier = Mth.clamp(this.globalConductivityMultiplier, 0.2F, 3.0F);
+        this.globalCapacityMultiplier = Mth.clamp(this.globalCapacityMultiplier, 0.2F, 3.0F);
 
         this.heatTorch = Mth.clamp(this.heatTorch, 0.0F, 80.0F);
         this.heatLantern = Mth.clamp(this.heatLantern, 0.0F, 80.0F);
@@ -283,6 +290,8 @@ public final class ServerSnowSettings {
         tag.putFloat("globalHeatingSpeedMultiplier", this.globalHeatingSpeedMultiplier);
         tag.putInt("roomHeatingPowerPercent", this.roomHeatingPowerPercent);
         tag.putFloat("roomComfortCeilingC", this.roomComfortCeilingC);
+        tag.putFloat("globalConductivityMultiplier", this.globalConductivityMultiplier);
+        tag.putFloat("globalCapacityMultiplier", this.globalCapacityMultiplier);
 
         tag.putFloat("heatTorch", this.heatTorch);
         tag.putFloat("heatLantern", this.heatLantern);
@@ -367,6 +376,8 @@ public final class ServerSnowSettings {
         if (tag.contains("globalHeatingSpeedMultiplier")) this.globalHeatingSpeedMultiplier = tag.getFloat("globalHeatingSpeedMultiplier");
         if (tag.contains("roomHeatingPowerPercent")) this.roomHeatingPowerPercent = tag.getInt("roomHeatingPowerPercent");
         if (tag.contains("roomComfortCeilingC")) this.roomComfortCeilingC = tag.getFloat("roomComfortCeilingC");
+        if (tag.contains("globalConductivityMultiplier")) this.globalConductivityMultiplier = tag.getFloat("globalConductivityMultiplier");
+        if (tag.contains("globalCapacityMultiplier")) this.globalCapacityMultiplier = tag.getFloat("globalCapacityMultiplier");
 
         if (tag.contains("heatTorch")) this.heatTorch = tag.getFloat("heatTorch");
         if (tag.contains("heatLantern")) this.heatLantern = tag.getFloat("heatLantern");
@@ -475,6 +486,9 @@ public final class ServerSnowSettings {
         // v2.5.2 appended at the END to keep the field order of older protocol versions intact
         buf.writeVarInt(this.roomHeatingPowerPercent);
         buf.writeFloat(this.roomComfortCeilingC);
+        // v2.5.3 appended at the END (older protocol versions simply have no trailing bytes)
+        buf.writeFloat(this.globalConductivityMultiplier);
+        buf.writeFloat(this.globalCapacityMultiplier);
     }
 
     public void readFromBuf(FriendlyByteBuf buf) {
@@ -544,6 +558,8 @@ public final class ServerSnowSettings {
         // v2.5.2 appended fields (safe defaults if an older packet has no trailing bytes)
         this.roomHeatingPowerPercent = buf.isReadable() ? buf.readVarInt() : 100;
         this.roomComfortCeilingC = buf.isReadable() ? buf.readFloat() : 26.0F;
+        this.globalConductivityMultiplier = buf.isReadable() ? buf.readFloat() : 1.0F;
+        this.globalCapacityMultiplier = buf.isReadable() ? buf.readFloat() : 1.0F;
         this.clamp();
     }
 }

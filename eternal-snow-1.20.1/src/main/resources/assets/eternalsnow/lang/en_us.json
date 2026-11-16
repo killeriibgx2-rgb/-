@@ -323,5 +323,8 @@
   "eternalsnow.hud.fireplace.damper_closed": "⛔ Damper closed (0%) — open on chimney!",
   "eternalsnow.hud.fireplace.fuel_stored_pct": "Fuel loaded: %s%%",
   "eternalsnow.hud.fireplace.burning_damper": "🔥 Burning: %s • draft %s%% • fuel %s%%",
-  "eternalsnow.hud.fireplace.ready_damper": "🪵 Fuel: %s%% (~%s at %s%% draft) — Right-Click lighter"
+  "eternalsnow.hud.fireplace.ready_damper": "🪵 Fuel: %s%% (~%s at %s%% draft) — Right-Click lighter",
+  "eternalsnow.gui.sec.therm_global_mult": "Global material multipliers",
+  "eternalsnow.gui.therm.cond_mult": "Conductivity multiplier",
+  "eternalsnow.gui.therm.cap_mult": "Heat capacity multiplier"
 }

@@ -27,7 +27,9 @@ public final class EternalSnowState {
     public static volatile float windYawDeg = 45.0F;
     public static volatile float windSpeed = 0.25F;     // 0.0 .. 1.0
     public static volatile float snowIntensity = 0.45F; // 0.0 .. 1.0
-    public static volatile float worldAmbientTempC = -18.0F;
+    public static volatile float worldAmbientTempC = -18.0F;   // server-authoritative live air
+    public static volatile float thermalMassTempC = -18.0F;    // v2.5.3: slow walls/soil lag (server)
+    public static volatile float clientStreetTempC = -18.0F;  // v2.5.3: client-only HUD street readout
     public static volatile int eventTicksRemaining = 4800;
 
     // Live Client Player Survival Telemetry (synced every 10 ticks to each player)

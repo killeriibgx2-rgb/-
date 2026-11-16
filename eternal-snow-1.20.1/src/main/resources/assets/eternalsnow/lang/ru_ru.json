@@ -323,5 +323,8 @@
   "eternalsnow.hud.fireplace.damper_closed": "⛔ Задвижка закрыта (0%) — откройте на дымоходе!",
   "eternalsnow.hud.fireplace.fuel_stored_pct": "Загружено топлива: %s%%",
   "eternalsnow.hud.fireplace.burning_damper": "🔥 Горит: %s • тяга %s%% • загрузка %s%%",
-  "eternalsnow.hud.fireplace.ready_damper": "🪵 Загрузка: %s%% (~%s при тяге %s%%) — ПКМ огнивом"
+  "eternalsnow.hud.fireplace.ready_damper": "🪵 Загрузка: %s%% (~%s при тяге %s%%) — ПКМ огнивом",
+  "eternalsnow.gui.sec.therm_global_mult": "Общие множители материалов",
+  "eternalsnow.gui.therm.cond_mult": "Множитель теплопроводности",
+  "eternalsnow.gui.therm.cap_mult": "Множитель теплоёмкости"
 }

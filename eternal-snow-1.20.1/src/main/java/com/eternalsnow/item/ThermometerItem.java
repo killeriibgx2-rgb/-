@@ -53,7 +53,7 @@ public class ThermometerItem extends Item {
         tooltip.add(Component.translatable("eternalsnow.thermometer.tooltip.desc").withStyle(ChatFormatting.GRAY));
         if (level != null && level.isClientSide) {
             String hereStr = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.clientLocalTempC);
-            String streetStr = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.worldAmbientTempC);
+            String streetStr = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.clientStreetTempC);
             tooltip.add(Component.translatable("eternalsnow.thermometer.tooltip.here", hereStr).withStyle(ChatFormatting.YELLOW));
             tooltip.add(Component.translatable("eternalsnow.thermometer.tooltip.street", streetStr).withStyle(ChatFormatting.AQUA));
         }
