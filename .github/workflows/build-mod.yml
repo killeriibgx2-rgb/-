@@ -36,7 +36,13 @@ jobs:
           GRADLE_OPTS: "-Xmx64m -XX:MaxMetaspaceSize=128m"
         run: |
           chmod +x gradlew
-          ./gradlew build --no-daemon -Dorg.gradle.jvmargs="-Xmx3200m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8"
+          set -o pipefail
+          ./gradlew build --no-daemon -Dorg.gradle.jvmargs="-Xmx3200m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" 2>&1 | tee build.log
+      - name: Show compile errors (if any)
+        if: failure()
+        working-directory: eternal-snow-1.20.1
+        run: |
+          grep -nE "error:|warning: \[|cannot find symbol|\.java:[0-9]+" build.log | head -80 || tail -120 build.log
       - name: Store jar back into the repo
         env:
           GH_TOKEN: ${{ github.token }}
