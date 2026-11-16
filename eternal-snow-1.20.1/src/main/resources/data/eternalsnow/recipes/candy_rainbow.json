@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "1KK",
+    "2K3",
+    " K "
+  ],
+  "key": {
+    "K": {
+      "item": "eternalsnow:caramel"
+    },
+    "1": {
+      "item": "minecraft:red_dye"
+    },
+    "2": [
+      {
+        "item": "minecraft:yellow_dye"
+      },
+      {
+        "item": "minecraft:green_dye"
+      }
+    ],
+    "3": [
+      {
+        "item": "minecraft:blue_dye"
+      },
+      {
+        "item": "minecraft:purple_dye"
+      }
+    ]
+  },
+  "result": {
+    "item": "eternalsnow:candy_rainbow",
+    "count": 1
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ST",
+    "S "
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:stick"
+    },
+    "T": {
+      "item": "minecraft:string"
+    }
+  },
+  "result": {
+    "item": "eternalsnow:wooden_firestarter",
+    "count": 1
+  }
+}

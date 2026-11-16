@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LCL",
+    "CGC",
+    " C "
+  ],
+  "key": {
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "G": {
+      "item": "minecraft:glass_bottle"
+    }
+  },
+  "result": {
+    "item": "eternalsnow:copper_thermos",
+    "count": 1
+  }
+}
