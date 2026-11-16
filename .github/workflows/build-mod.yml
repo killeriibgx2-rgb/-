@@ -1,6 +1,8 @@
 name: build-mod
 on:
   push:
+    branches-ignore:
+      - 'main'
     paths-ignore:
       - 'eternal-snow-1.20.1/release/*.jar'
       - '**.md'
