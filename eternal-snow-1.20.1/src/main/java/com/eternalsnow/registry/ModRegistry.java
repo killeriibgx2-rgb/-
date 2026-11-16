@@ -7,7 +7,10 @@ import com.eternalsnow.block.CocoaPotBlockEntity;
 import com.eternalsnow.block.FireplaceBlock;
 import com.eternalsnow.block.FireplaceBlockEntity;
 import com.eternalsnow.block.FireplacePartBlock;
+import com.eternalsnow.block.HeatAccumulatorBlock;
+import com.eternalsnow.block.HeatAccumulatorBlockEntity;
 import com.eternalsnow.block.IcicleBlock;
+import com.eternalsnow.block.ThermalShutterBlock;
 import com.eternalsnow.block.WallThermometerBlock;
 import com.eternalsnow.block.WallThermometerBlockEntity;
 import com.eternalsnow.effect.ColdImmunityEffect;
@@ -21,6 +24,7 @@ import com.eternalsnow.item.CaramelItem;
 import com.eternalsnow.item.CopperThermosItem;
 import com.eternalsnow.item.EmptyCupItem;
 import com.eternalsnow.item.HeatScannerItem;
+import com.eternalsnow.item.LocalThermometerItem;
 import com.eternalsnow.item.HotDrinkCupItem;
 import com.eternalsnow.item.SnowShovelItem;
 import com.eternalsnow.item.ThermometerItem;
@@ -102,6 +106,21 @@ public final class ModRegistry {
                     .noOcclusion()
                     .pushReaction(PushReaction.DESTROY))
     );
+    public static final RegistryObject<Block> THERMAL_SHUTTER = BLOCKS.register(
+            "thermal_shutter",
+            () -> new ThermalShutterBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(0.8F)
+                    .sound(SoundType.WOOD))
+    );
+    public static final RegistryObject<Block> HEAT_ACCUMULATOR = BLOCKS.register(
+            "heat_accumulator",
+            () -> new HeatAccumulatorBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+    );
     public static final RegistryObject<Block> FIREPLACE = BLOCKS.register(
             "fireplace",
             () -> new FireplaceBlock(BlockBehaviour.Properties.of()
@@ -146,6 +165,10 @@ public final class ModRegistry {
     public static final RegistryObject<BlockEntityType<WallThermometerBlockEntity>> WALL_THERMOMETER_BE = BLOCK_ENTITIES.register(
             "wall_thermometer",
             () -> BlockEntityType.Builder.of(WallThermometerBlockEntity::new, WALL_THERMOMETER.get()).build(null)
+    );
+    public static final RegistryObject<BlockEntityType<HeatAccumulatorBlockEntity>> HEAT_ACCUMULATOR_BE = BLOCK_ENTITIES.register(
+            "heat_accumulator",
+            () -> BlockEntityType.Builder.of(HeatAccumulatorBlockEntity::new, HEAT_ACCUMULATOR.get()).build(null)
     );
     public static final RegistryObject<BlockEntityType<FireplaceBlockEntity>> FIREPLACE_BE = BLOCK_ENTITIES.register(
             "fireplace",
@@ -196,6 +219,10 @@ public final class ModRegistry {
             "thermometer",
             () -> new ThermometerItem(new Item.Properties().stacksTo(1))
     );
+    public static final RegistryObject<Item> LOCAL_THERMOMETER = ITEMS.register(
+            "local_thermometer",
+            () -> new LocalThermometerItem(new Item.Properties().stacksTo(1))
+    );
     public static final RegistryObject<Item> HEAT_SCANNER = ITEMS.register(
             "heat_scanner",
             () -> new HeatScannerItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE))
@@ -224,6 +251,14 @@ public final class ModRegistry {
     public static final RegistryObject<Item> ICICLE_ITEM = ITEMS.register(
             "icicle",
             () -> new BlockItem(ICICLE.get(), new Item.Properties())
+    );
+    public static final RegistryObject<Item> THERMAL_SHUTTER_ITEM = ITEMS.register(
+            "thermal_shutter",
+            () -> new BlockItem(THERMAL_SHUTTER.get(), new Item.Properties())
+    );
+    public static final RegistryObject<Item> HEAT_ACCUMULATOR_ITEM = ITEMS.register(
+            "heat_accumulator",
+            () -> new BlockItem(HEAT_ACCUMULATOR.get(), new Item.Properties())
     );
     public static final RegistryObject<Item> WALL_THERMOMETER_ITEM = ITEMS.register(
             "wall_thermometer",
@@ -314,8 +349,11 @@ public final class ModRegistry {
                         output.accept(CHIMNEY_ITEM.get());
                         output.accept(WOODEN_FIRESTARTER.get());
                         output.accept(THERMOMETER.get());
+                        output.accept(LOCAL_THERMOMETER.get());
                         output.accept(WALL_THERMOMETER_ITEM.get());
                         output.accept(HEAT_SCANNER.get());
+                        output.accept(THERMAL_SHUTTER_ITEM.get());
+                        output.accept(HEAT_ACCUMULATOR_ITEM.get());
                         output.accept(SNOW_SHOVEL.get());
                         output.accept(FESTIVE_COPPER_GOLEM_SPAWN_EGG.get());
                         output.accept(WARMING_PILL.get());

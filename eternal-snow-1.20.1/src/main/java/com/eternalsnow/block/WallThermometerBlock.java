@@ -126,11 +126,8 @@ public final class WallThermometerBlock extends BaseEntityBlock {
             InteractionHand hand,
             BlockHitResult hit
     ) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof WallThermometerBlockEntity be) {
-            String tempStr = String.format(Locale.ROOT, "%+.1f°C", be.getLocalTempC());
-            player.displayClientMessage(Component.translatable("eternalsnow.wall_thermometer.readout", tempStr), true);
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        // v2.6.0: readout is shown ONLY on crosshair hover (HUD overlay), never in chat.
+        return InteractionResult.PASS;
     }
 
     @Nullable

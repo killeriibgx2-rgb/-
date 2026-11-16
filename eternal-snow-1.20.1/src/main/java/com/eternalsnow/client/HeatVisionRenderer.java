@@ -18,8 +18,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
 public final class HeatVisionRenderer {
+    private static final Matrix4f VIEW_PROJ = new Matrix4f();
+    private static final Vector4f CLIP = new Vector4f();
+
     private HeatVisionRenderer() {
     }
 
@@ -39,6 +43,20 @@ public final class HeatVisionRenderer {
             return;
         }
 
+        Vec3 cam = event.getCamera().getPosition();
+        double cx = cam.x;
+        double cy = cam.y;
+        double cz = cam.z;
+        Matrix4f pose = event.getPoseStack().last().pose();
+
+        // v2.6.0: project the two world-anchored markers BEFORE any early return.
+        projectMarkers(mc, pose, cx, cy, cz);
+
+        int mode = HeatScannerItem.getMode(heldScanner);
+        if (mode == HeatScannerItem.MODE_THERMAL) {
+            return; // full-screen thermal pass is drawn by the HUD overlay (cheap, no wireframes)
+        }
+
         short[] offsets = HeatScanClientData.packedOffsets;
         short[] temps = HeatScanClientData.deciTemps;
         BlockPos origin = HeatScanClientData.origin;
@@ -50,13 +68,8 @@ public final class HeatVisionRenderer {
             return;
         }
 
-        boolean warmOnly = HeatScannerItem.isWarmOnlyMode(heldScanner);
-        Vec3 cam = event.getCamera().getPosition();
-        double cx = cam.x;
-        double cy = cam.y;
-        double cz = cam.z;
-
-        Matrix4f pose = event.getPoseStack().last().pose();
+        boolean warmOnly = mode == HeatScannerItem.MODE_WARM_ONLY;
+        boolean relative = mode == HeatScannerItem.MODE_WALLS;
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -89,7 +102,10 @@ public final class HeatVisionRenderer {
             int bz = origin.getZ() + dz;
 
             float tempC = temps[i] * 0.1F;
-            int colorRgb = temperatureToRgb(tempC);
+            int colorRgb = relative
+                    ? relativeToRgb((tempC - HeatScanClientData.minC)
+                            / Math.max(0.001F, HeatScanClientData.maxC - HeatScanClientData.minC))
+                    : temperatureToRgb(tempC);
             int r = (colorRgb >> 16) & 0xFF;
             int g = (colorRgb >> 8) & 0xFF;
             int b = colorRgb & 0xFF;
@@ -157,6 +173,58 @@ public final class HeatVisionRenderer {
     ) {
         buf.vertex(p, ax, ay, az).color(r, g, b, a).endVertex();
         buf.vertex(p, bx, by, bz).color(r, g, b, a).endVertex();
+    }
+
+    /** v2.6.0: auto-scaled palette — coldest in view = blue, hottest in view = red. */
+    public static int relativeToRgb(float t) {
+        t = Mth.clamp(t, 0.0F, 1.0F);
+        if (t < 0.25F) return lerpRgb(t / 0.25F, 30, 70, 235, 40, 190, 255);
+        if (t < 0.50F) return lerpRgb((t - 0.25F) / 0.25F, 40, 190, 255, 70, 230, 150);
+        if (t < 0.75F) return lerpRgb((t - 0.50F) / 0.25F, 70, 230, 150, 255, 225, 60);
+        return lerpRgb((t - 0.75F) / 0.25F, 255, 225, 60, 255, 45, 40);
+    }
+
+    /**
+     * Screen-space projection of the hottest/coldest world positions. The markers are stored as
+     * BLOCK POSITIONS, so turning the camera keeps them anchored in the world (they simply leave
+     * the screen); the server replaces them every 2 seconds with a fresh look-target sample.
+     */
+    private static void projectMarkers(Minecraft mc, Matrix4f pose, double cx, double cy, double cz) {
+        long hot = HeatScanClientData.hotPos;
+        long cold = HeatScanClientData.coldPos;
+        if (!HeatScanClientData.markersFresh() || (hot == Long.MIN_VALUE && cold == Long.MIN_VALUE)) {
+            HeatScanClientData.setMarkerScreen(-1.0F, -1.0F, false, -1.0F, -1.0F, false);
+            return;
+        }
+        VIEW_PROJ.set(RenderSystem.getProjectionMatrix()).mul(pose);
+        int w = mc.getWindow().getGuiScaledWidth();
+        int h = mc.getWindow().getGuiScaledHeight();
+
+        float hx = -1.0F, hy = -1.0F, lx = -1.0F, ly = -1.0F;
+        boolean hv = false, lv = false;
+        if (hot != Long.MIN_VALUE) {
+            CLIP.set((float) (BlockPos.getX(hot) + 0.5D - cx),
+                    (float) (BlockPos.getY(hot) + 0.5D - cy),
+                    (float) (BlockPos.getZ(hot) + 0.5D - cz), 1.0F);
+            VIEW_PROJ.transform(CLIP);
+            if (CLIP.w > 0.0F && Math.abs(CLIP.x) <= CLIP.w && Math.abs(CLIP.y) <= CLIP.w) {
+                hx = (CLIP.x / CLIP.w * 0.5F + 0.5F) * w;
+                hy = (1.0F - (CLIP.y / CLIP.w * 0.5F + 0.5F)) * h;
+                hv = true;
+            }
+        }
+        if (cold != Long.MIN_VALUE) {
+            CLIP.set((float) (BlockPos.getX(cold) + 0.5D - cx),
+                    (float) (BlockPos.getY(cold) + 0.5D - cy),
+                    (float) (BlockPos.getZ(cold) + 0.5D - cz), 1.0F);
+            VIEW_PROJ.transform(CLIP);
+            if (CLIP.w > 0.0F && Math.abs(CLIP.x) <= CLIP.w && Math.abs(CLIP.y) <= CLIP.w) {
+                lx = (CLIP.x / CLIP.w * 0.5F + 0.5F) * w;
+                ly = (1.0F - (CLIP.y / CLIP.w * 0.5F + 0.5F)) * h;
+                lv = true;
+            }
+        }
+        HeatScanClientData.setMarkerScreen(hx, hy, hv, lx, ly, lv);
     }
 
     public static int temperatureToRgb(float tempC) {

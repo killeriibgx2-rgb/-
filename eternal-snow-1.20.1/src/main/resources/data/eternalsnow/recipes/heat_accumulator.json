@@ -1,9 +1,9 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    " C ",
-    " G ",
-    " R "
+    "CGC",
+    "GWG",
+    "CGC"
   ],
   "key": {
     "C": {
@@ -12,12 +12,12 @@
     "G": {
       "item": "minecraft:glass"
     },
-    "R": {
-      "item": "minecraft:redstone"
+    "W": {
+      "item": "minecraft:water_bucket"
     }
   },
   "result": {
-    "item": "eternalsnow:thermometer",
+    "item": "eternalsnow:heat_accumulator",
     "count": 1
   }
 }

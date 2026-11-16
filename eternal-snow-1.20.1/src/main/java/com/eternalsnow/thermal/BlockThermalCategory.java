@@ -1,5 +1,7 @@
 package com.eternalsnow.thermal;
 
+import com.eternalsnow.block.HeatAccumulatorBlock;
+import com.eternalsnow.block.ThermalShutterBlock;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.AbstractGlassBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -38,6 +40,13 @@ public enum BlockThermalCategory {
     }
 
     public static BlockThermalCategory classify(BlockState state) {
+        // v2.6.0: shutter = wool-class insulator (low U), water tank = massive metal (high C).
+        if (state.getBlock() instanceof ThermalShutterBlock) {
+            return WOOL;
+        }
+        if (state.getBlock() instanceof HeatAccumulatorBlock) {
+            return METAL;
+        }
         if (state.is(BlockTags.WOOL) || state.is(BlockTags.WOOL_CARPETS) || state.is(Blocks.HAY_BLOCK)) {
             return WOOL;
         }

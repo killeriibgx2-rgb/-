@@ -4,6 +4,8 @@ import com.eternalsnow.block.FireplaceBlock;
 import com.eternalsnow.block.FireplaceBlockEntity;
 import com.eternalsnow.block.FireplaceFuelHelper;
 import com.eternalsnow.block.FireplacePartBlock;
+import com.eternalsnow.block.HeatAccumulatorBlock;
+import com.eternalsnow.block.HeatAccumulatorBlockEntity;
 import com.eternalsnow.config.ServerSnowSettings;
 import com.eternalsnow.registry.ModRegistry;
 import com.eternalsnow.state.EternalSnowState;
@@ -237,6 +239,7 @@ public final class ThermalEngine {
         }
         Block b = state.getBlock();
         return b instanceof FireplaceBlock
+                || b instanceof HeatAccumulatorBlock
                 || b instanceof CampfireBlock
                 || b instanceof AbstractFurnaceBlock
                 || b instanceof LanternBlock
@@ -397,6 +400,11 @@ public final class ThermalEngine {
             basePower = s.heatLava;
         } else if (state.is(Blocks.MAGMA_BLOCK)) {
             basePower = s.heatMagma;
+        } else if (block instanceof HeatAccumulatorBlock) {
+            // v2.6.0: hot water releases its stored heat slowly through the normal emitter path.
+            if (level.getBlockEntity(pos) instanceof HeatAccumulatorBlockEntity acc) {
+                basePower = acc.getEmitPowerC();
+            }
         } else if (block instanceof CampfireBlock) {
             if (state.hasProperty(CampfireBlock.LIT) && state.getValue(CampfireBlock.LIT)) {
                 if (state.is(Blocks.SOUL_CAMPFIRE)) {
