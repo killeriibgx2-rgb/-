@@ -236,14 +236,19 @@ public final class ModWorldEvents {
     }
 
     public static void onPlayerClone(PlayerEvent.Clone event) {
-        if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer newPlayer) {
-            CompoundTag oldData = event.getOriginal().getPersistentData();
-            if (oldData.contains(Player.PERSISTED_NBT_TAG)) {
-                newPlayer.getPersistentData().put(
-                        Player.PERSISTED_NBT_TAG,
-                        oldData.getCompound(Player.PERSISTED_NBT_TAG).copy()
-                );
-            }
+        if (!(event.getEntity() instanceof ServerPlayer newPlayer)) {
+            return;
+        }
+        // v2.6.1: survival state must also survive dimension changes (End return, portals),
+        // not just death — otherwise body temp / thirst silently reset when changing worlds.
+        CompoundTag oldData = event.getOriginal().getPersistentData();
+        if (oldData.contains(Player.PERSISTED_NBT_TAG)) {
+            newPlayer.getPersistentData().put(
+                    Player.PERSISTED_NBT_TAG,
+                    oldData.getCompound(Player.PERSISTED_NBT_TAG).copy()
+            );
+        }
+        if (event.isWasDeath()) {
             PlayerSurvivalManager.resetOnRespawn(newPlayer);
         }
     }

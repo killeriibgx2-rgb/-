@@ -83,6 +83,10 @@ public final class EternalSnowState {
         clientBodyTempC = 36.6F;
         clientBodyTempState = 0.0F;
         clientThirstLevel = 20;
+        // v2.6.1: never keep another server's temperature on the HUD after a disconnect
+        clientLocalTempC = -18.0F;
+        clientStreetTempC = -18.0F;
+        clientBodyTempC = 36.6F;
     }
 
     public static boolean canClientEditAdmin() {

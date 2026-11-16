@@ -51,17 +51,32 @@ public final class PlayerSurvivalManager {
     private PlayerSurvivalManager() {
     }
 
+    /**
+     * v2.6.1: survival state lives UNDER Forge's PlayerPersisted tag and is written back after
+     * every mutation. Before this, getCompound() returned a detached copy, so body temperature and
+     * thirst were silently reset on world re-entry / respawn (and on dedicated servers).
+     */
     private static CompoundTag getOrCreateTag(ServerPlayer player) {
         CompoundTag persistent = player.getPersistentData();
-        if (!persistent.contains(NBT_ROOT, CompoundTag.TAG_COMPOUND)) {
+        CompoundTag persisted = persistent.getCompound(Player.PERSISTED_NBT_TAG);
+        if (!persisted.contains(NBT_ROOT, CompoundTag.TAG_COMPOUND)) {
             CompoundTag tag = new CompoundTag();
             tag.putFloat(TAG_BODY_TEMP, 0.0F);
             tag.putInt(TAG_THIRST, 20);
             tag.putFloat(TAG_THIRST_SAT, 5.0F);
             tag.putFloat(TAG_THIRST_EXH, 0.0F);
-            persistent.put(NBT_ROOT, tag);
+            persisted.put(NBT_ROOT, tag);
+            persistent.put(Player.PERSISTED_NBT_TAG, persisted);
+            return tag;
         }
-        return persistent.getCompound(NBT_ROOT);
+        return persisted.getCompound(NBT_ROOT);
+    }
+
+    private static void storeTag(ServerPlayer player, CompoundTag tag) {
+        CompoundTag persistent = player.getPersistentData();
+        CompoundTag persisted = persistent.getCompound(Player.PERSISTED_NBT_TAG);
+        persisted.put(NBT_ROOT, tag.copy());
+        persistent.put(Player.PERSISTED_NBT_TAG, persisted);
     }
 
     public static void resetOnRespawn(ServerPlayer newPlayer) {
@@ -70,6 +85,7 @@ public final class PlayerSurvivalManager {
         tag.putInt(TAG_THIRST, 20);
         tag.putFloat(TAG_THIRST_SAT, 5.0F);
         tag.putFloat(TAG_THIRST_EXH, 0.0F);
+        storeTag(newPlayer, tag);
         updateSmoothColdSlowdown(newPlayer, 0.0F);
     }
 
@@ -79,6 +95,7 @@ public final class PlayerSurvivalManager {
         float sat = Mth.clamp(tag.getFloat(TAG_THIRST_SAT) + addSat, 0.0F, 10.0F);
         tag.putInt(TAG_THIRST, thirst);
         tag.putFloat(TAG_THIRST_SAT, sat);
+        storeTag(player, tag);
     }
 
     private static void updateSmoothColdSlowdown(ServerPlayer player, float slowFraction) {
@@ -278,6 +295,7 @@ public final class PlayerSurvivalManager {
                 }
             }
             tag.putFloat(TAG_BODY_TEMP, bodyState);
+            storeTag(player, tag);
         }
 
         // 2. Player Thirst Simulation
@@ -320,6 +338,7 @@ public final class PlayerSurvivalManager {
             tag.putInt(TAG_THIRST, thirst);
             tag.putFloat(TAG_THIRST_SAT, thirstSat);
             tag.putFloat(TAG_THIRST_EXH, thirstExh);
+            storeTag(player, tag);
         }
 
         // 3. Sync survival + live looked-at Campfire telemetry to client every 10 ticks
@@ -487,5 +506,6 @@ public final class PlayerSurvivalManager {
             bodyState = Math.min(0.0F, bodyState + tempShift);
             tag.putFloat(TAG_BODY_TEMP, bodyState);
         }
+        storeTag(player, tag);
     }
 }
