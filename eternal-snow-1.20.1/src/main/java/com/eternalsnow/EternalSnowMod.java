@@ -34,6 +34,7 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import com.eternalsnow.world.RecipeUnlockHelper;
 import org.slf4j.Logger;
 
 @Mod(EternalSnowMod.MODID)
@@ -86,7 +87,7 @@ public class EternalSnowMod {
         EternalSnowSavedData data = EternalSnowSavedData.get(event.getServer());
         EternalSnowState.setServerSettings(data.getSettings());
         EternalSnowState.setServerRunning(true);
-        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.1): enabled={}", data.getSettings().enabled);
+        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.2): enabled={}", data.getSettings().enabled);
     }
 
     private void onServerStopped(final ServerStoppedEvent event) {
@@ -98,6 +99,7 @@ public class EternalSnowMod {
     private void onPlayerLoggedIn(final PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             grantStarterPillOnce(player);
+            RecipeUnlockHelper.unlockAll(player);
             EternalSnowSavedData data = EternalSnowSavedData.get(player.server);
             boolean canManage = EternalSnowState.canPlayerManageServer(player);
             PacketHandler.sendToPlayer(player, new ClientboundSyncSettingsPacket(data.getSettings(), canManage));
