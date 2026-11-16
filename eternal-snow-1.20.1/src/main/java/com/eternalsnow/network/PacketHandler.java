@@ -14,7 +14,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class PacketHandler {
-    private static final String PROTOCOL_VERSION = "11"; // v2.6.0: scanner modes + markers in one packet
+    private static final String PROTOCOL_VERSION = "12"; // v2.6.1: multiplayer persistence fixes (wire format same as 11)
     private static boolean registered = false;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

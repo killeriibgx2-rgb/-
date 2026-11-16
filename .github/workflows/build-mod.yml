@@ -38,11 +38,26 @@ jobs:
           chmod +x gradlew
           set -o pipefail
           ./gradlew build --no-daemon -Dorg.gradle.jvmargs="-Xmx3200m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" 2>&1 | tee build.log
-      - name: Show compile errors (if any)
+      - name: Publish compile errors into the repo (if any)
         if: failure()
-        working-directory: eternal-snow-1.20.1
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          grep -nE "error:|warning: \[|cannot find symbol|\.java:[0-9]+" build.log | head -80 || tail -120 build.log
+          set -e
+          OUT="eternal-snow-1.20.1/release/build-errors.log"
+          mkdir -p eternal-snow-1.20.1/release
+          { grep -nE "error:|cannot find symbol|incompatible types|\.java:[0-9]+" eternal-snow-1.20.1/build.log || true; } > "$OUT"
+          tail -60 eternal-snow-1.20.1/build.log >> "$OUT" || true
+          cat "$OUT"
+          git config user.name "eternalsnow-build-bot"
+          git config user.email "eternalsnow-build-bot@users.noreply.github.com"
+          git add "$OUT"
+          if git diff --cached --quiet; then
+            echo "No new errors."
+            exit 0
+          fi
+          git commit -m "ci: build errors [skip ci]"
+          git push origin "HEAD:${{ github.ref_name }}"
       - name: Store jar back into the repo
         env:
           GH_TOKEN: ${{ github.token }}
