@@ -328,7 +328,8 @@ public final class PlayerSurvivalManager {
             int lookedCampTicks = 0;
             boolean lookedCampWind = false;
 
-            HitResult hit = player.pick(6.0D, 1.0F, false);
+            // v2.6.0: dynamic fuel readout only point-blank (2 blocks), not from across the room
+            HitResult hit = player.pick(2.0D, 1.0F, false);
             if (hit.getType() == HitResult.Type.BLOCK && hit instanceof BlockHitResult bhr) {
                 BlockPos hp = bhr.getBlockPos();
                 BlockState hs = level.getBlockState(hp);
@@ -352,7 +353,14 @@ public final class PlayerSurvivalManager {
             ));
 
             if (HeatScannerItem.isHoldingScanner(player)) {
-                PacketHandler.sendToPlayer(player, ClientboundHeatGridPacket.captureAround(level, samplePos));
+                ItemStack scannerStack = HeatScannerItem.getHeldScanner(player);
+                int mode = HeatScannerItem.getMode(scannerStack);
+                // Air modes refresh once a second; wall/thermal modes (heavier capture) every 2 s.
+                int period = mode >= HeatScannerItem.MODE_WALLS ? 40 : 20;
+                if (player.tickCount % period == 0) {
+                    PacketHandler.sendToPlayer(player,
+                            ClientboundHeatGridPacket.captureFor(level, player, mode));
+                }
             }
         }
     }

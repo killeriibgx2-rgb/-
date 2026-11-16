@@ -16,7 +16,7 @@
       "item": "minecraft:glass_pane"
     },
     "T": {
-      "item": "eternalsnow:thermometer"
+      "item": "eternalsnow:local_thermometer"
     },
     "R": {
       "item": "minecraft:redstone"

@@ -2,10 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "eternalsnow:thermometer"
-    },
-    {
-      "tag": "minecraft:planks"
+      "item": "eternalsnow:local_thermometer"
     }
   ],
   "result": {
