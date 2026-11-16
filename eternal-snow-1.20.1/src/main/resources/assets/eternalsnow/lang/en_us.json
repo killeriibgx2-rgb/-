@@ -115,6 +115,8 @@
   "eternalsnow.gui.surf.paths": "Paths & Farmland",
   "eternalsnow.gui.therm.global_bonus": "Bonus to All Heat Sources: ",
   "eternalsnow.gui.therm.global_speed": "Global Heating Speed & Power: ",
+  "eternalsnow.gui.therm.room_power": "Room Heating Power: ",
+  "eternalsnow.gui.therm.room_ceiling": "Indoor Temperature Ceiling: ",
   "eternalsnow.gui.therm.melt_roof": "Melt Snow on Warm Uninsulated Roofs",
   "eternalsnow.gui.therm.torch": "Torch: +",
   "eternalsnow.gui.therm.lantern": "Lantern: +",

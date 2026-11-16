@@ -49,6 +49,10 @@ public final class ServerSnowSettings {
     public float globalHeatBonusC = 0.0F;              // Adds +/- °C directly to ALL active heat sources!
     public float globalHeatingSpeedMultiplier = 1.0F;  // Scales warming speed & heat spread strength across all sources!
 
+    // v2.5.2: enclosed-room lumped heat model (power in / envelope resistance out)
+    public int roomHeatingPowerPercent = 100;          // 0..300: how strongly a fire heats the ROOM (not just nearby voxels)
+    public float roomComfortCeilingC = 26.0F;          // absolute cap of enclosed air temperature
+
     public float heatTorch = 14.0F;
     public float heatLantern = 20.0F;
     public float heatFurnace = 48.0F;
@@ -155,6 +159,8 @@ public final class ServerSnowSettings {
 
         this.globalHeatBonusC = src.globalHeatBonusC;
         this.globalHeatingSpeedMultiplier = src.globalHeatingSpeedMultiplier;
+        this.roomHeatingPowerPercent = src.roomHeatingPowerPercent;
+        this.roomComfortCeilingC = src.roomComfortCeilingC;
 
         this.heatTorch = src.heatTorch;
         this.heatLantern = src.heatLantern;
@@ -205,6 +211,8 @@ public final class ServerSnowSettings {
 
         this.globalHeatBonusC = Mth.clamp(this.globalHeatBonusC, -40.0F, 100.0F);
         this.globalHeatingSpeedMultiplier = Mth.clamp(this.globalHeatingSpeedMultiplier, 0.2F, 4.0F);
+        this.roomHeatingPowerPercent = Mth.clamp(this.roomHeatingPowerPercent, 0, 300);
+        this.roomComfortCeilingC = Mth.clamp(this.roomComfortCeilingC, -5.0F, 60.0F);
 
         this.heatTorch = Mth.clamp(this.heatTorch, 0.0F, 80.0F);
         this.heatLantern = Mth.clamp(this.heatLantern, 0.0F, 80.0F);
@@ -273,6 +281,8 @@ public final class ServerSnowSettings {
 
         tag.putFloat("globalHeatBonusC", this.globalHeatBonusC);
         tag.putFloat("globalHeatingSpeedMultiplier", this.globalHeatingSpeedMultiplier);
+        tag.putInt("roomHeatingPowerPercent", this.roomHeatingPowerPercent);
+        tag.putFloat("roomComfortCeilingC", this.roomComfortCeilingC);
 
         tag.putFloat("heatTorch", this.heatTorch);
         tag.putFloat("heatLantern", this.heatLantern);
@@ -355,6 +365,8 @@ public final class ServerSnowSettings {
 
         if (tag.contains("globalHeatBonusC")) this.globalHeatBonusC = tag.getFloat("globalHeatBonusC");
         if (tag.contains("globalHeatingSpeedMultiplier")) this.globalHeatingSpeedMultiplier = tag.getFloat("globalHeatingSpeedMultiplier");
+        if (tag.contains("roomHeatingPowerPercent")) this.roomHeatingPowerPercent = tag.getInt("roomHeatingPowerPercent");
+        if (tag.contains("roomComfortCeilingC")) this.roomComfortCeilingC = tag.getFloat("roomComfortCeilingC");
 
         if (tag.contains("heatTorch")) this.heatTorch = tag.getFloat("heatTorch");
         if (tag.contains("heatLantern")) this.heatLantern = tag.getFloat("heatLantern");
@@ -459,6 +471,10 @@ public final class ServerSnowSettings {
         buf.writeVarInt(this.shovelDurability);
         buf.writeVarInt(this.golemSwingIntervalTicks);
         buf.writeVarInt(this.golemMaxRadius);
+
+        // v2.5.2 appended at the END to keep the field order of older protocol versions intact
+        buf.writeVarInt(this.roomHeatingPowerPercent);
+        buf.writeFloat(this.roomComfortCeilingC);
     }
 
     public void readFromBuf(FriendlyByteBuf buf) {
@@ -525,6 +541,9 @@ public final class ServerSnowSettings {
         this.shovelDurability = buf.readVarInt();
         this.golemSwingIntervalTicks = buf.readVarInt();
         this.golemMaxRadius = buf.readVarInt();
+        // v2.5.2 appended fields (safe defaults if an older packet has no trailing bytes)
+        this.roomHeatingPowerPercent = buf.isReadable() ? buf.readVarInt() : 100;
+        this.roomComfortCeilingC = buf.isReadable() ? buf.readFloat() : 26.0F;
         this.clamp();
     }
 }
