@@ -115,6 +115,8 @@
   "eternalsnow.gui.surf.paths": "Тропинки и пашня",
   "eternalsnow.gui.therm.global_bonus": "Прибавка ко всем источникам: ",
   "eternalsnow.gui.therm.global_speed": "Общая скорость и мощь прогрева: ",
+  "eternalsnow.gui.therm.room_power": "Отопление комнаты (мощность): ",
+  "eternalsnow.gui.therm.room_ceiling": "Потолок температуры в доме: ",
   "eternalsnow.gui.therm.melt_roof": "Таяние снега на тёплых крышах",
   "eternalsnow.gui.therm.torch": "Факел: +",
   "eternalsnow.gui.therm.lantern": "Фонарь: +",

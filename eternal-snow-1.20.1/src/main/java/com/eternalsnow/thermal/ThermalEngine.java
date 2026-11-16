@@ -3,6 +3,7 @@ package com.eternalsnow.thermal;
 import com.eternalsnow.block.FireplaceBlock;
 import com.eternalsnow.block.FireplaceBlockEntity;
 import com.eternalsnow.block.FireplaceFuelHelper;
+import com.eternalsnow.block.FireplacePartBlock;
 import com.eternalsnow.config.ServerSnowSettings;
 import com.eternalsnow.registry.ModRegistry;
 import com.eternalsnow.state.EternalSnowState;
@@ -53,6 +54,25 @@ public final class ThermalEngine {
     };
     private static final int MAX_ACTIVE_VOXELS_PER_LEVEL = 16000;
 
+    // --- v2.5.2: lumped-capacitance room heating (З-2 «физика ограждений») -----------------
+    // A closed room is flooded once (bounded BFS), its envelope conductance U is summed over
+    // exterior faces as a SERIES resistance of up to MAX_WALL_DEPTH blocks: 2 wool layers halve U.
+    // Heat is injected as power (not as a temperature clamp) and leaves ONLY through that envelope,
+    // so wall material, wall thickness and wall heat capacity all change the measured numbers.
+    private static final int MAX_ROOM_CELLS = 2048;
+    private static final int MAX_WALL_DEPTH = 4;
+    private static final int MAX_ROOMS_PER_TICK = 8;
+    private static final float ROOM_OPEN_FACE_U = 1.20F;   // open door / window / hole in the roof
+    private static final float ROOM_WALL_K_BASE = 0.32F;   // compressed conductivity: k = BASE + COND*cond
+    private static final float ROOM_WALL_K_COND = 0.68F;   // wool ~0.354, planks ~0.483, stone ~0.810
+    private static final float ROOM_POWER_GAIN = 1.51F;    // heat power -> delta °C per room cell per tick
+    private static final float ROOM_LEAK_SCALE = 0.12F;    // U/volume -> per-substep heat loss
+    private static final float ROOM_LEAK_MIN = 0.004F;     // always a tiny leak (no eternal thermos)
+    private static final float ROOM_LEAK_MAX = 0.35F;
+    private static final float ROOM_LEAK_FALLBACK = 0.02F; // for enclosed air outside any scanned room
+    private static final float ROOM_CAP_INERTIA = 0.18F;   // wall capacity slows BOTH gain and loss (equilibrium unchanged)
+    private static final int ROOM_REFRESH_TICKS = 40;      // re-scan geometry every 20 s
+
     private static final int[] DX26 = new int[26];
     private static final int[] DY26 = new int[26];
     private static final int[] DZ26 = new int[26];
@@ -85,6 +105,19 @@ public final class ThermalEngine {
         }
     }
 
+    /** Cached geometry of one enclosed air volume (re-scanned on block changes / settings changes). */
+    private static final class RoomData {
+        final LongOpenHashSet air = new LongOpenHashSet();
+        float conductance = 0.0F;   // Σ 1/Σ(1/kWall) over all exterior faces
+        float capacitySum = 0.0F;
+        int boundaryFaces = 0;
+        float volume = 1.0F;
+        float leakPerCell = ROOM_LEAK_FALLBACK;
+        float inertia = 1.0F;
+        float power = 0.0F;         // transient: summed source power for THIS tick only
+        boolean valid = false;
+    }
+
     private static final class LevelThermalWorkspace {
         Long2FloatOpenHashMap activeMap = createHeatMap();
         Long2FloatOpenHashMap backMap = createHeatMap();
@@ -92,10 +125,30 @@ public final class ThermalEngine {
         final LongOpenHashSet seenSources = new LongOpenHashSet(64);
         final Long2ObjectOpenHashMap<LongOpenHashSet> chunkEmitters = new Long2ObjectOpenHashMap<>();
 
+        // v2.5.2 room model caches (all re-used, zero allocations in the hot tick loop)
+        final Long2ObjectOpenHashMap<RoomData> roomCache = new Long2ObjectOpenHashMap<>();
+        final Long2FloatOpenHashMap leakCache = createLeakMap();
+        final LongOpenHashSet roomVisited = new LongOpenHashSet(MAX_ROOM_CELLS);
+        final long[] roomQueue = new long[MAX_ROOM_CELLS];
+        final RoomData[] rooms = new RoomData[MAX_ROOMS_PER_TICK];
+        float settingsStamp = Float.NaN;
+        int tickCounter = 0;
+
         private static Long2FloatOpenHashMap createHeatMap() {
             Long2FloatOpenHashMap m = new Long2FloatOpenHashMap(2048);
             m.defaultReturnValue(0.0F);
             return m;
+        }
+
+        private static Long2FloatOpenHashMap createLeakMap() {
+            Long2FloatOpenHashMap m = new Long2FloatOpenHashMap(2048);
+            m.defaultReturnValue(-1.0F);
+            return m;
+        }
+
+        void invalidateGeometry() {
+            roomCache.clear();
+            leakCache.clear();
         }
     }
 
@@ -164,6 +217,7 @@ public final class ThermalEngine {
 
     public static void onBlockPlaced(ServerLevel level, BlockPos pos) {
         LevelThermalWorkspace ws = getWorkspace(level);
+        ws.invalidateGeometry(); // a new wall layer must change room envelope resistance immediately
         long key = pos.asLong();
         ws.activeMap.remove(key);
         BlockState st = level.getBlockState(pos);
@@ -180,6 +234,7 @@ public final class ThermalEngine {
 
     public static void onBlockBroken(ServerLevel level, BlockPos pos) {
         LevelThermalWorkspace ws = getWorkspace(level);
+        ws.invalidateGeometry();
         long key = pos.asLong();
         ws.activeMap.remove(key);
         long cKey = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
@@ -374,6 +429,21 @@ public final class ThermalEngine {
             }
         }
 
+        // 1b. v2.5.2: room geometry caches are invalidated when admin changes material physics
+        //     and refreshed periodically (snow on the roof, growing walls, etc.).
+        float stamp = conductivityStamp(settings);
+        if (Float.isNaN(ws.settingsStamp) || ws.settingsStamp != stamp) {
+            ws.invalidateGeometry();
+            ws.settingsStamp = stamp;
+        }
+        ws.tickCounter++;
+        if (ws.tickCounter % ROOM_REFRESH_TICKS == 0) {
+            ws.roomCache.clear();
+        }
+
+        float roomCapDelta = Math.max(6.0F, settings.roomComfortCeilingC - EternalSnowState.worldAmbientTempC);
+        applyEnclosedRoomHeating(level, ws, heatMap, settings, roomCapDelta, scanPos, rayPos);
+
         if (heatMap.isEmpty()) {
             return;
         }
@@ -431,11 +501,22 @@ public final class ThermalEngine {
                 }
 
                 if (isAirOrOpenPassage(state)) {
-                    if (level.canSeeSky(mPos)) {
+                    // v2.5.2: an enclosed air cell loses heat ONLY through its room envelope
+                    // (wall material + wall thickness), not through a universal fudge decay.
+                    boolean skyHere = level.canSeeSky(mPos);
+                    if (skyHere) {
                         float windBleed = 0.20F + EternalSnowState.windSpeed * 0.14F;
                         u *= (1.0F - Mth.clamp(windBleed, 0.18F, 0.36F));
-                    } else if ((state.getBlock() instanceof DoorBlock && state.getValue(DoorBlock.OPEN))
-                            || (state.getBlock() instanceof TrapDoorBlock && state.getValue(TrapDoorBlock.OPEN))) {
+                    } else {
+                        float leak = ws.leakCache.get(key);
+                        if (leak < 0.0F) {
+                            leak = ROOM_LEAK_FALLBACK;
+                        }
+                        u *= (1.0F - leak);
+                    }
+
+                    if (!skyHere && ((state.getBlock() instanceof DoorBlock && state.getValue(DoorBlock.OPEN))
+                            || (state.getBlock() instanceof TrapDoorBlock && state.getValue(TrapDoorBlock.OPEN)))) {
                         // З-1: Open Door Draft («Сквозняк»)! Leaving an exterior door open lets cold gusts pull warmth out!
                         for (Direction hd : HORIZ_4) {
                             nPos.set(x + hd.getStepX(), y, z + hd.getStepZ());
@@ -492,7 +573,10 @@ public final class ThermalEngine {
                         netFlow *= (0.86F / weightSum);
                     }
 
-                    float updated = (u + netFlow) * 0.998F;
+                    float updated = (u + netFlow) * (skyHere ? 0.998F : 0.9999F);
+                    if (!skyHere && updated > roomCapDelta) {
+                        updated = roomCapDelta; // comfort ceiling for enclosed air only
+                    }
                     if (updated >= 0.18F) {
                         nextMap.put(key, updated);
                     }
@@ -555,6 +639,220 @@ public final class ThermalEngine {
             ws.backMap = heatMap;
             ws.activeMap = nextMap;
             heatMap = nextMap;
+        }
+    }
+
+    // =====================================================================================
+    // v2.5.2: Enclosed-room lumped heat model (power in, envelope resistance out)
+    // =====================================================================================
+
+    /** Cheap checksum so an admin conductivity/capacity change invalidates cached geometry. */
+    private static float conductivityStamp(ServerSnowSettings s) {
+        float h = 0.0F;
+        for (float v : s.blockConductivity) {
+            h = h * 1.07F + v;
+        }
+        for (float v : s.blockCapacity) {
+            h = h * 1.07F + v;
+        }
+        return h + s.roomHeatingPowerPercent * 0.013F;
+    }
+
+    /** First enclosed air neighbour of a heat source (front face preferred for the 3x2x2 hearth). */
+    private static long findRoomEntry(ServerLevel level, int sx, int sy, int sz,
+                                      BlockState srcState, BlockPos.MutableBlockPos tmp) {
+        if (srcState.getBlock() instanceof FireplaceBlock && srcState.hasProperty(FireplaceBlock.FACING)) {
+            Direction f = srcState.getValue(FireplaceBlock.FACING);
+            tmp.set(sx + f.getStepX(), sy + f.getStepY(), sz + f.getStepZ());
+            BlockState front = level.getBlockState(tmp);
+            if (isAirOrOpenPassage(front) && !level.canSeeSky(tmp)) {
+                return tmp.asLong();
+            }
+        }
+        for (Direction d : DIRS_6) {
+            tmp.set(sx + d.getStepX(), sy + d.getStepY(), sz + d.getStepZ());
+            BlockState st = level.getBlockState(tmp);
+            if (isAirOrOpenPassage(st) && !level.canSeeSky(tmp)) {
+                return tmp.asLong();
+            }
+        }
+        return Long.MIN_VALUE; // outdoors: fine-grained radiation solver handles it
+    }
+
+    /**
+     * Bounded flood-fill of the enclosed air volume + series-resistance envelope scan.
+     * Runs only on a cache miss (block change, settings change or every 20 s), never per tick.
+     */
+    private static RoomData scanRoom(ServerLevel level, LevelThermalWorkspace ws, long entryKey,
+                                     ServerSnowSettings settings, float roomCapDelta,
+                                     BlockPos.MutableBlockPos tmp, BlockPos.MutableBlockPos tmp2) {
+        RoomData room = new RoomData();
+        LongOpenHashSet visited = ws.roomVisited;
+        long[] queue = ws.roomQueue;
+        visited.clear();
+        int head = 0;
+        int tail = 0;
+        visited.add(entryKey);
+        queue[tail++] = entryKey;
+        boolean tooBig = false;
+
+        while (head < tail) {
+            long key = queue[head++];
+            int x = BlockPos.getX(key);
+            int y = BlockPos.getY(key);
+            int z = BlockPos.getZ(key);
+            room.air.add(key);
+
+            for (Direction d : DIRS_6) {
+                int dx = d.getStepX();
+                int dy = d.getStepY();
+                int dz = d.getStepZ();
+                int nx = x + dx;
+                int ny = y + dy;
+                int nz = z + dz;
+                tmp.set(nx, ny, nz);
+                BlockState nState = level.getBlockState(tmp);
+
+                if (isAirOrOpenPassage(nState)) {
+                    if (level.canSeeSky(tmp)) {
+                        // Open door / window / chimney hole: strong convective leak, no expansion.
+                        room.conductance += ROOM_OPEN_FACE_U;
+                        room.boundaryFaces++;
+                        continue;
+                    }
+                    long nKey = BlockPos.asLong(nx, ny, nz);
+                    if (!visited.contains(nKey)) {
+                        if (tail >= MAX_ROOM_CELLS) {
+                            tooBig = true;
+                            break;
+                        }
+                        visited.add(nKey);
+                        queue[tail++] = nKey;
+                    }
+                    continue;
+                }
+
+                // Solid neighbour: walk the wall as a SERIES of thermal resistances.
+                // 1 wool block -> R = 1/0.354; 2 wool blocks -> R = 2/0.354 (U halves!).
+                float resistance = 0.0F;
+                boolean outside = false;
+                for (int step = 0; step < MAX_WALL_DEPTH; step++) {
+                    tmp2.set(nx + dx * step, ny + dy * step, nz + dz * step);
+                    BlockState wall = level.getBlockState(tmp2);
+                    if (isAirOrOpenPassage(wall)) {
+                        outside = level.canSeeSky(tmp2);
+                        break;
+                    }
+                    BlockThermalCategory cat = BlockThermalCategory.classify(wall);
+                    float cond = settings.blockConductivity[cat.ordinal()];
+                    float kWall = ROOM_WALL_K_BASE + ROOM_WALL_K_COND * cond;
+                    resistance += 1.0F / Math.max(0.02F, kWall);
+                    if (step == 0) {
+                        room.capacitySum += settings.blockCapacity[cat.ordinal()];
+                        room.boundaryFaces++;
+                    }
+                }
+                if (outside) {
+                    room.conductance += 1.0F / Math.max(0.02F, resistance);
+                }
+            }
+            if (tooBig) {
+                break;
+            }
+        }
+
+        room.valid = !tooBig && !room.air.isEmpty();
+        if (!room.valid) {
+            return room;
+        }
+        room.volume = Math.max(1.0F, room.air.size());
+        float capAvg = room.boundaryFaces > 0 ? room.capacitySum / room.boundaryFaces : 2.0F;
+        room.inertia = 1.0F / (1.0F + capAvg * ROOM_CAP_INERTIA);
+        room.leakPerCell = Mth.clamp(
+                (room.conductance / room.volume) * ROOM_LEAK_SCALE * room.inertia,
+                ROOM_LEAK_MIN, ROOM_LEAK_MAX);
+
+        // Cooling must stay insulation-dependent even after the fire goes out and no room is scanned.
+        LongIterator airIt = room.air.iterator();
+        while (airIt.hasNext()) {
+            ws.leakCache.put(airIt.nextLong(), room.leakPerCell);
+        }
+        return room;
+    }
+
+    /**
+     * Injects fireplace/engine POWER uniformly into every enclosed air cell of the room.
+     * Equilibrium is power / (2 * U * leakScale): doubling wall thickness halves U and therefore
+     * roughly doubles the temperature above ambient (until the comfort ceiling is reached).
+     */
+    private static void applyEnclosedRoomHeating(ServerLevel level, LevelThermalWorkspace ws,
+                                                 Long2FloatOpenHashMap heatMap,
+                                                 ServerSnowSettings settings, float roomCapDelta,
+                                                 BlockPos.MutableBlockPos tmp,
+                                                 BlockPos.MutableBlockPos tmp2) {
+        if (ws.seenSources.isEmpty()) {
+            return;
+        }
+        int roomCount = 0;
+
+        LongIterator srcIt = ws.seenSources.iterator();
+        while (srcIt.hasNext()) {
+            long srcKey = srcIt.nextLong();
+            int sx = BlockPos.getX(srcKey);
+            int sy = BlockPos.getY(srcKey);
+            int sz = BlockPos.getZ(srcKey);
+            tmp.set(sx, sy, sz);
+            BlockState srcState = level.getBlockState(tmp);
+            float power = getHeatSourcePowerC(level, tmp, srcState, settings);
+            if (power <= 0.5F) {
+                continue;
+            }
+            long entry = findRoomEntry(level, sx, sy, sz, srcState, tmp);
+            if (entry == Long.MIN_VALUE) {
+                continue;
+            }
+
+            RoomData room = null;
+            for (int i = 0; i < roomCount; i++) {
+                if (ws.rooms[i].air.contains(entry)) {
+                    room = ws.rooms[i];
+                    break;
+                }
+            }
+            if (room == null) {
+                room = ws.roomCache.get(entry);
+                if (room == null) {
+                    room = scanRoom(level, ws, entry, settings, roomCapDelta, tmp, tmp2);
+                    ws.roomCache.put(entry, room);
+                }
+                if (!room.valid) {
+                    continue;
+                }
+                if (roomCount >= MAX_ROOMS_PER_TICK) {
+                    break;
+                }
+                ws.rooms[roomCount++] = room;
+                room.power = 0.0F;
+            }
+            room.power += power;
+        }
+
+        float powerScale = ROOM_POWER_GAIN * (settings.roomHeatingPowerPercent / 100.0F);
+        for (int i = 0; i < roomCount; i++) {
+            RoomData room = ws.rooms[i];
+            if (room.power <= 0.0F) {
+                continue;
+            }
+            float gain = room.power * powerScale * room.inertia / room.volume;
+            LongIterator airIt = room.air.iterator();
+            while (airIt.hasNext()) {
+                long key = airIt.nextLong();
+                float cur = heatMap.get(key);
+                float val = Math.min(roomCapDelta, cur + gain);
+                if (val >= 0.18F) {
+                    heatMap.put(key, val);
+                }
+            }
         }
     }
 
@@ -681,7 +979,11 @@ public final class ThermalEngine {
             }
             rayPos.set(bx, by, bz);
             BlockState mid = chunk.getBlockState(rayPos);
-            if (!isAirOrOpenPassage(mid) && !(mid.getBlock() instanceof FireplaceBlock)) {
+            // FireplacePartBlock is an INVISIBLE proxy of the same 3x2x2 hearth:
+            // radiation must pass through it, otherwise the fire is walled in by its own model.
+            if (!isAirOrOpenPassage(mid)
+                    && !(mid.getBlock() instanceof FireplaceBlock)
+                    && !(mid.getBlock() instanceof FireplacePartBlock)) {
                 return false;
             }
         }

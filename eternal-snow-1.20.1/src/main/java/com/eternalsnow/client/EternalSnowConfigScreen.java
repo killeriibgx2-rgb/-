@@ -599,6 +599,21 @@ public final class EternalSnowConfigScreen extends Screen {
         ), y);
         y += 23;
 
+        // v2.5.2: whole-room heating balance (envelope resistance model)
+        addScrolled(makeDoubleSlider(
+                leftX, fullW, "eternalsnow.gui.therm.room_power", "%",
+                0.0D, 300.0D, this.workingServer.roomHeatingPowerPercent, 5.0D, 0,
+                v -> this.workingServer.roomHeatingPowerPercent = v.intValue()
+        ), y);
+        y += 23;
+
+        addScrolled(makeDoubleSlider(
+                leftX, fullW, "eternalsnow.gui.therm.room_ceiling", "°C",
+                -5.0D, 60.0D, this.workingServer.roomComfortCeilingC, 1.0D, 0,
+                v -> this.workingServer.roomComfortCeilingC = v.floatValue()
+        ), y);
+        y += 23;
+
         addScrolled(new EternalSnowWidgets.ToggleSwitch(
                 leftX, 0, fullW, 20,
                 Component.translatable("eternalsnow.gui.therm.melt_roof"),
