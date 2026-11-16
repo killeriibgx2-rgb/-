@@ -57,7 +57,10 @@ public final class ClientboundWeatherSyncPacket {
             EternalSnowState.windYawDeg = msg.windYawDeg;
             EternalSnowState.windSpeed = msg.windSpeed;
             EternalSnowState.snowIntensity = msg.snowIntensity;
-            EternalSnowState.worldAmbientTempC = msg.worldAmbientTempC;
+            // v2.5.3: write a CLIENT-ONLY field. In singleplayer the client and the logical
+            // server share one JVM, so overwriting worldAmbientTempC here would feed a stale
+            // value back into the server-side thermal solver.
+            EternalSnowState.clientStreetTempC = msg.worldAmbientTempC;
             EternalSnowState.eventTicksRemaining = msg.eventTicksRemaining;
         });
         ctx.setPacketHandled(true);

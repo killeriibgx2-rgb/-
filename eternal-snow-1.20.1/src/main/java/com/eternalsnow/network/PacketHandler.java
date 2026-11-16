@@ -14,7 +14,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class PacketHandler {
-    private static final String PROTOCOL_VERSION = "8"; // v2.5.2: +2 room-heating settings fields
+    private static final String PROTOCOL_VERSION = "9"; // v2.5.3: +2 global material multipliers
     private static boolean registered = false;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

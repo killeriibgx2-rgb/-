@@ -1,6 +1,8 @@
 package com.eternalsnow.weather;
 
 import com.eternalsnow.config.ServerSnowSettings;
+import com.eternalsnow.network.ClientboundWeatherSyncPacket;
+import com.eternalsnow.network.PacketHandler;
 import com.eternalsnow.state.EternalSnowState;
 import com.eternalsnow.thermal.ThermalEngine;
 import net.minecraft.core.BlockPos;
@@ -28,7 +30,30 @@ public final class WeatherEventManager {
     private static float smoothWindSpeed = 0.24F;
     private static float smoothSnowIntensity = 0.42F;
 
+    // v2.5.3: climate thermal inertia. Four plain floats, O(1) per tick, zero allocations.
+    private static final float AMBIENT_LAG_TICKS = 900.0F;   // outdoor air: ~45 s e-folding
+    private static final float GROUND_LAG_TICKS = 7200.0F;   // walls / soil: ~6 min e-folding
+    private static final float SKIP_CREDIT_SCALE = 0.02F;    // replay 2% of skipped world ticks
+    private static final float MAX_SKIP_CREDIT = 300.0F;     // cap credit per time jump
+    private static final float SKIP_DRAW_PER_TICK = 2.0F;    // spend credit over real ticks
+    private static final float ONE_TICK_PHASE = 1.0F / 24000.0F;
+
+    private static float smoothAmbientC = Float.NaN;
+    private static float smoothGroundC = Float.NaN;
+    private static float lastTimeOfDay = -1.0F;
+    private static float pendingSkipTicks = 0.0F;
+
     private WeatherEventManager() {
+    }
+
+    /** New world must start from its own climate, not from the previous save's inertia. */
+    public static void resetClimate() {
+        smoothAmbientC = Float.NaN;
+        smoothGroundC = Float.NaN;
+        lastTimeOfDay = -1.0F;
+        pendingSkipTicks = 0.0F;
+        EternalSnowState.worldAmbientTempC = -18.0F;
+        EternalSnowState.thermalMassTempC = -18.0F;
     }
 
     public static void forceEvent(WeatherEventType type, ServerSnowSettings settings) {
@@ -74,7 +99,7 @@ public final class WeatherEventManager {
             smoothWindSpeed = Mth.lerp(0.05F, smoothWindSpeed, 0.0F);
             EternalSnowState.snowIntensity = smoothSnowIntensity;
             EternalSnowState.windSpeed = smoothWindSpeed;
-            EternalSnowState.worldAmbientTempC = 15.0F;
+            advanceAmbientC(overworld, overworld.getTimeOfDay(1.0F), 15.0F);
             return;
         }
 
@@ -126,7 +151,8 @@ public final class WeatherEventManager {
         // 4. Automatic Temperature Curve inside [minWorldTempC .. maxWorldTempC] (wave + day/night + weather chill!)
         double multiDayWave = 0.5D + 0.5D * Math.sin(gameTime / 24000.0D * Math.PI * 0.65D
                 + 0.4D * Math.cos(gameTime / 9000.0D)); // [0..1]
-        float sunAngle = overworld.getTimeOfDay(1.0F) * ((float) Math.PI * 2.0F);
+        float timeOfDay = overworld.getTimeOfDay(1.0F);
+        float sunAngle = timeOfDay * ((float) Math.PI * 2.0F);
         float dayWarmthFactor = Mth.clamp(0.5F + 0.5F * Mth.cos(sunAngle), 0.0F, 1.0F); // 1 at noon, 0 at midnight
         float weatherWarmthFactor = switch (currentEvent) {
             case LIGHT_SNOW -> 0.85F;
@@ -140,7 +166,8 @@ public final class WeatherEventManager {
                 (float) (multiDayWave * 0.48D) + dayWarmthFactor * 0.34F + weatherWarmthFactor * 0.18F,
                 0.0F, 1.0F
         );
-        EternalSnowState.worldAmbientTempC = Mth.lerp(combinedFactor, settings.minWorldTempC, settings.maxWorldTempC);
+        float targetAmbientC = Mth.lerp(combinedFactor, settings.minWorldTempC, settings.maxWorldTempC);
+        advanceAmbientC(overworld, timeOfDay, targetAmbientC);
 
         // 5. Blizzard Wind Push on exposed players
         if (settings.blizzardWindPush
@@ -152,6 +179,58 @@ public final class WeatherEventManager {
         // 6. Д-4: During Blizzard, outdoor animals & villagers seek nearby warmth or roof shelter!
         if (currentEvent == WeatherEventType.BLIZZARD && gameTime % 80L == 0L) {
             nudgeOutdoorMobsTowardShelter(overworld);
+        }
+    }
+
+    /**
+     * v2.5.3: temperature no longer jumps when world time is skipped (/time set, /time add, sleep).
+     * A first-order lag tracks the target; skipped world time is replayed as a bounded credit that
+     * is spent over REAL ticks, so even an instant night/day switch only produces a gradual ramp.
+     * A second, much slower lag represents walls/soil thermal mass; enclosed rooms use its offset
+     * as their baseline, so a warm house keeps its heat for minutes after the air outside cools.
+     */
+    private static void advanceAmbientC(ServerLevel overworld, float phase, float targetC) {
+        float dt = 1.0F;
+        if (lastTimeOfDay >= 0.0F) {
+            float diff = phase - lastTimeOfDay;
+            if (diff > 0.5F) {
+                diff -= 1.0F;
+            } else if (diff < -0.5F) {
+                diff += 1.0F;
+            }
+            float excess = Math.abs(diff) - 4.0F * ONE_TICK_PHASE; // tolerate a few ticks of jitter
+            if (excess > 0.0F) {
+                float skippedTicks = Math.min(12000.0F, excess * 24000.0F);
+                pendingSkipTicks = Math.min(MAX_SKIP_CREDIT,
+                        pendingSkipTicks + skippedTicks * SKIP_CREDIT_SCALE);
+            }
+            if (pendingSkipTicks > 0.0F) {
+                float draw = Math.min(SKIP_DRAW_PER_TICK, pendingSkipTicks);
+                pendingSkipTicks -= draw;
+                dt += draw;
+            }
+        }
+        lastTimeOfDay = phase;
+
+        if (Float.isNaN(smoothAmbientC)) {
+            smoothAmbientC = targetC;
+            smoothGroundC = targetC;
+        }
+        smoothAmbientC += (targetC - smoothAmbientC) * Math.min(1.0F, dt / AMBIENT_LAG_TICKS);
+        smoothGroundC += (smoothAmbientC - smoothGroundC) * Math.min(1.0F, dt / GROUND_LAG_TICKS);
+        EternalSnowState.worldAmbientTempC = smoothAmbientC;
+        EternalSnowState.thermalMassTempC = smoothGroundC;
+
+        // The HUD "street" line used to freeze at the login value: sync once a second (1 packet/player/s).
+        if (overworld.getGameTime() % 20L == 0L) {
+            PacketHandler.broadcastToAll(new ClientboundWeatherSyncPacket(
+                    EternalSnowState.weatherEventId,
+                    EternalSnowState.windYawDeg,
+                    EternalSnowState.windSpeed,
+                    EternalSnowState.snowIntensity,
+                    smoothAmbientC,
+                    EternalSnowState.eventTicksRemaining
+            ));
         }
     }
 

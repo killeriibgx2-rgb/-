@@ -594,7 +594,7 @@ public final class ThermalEngine {
                             weightSum += airK;
                         } else if (dist2 == 1) {
                             BlockThermalCategory cat = BlockThermalCategory.classify(nState);
-                            float cond = settings.blockConductivity[cat.ordinal()];
+                            float cond = conductivityOf(settings, cat);
                             float nu = heatMap.get(BlockPos.asLong(nx, ny, nz));
                             float wallK = 0.058F * cond;
                             netFlow += (nu - u) * wallK;
@@ -615,8 +615,8 @@ public final class ThermalEngine {
                     }
                 } else {
                     BlockThermalCategory cat = BlockThermalCategory.classify(state);
-                    float selfCond = settings.blockConductivity[cat.ordinal()];
-                    float selfCap = Math.max(0.25F, settings.blockCapacity[cat.ordinal()]);
+                    float selfCond = conductivityOf(settings, cat);
+                    float selfCap = Math.max(0.25F, capacityOf(settings, cat));
 
                     float netHeatFlux = 0.0F;
                     for (Direction d : DIRS_6) {
@@ -638,7 +638,7 @@ public final class ThermalEngine {
                             }
                         } else {
                             BlockThermalCategory nCat = BlockThermalCategory.classify(nState);
-                            float pairCond = Math.min(selfCond, settings.blockConductivity[nCat.ordinal()]);
+                            float pairCond = Math.min(selfCond, conductivityOf(settings, nCat));
                             netHeatFlux += (nu - u) * (0.065F * pairCond);
                         }
                     }
@@ -679,6 +679,15 @@ public final class ThermalEngine {
     // v2.5.2: Enclosed-room lumped heat model (power in, envelope resistance out)
     // =====================================================================================
 
+    /** v2.5.3: one shared multiplier for every material (admin "general thermal" section). */
+    private static float conductivityOf(ServerSnowSettings s, BlockThermalCategory cat) {
+        return s.blockConductivity[cat.ordinal()] * s.globalConductivityMultiplier;
+    }
+
+    private static float capacityOf(ServerSnowSettings s, BlockThermalCategory cat) {
+        return s.blockCapacity[cat.ordinal()] * s.globalCapacityMultiplier;
+    }
+
     /** Cheap checksum so an admin conductivity/capacity change invalidates cached geometry. */
     private static float conductivityStamp(ServerSnowSettings s) {
         float h = 0.0F;
@@ -688,7 +697,9 @@ public final class ThermalEngine {
         for (float v : s.blockCapacity) {
             h = h * 1.07F + v;
         }
-        return h + s.roomHeatingPowerPercent * 0.013F;
+        return h + s.roomHeatingPowerPercent * 0.013F
+                + s.globalConductivityMultiplier * 0.37F
+                + s.globalCapacityMultiplier * 0.91F;
     }
 
     /** First enclosed air neighbour of a heat source (front face preferred for the 3x2x2 hearth). */
@@ -783,11 +794,11 @@ public final class ThermalEngine {
                         break;
                     }
                     BlockThermalCategory cat = BlockThermalCategory.classify(wall);
-                    float cond = settings.blockConductivity[cat.ordinal()];
+                    float cond = conductivityOf(settings, cat);
                     float kWall = ROOM_WALL_K_BASE + ROOM_WALL_K_COND * cond;
                     resistance += 1.0F / Math.max(0.02F, kWall);
                     if (step == 0) {
-                        room.capacitySum += settings.blockCapacity[cat.ordinal()];
+                        room.capacitySum += capacityOf(settings, cat);
                         room.boundaryFaces++;
                     }
                 }
@@ -921,28 +932,40 @@ public final class ThermalEngine {
         // until the comfort ceiling is reached. Wall capacity scales BOTH gain and leak (inertia),
         // i.e. it changes warm-up / cool-down time but NOT the steady temperature — correct physics.
         float powerScale = ROOM_POWER_GAIN * (settings.roomHeatingPowerPercent / 100.0F);
+        // v2.5.3: walls/soil keep yesterday's temperature for minutes. A well-insulated room
+        // inherits most of that offset; a leaky stone hut inherits almost none of it.
+        float massLagC = EternalSnowState.thermalMassTempC - EternalSnowState.worldAmbientTempC;
         for (RoomData room : ws.roomCache.values()) {
             if (!room.valid || room.air.isEmpty()) {
                 continue;
             }
+            float retention = Mth.clamp(
+                    1.0F - 2.5F * room.leakPerCell / Math.max(0.35F, room.inertia),
+                    0.05F, 0.95F);
+            float lagC = massLagC * retention;
+            float capForRoom = Math.max(0.0F, roomCapDelta - lagC);
+
             float sum = 0.0F;
             LongIterator airIt = room.air.iterator();
             while (airIt.hasNext()) {
                 sum += heatMap.get(airIt.nextLong());
             }
-            float avg = sum / room.volume;
+            // Convert stored "above live ambient" deltas back into the room's own baseline.
+            float avg = sum / room.volume - lagC;
             float gain = room.power * powerScale * room.inertia / room.volume;
             float keep = Math.max(0.0F, 1.0F - 2.0F * room.leakPerCell);
-            float val = Math.min(roomCapDelta, (avg + gain) * keep);
+            float val = Math.min(capForRoom, (avg + gain) * keep);
+            // Store back as "above live ambient" so snow/ice, HUD and fine-grained solver agree.
+            float stored = Mth.clamp(val + lagC, 0.0F, roomCapDelta);
 
             airIt = room.air.iterator();
-            if (val < 0.18F) {
+            if (stored < 0.18F) {
                 while (airIt.hasNext()) {
                     heatMap.remove(airIt.nextLong());
                 }
             } else {
                 while (airIt.hasNext()) {
-                    heatMap.put(airIt.nextLong(), val);
+                    heatMap.put(airIt.nextLong(), stored);
                 }
             }
         }
@@ -1018,8 +1041,8 @@ public final class ThermalEngine {
                     } else if (d2 == 1) {
                         ServerSnowSettings s = EternalSnowState.getServerSettings();
                         BlockThermalCategory cat = BlockThermalCategory.classify(targetState);
-                        float cond = s.blockConductivity[cat.ordinal()];
-                        float cap = Math.max(0.25F, s.blockCapacity[cat.ordinal()]);
+                        float cond = conductivityOf(s, cat);
+                        float cap = Math.max(0.25F, capacityOf(s, cat));
                         long key = BlockPos.asLong(tx, ty, tz);
                         float cur = heatMap.get(key);
                         float gain = (sourcePower - cur) * (0.20F * cond * speedMult) / cap;

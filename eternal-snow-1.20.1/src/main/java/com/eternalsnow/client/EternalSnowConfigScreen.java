@@ -614,6 +614,25 @@ public final class EternalSnowConfigScreen extends Screen {
         ), y);
         y += 23;
 
+        // v2.5.3: own section for the two GLOBAL material multipliers.
+        addScrolled(new EternalSnowWidgets.SectionHeader(
+                leftX, 0, fullW, Component.translatable("eternalsnow.gui.sec.therm_global_mult")), y);
+        y += 18;
+
+        addScrolled(makeDoubleSlider(
+                leftX, fullW, "eternalsnow.gui.therm.cond_mult", "x",
+                0.20D, 3.00D, this.workingServer.globalConductivityMultiplier, 0.05D, 2,
+                v -> this.workingServer.globalConductivityMultiplier = v.floatValue()
+        ), y);
+        y += 23;
+
+        addScrolled(makeDoubleSlider(
+                leftX, fullW, "eternalsnow.gui.therm.cap_mult", "x",
+                0.20D, 3.00D, this.workingServer.globalCapacityMultiplier, 0.05D, 2,
+                v -> this.workingServer.globalCapacityMultiplier = v.floatValue()
+        ), y);
+        y += 26;
+
         addScrolled(new EternalSnowWidgets.ToggleSwitch(
                 leftX, 0, fullW, 20,
                 Component.translatable("eternalsnow.gui.therm.melt_roof"),
@@ -972,7 +991,7 @@ public final class EternalSnowConfigScreen extends Screen {
             WeatherEventType ev = EternalSnowState.getActiveWeatherEvent();
             int windPct = Math.round(EternalSnowState.windSpeed * 100.0F);
             int yaw = Math.round(EternalSnowState.windYawDeg);
-            String worldT = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.worldAmbientTempC);
+            String worldT = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.clientStreetTempC);
             String localT = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.clientLocalTempC);
             String bodyT = String.format(Locale.ROOT, "%.1f°C", EternalSnowState.clientBodyTempC);
             float livePrecip = this.workingServer.computeCurrentPrecipitationSpeed(ev, EternalSnowState.snowIntensity);
