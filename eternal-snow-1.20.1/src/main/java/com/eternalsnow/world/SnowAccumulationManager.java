@@ -223,6 +223,11 @@ public final class SnowAccumulationManager {
         return false;
     }
 
+    /** v2.6.4: drop the trample bookkeeping of players who left — the map used to grow forever. */
+    public static void forgetPlayer(java.util.UUID uuid) {
+        LAST_PLAYER_COLUMN.remove(uuid);
+    }
+
     private static void tickPlayerFootstepTrample(ServerLevel level, List<ServerPlayer> players, int chancePercent) {
         for (ServerPlayer player : players) {
             if (player.isSpectator() || !player.onGround()) {

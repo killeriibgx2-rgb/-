@@ -63,6 +63,17 @@ public final class EternalSnowState {
         serverRunningInProcess = running;
     }
 
+    /**
+     * v2.6.4: setServerRunning flips this flag for the SERVER side only. On a singleplayer client the
+     * mod is loaded in the same JVM, so the flag used to make the client read the server's live settings
+     * instead of the synced copy — the HUD ignored config changes until the world was reloaded.
+     */
+    public static void markClientSide() {
+        clientSidePresent = true;
+    }
+
+    private static boolean clientSidePresent = false;
+
     public static ServerSnowSettings getClientSyncedSettings() {
         return clientSyncedSettings;
     }
@@ -98,7 +109,7 @@ public final class EternalSnowState {
     }
 
     public static ServerSnowSettings getEffectiveSettings() {
-        return serverRunningInProcess ? serverSettings : clientSyncedSettings;
+        return (serverRunningInProcess && !clientSidePresent) ? serverSettings : clientSyncedSettings;
     }
 
     public static boolean isGlobalColdActive() {

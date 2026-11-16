@@ -35,6 +35,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.eternalsnow.world.RecipeUnlockHelper;
+import com.eternalsnow.client.EternalSnowClientSetup;
 import org.slf4j.Logger;
 
 @Mod(EternalSnowMod.MODID)
@@ -53,6 +54,7 @@ public class EternalSnowMod {
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
+        MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerChangedDimension);
         MinecraftForge.EVENT_BUS.addListener(this::onServerTick);
         MinecraftForge.EVENT_BUS.addListener(this::onLevelTick);
@@ -67,6 +69,7 @@ public class EternalSnowMod {
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onItemUseFinish);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onPlayerClone);
 
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> EternalSnowClientSetup::init);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> ClientModInit::init);
     }
 
@@ -87,13 +90,19 @@ public class EternalSnowMod {
         EternalSnowSavedData data = EternalSnowSavedData.get(event.getServer());
         EternalSnowState.setServerSettings(data.getSettings());
         EternalSnowState.setServerRunning(true);
-        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.3): enabled={}", data.getSettings().enabled);
+        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.4): enabled={}", data.getSettings().enabled);
     }
 
     private void onServerStopped(final ServerStoppedEvent event) {
         EternalSnowState.setServerRunning(false);
         ThermalEngine.clearAll();
         WeatherEventManager.resetClimate();
+    }
+
+    private void onPlayerLoggedOut(final PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            SnowAccumulationManager.forgetPlayer(player.getUUID());
+        }
     }
 
     private void onPlayerLoggedIn(final PlayerEvent.PlayerLoggedInEvent event) {
