@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.eternalsnow.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "eternalsnow.refmap.json",
+  "mixins": [
+    "BiomeMixin",
+    "LevelMixin",
+    "ServerLevelMixin",
+    "SnowLayerBlockMixin"
+  ],
+  "client": [
+    "LevelRendererMixin",
+    "CampfireSmokeParticleMixin",
+    "BaseAshSmokeParticleMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
