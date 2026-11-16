@@ -72,6 +72,14 @@ public final class ThermalEngine {
     private static final float ROOM_CAP_INERTIA = 0.18F;   // wall capacity slows BOTH gain and loss (equilibrium unchanged)
     private static final int ROOM_REFRESH_TICKS = 40;      // re-scan geometry every 20 s
 
+    // --- v2.5.4: per-room thermal baseline (real C/U time constant) -------------------------
+    private static final int MAX_CACHED_ROOMS = 32;
+    private static final int MAX_ROOM_SCANS_PER_TICK = 1;   // hard TPS bound on flood-fills
+    private static final float ROOM_TAU_SCALE = 250.0F;     // ticks per (wallCapacity / envelopeU)
+    private static final float ROOM_TAU_MIN = 600.0F;       // 30 s
+    private static final float ROOM_TAU_MAX = 7200.0F;      // 6 min
+    private static final float ROOM_THERMAL_STEP_TICKS = 10.0F;
+
     private static final int[] DX26 = new int[26];
     private static final int[] DY26 = new int[26];
     private static final int[] DZ26 = new int[26];
@@ -107,6 +115,9 @@ public final class ThermalEngine {
     /** Cached geometry of one enclosed air volume (re-scanned on block changes / settings changes). */
     private static final class RoomData {
         final LongOpenHashSet air = new LongOpenHashSet();
+        final LongOpenHashSet envelope = new LongOpenHashSet(); // wall blocks that own the baseline
+        float baselineC = Float.NaN;   // absolute temperature of this room's walls/air reference
+        float tauTicks = ROOM_TAU_MIN; // C/U: how slowly the room follows the street
         float conductance = 0.0F;   // Σ 1/Σ(1/kWall) over all exterior faces
         float capacitySum = 0.0F;
         int boundaryFaces = 0;
@@ -135,6 +146,10 @@ public final class ThermalEngine {
         final Long2FloatOpenHashMap leakCache = createLeakMap();
         final LongOpenHashSet roomVisited = new LongOpenHashSet(MAX_ROOM_CELLS);
         final long[] roomQueue = new long[MAX_ROOM_CELLS];
+        // v2.5.4: absolute baseline per room-owned cell (air + wall blocks). NaN = outdoor cell.
+        final Long2FloatOpenHashMap baselineMap = createBaselineMap();
+        final LongOpenHashSet failedSeeds = new LongOpenHashSet(256);
+        long lastThermalGameTime = -1L;
         float settingsStamp = Float.NaN;
         int tickCounter = 0;
 
@@ -150,9 +165,17 @@ public final class ThermalEngine {
             return m;
         }
 
+        private static Long2FloatOpenHashMap createBaselineMap() {
+            Long2FloatOpenHashMap m = new Long2FloatOpenHashMap(2048);
+            m.defaultReturnValue(Float.NaN);
+            return m;
+        }
+
         void invalidateGeometry() {
             roomCache.clear();
             leakCache.clear();
+            baselineMap.clear();
+            failedSeeds.clear();
         }
     }
 
@@ -193,9 +216,18 @@ public final class ThermalEngine {
             if (room != null) {
                 LongIterator airIt = room.air.iterator();
                 while (airIt.hasNext()) {
-                    ws.leakCache.remove(airIt.nextLong());
+                    long cell = airIt.nextLong();
+                    ws.leakCache.remove(cell);
+                    ws.baselineMap.remove(cell);
+                }
+                LongIterator wallIt = room.envelope.iterator();
+                while (wallIt.hasNext()) {
+                    ws.baselineMap.remove(wallIt.nextLong());
                 }
             }
+        }
+        if (n > 0) {
+            ws.failedSeeds.clear(); // a failed cave seed may now be a valid room
         }
     }
 
@@ -295,13 +327,23 @@ public final class ThermalEngine {
     }
 
     public static float getLocalTemperatureC(ServerLevel level, BlockPos pos) {
-        float base = computeBaseAmbientC(level, pos);
-        float delta = getWorkspace(level).activeMap.get(pos.asLong());
-        return base + delta;
+        return computeBaseAmbientC(level, pos) + getDeltaHeatAt(level, pos);
     }
 
+    /**
+     * v2.5.4: internally heatMap holds a delta above the CELL'S OWN baseline (street outdoors,
+     * the room's wall temperature indoors). Publicly the old contract is preserved — delta above
+     * the STREET — so drying, crop growth, heat vision and mob shelter checks behave as before.
+     */
     public static float getDeltaHeatAt(ServerLevel level, BlockPos pos) {
-        return getWorkspace(level).activeMap.get(pos.asLong());
+        LevelThermalWorkspace ws = getWorkspace(level);
+        long key = pos.asLong();
+        float delta = ws.activeMap.get(key);
+        float baselineC = ws.baselineMap.get(key);
+        if (Float.isNaN(baselineC)) {
+            return delta;
+        }
+        return delta + baselineC - EternalSnowState.worldAmbientTempC;
     }
 
     public static float computeBaseAmbientC(ServerLevel level, BlockPos pos) {
@@ -474,7 +516,9 @@ public final class ThermalEngine {
         float roomCapDelta = Math.max(6.0F, settings.roomComfortCeilingC - EternalSnowState.worldAmbientTempC);
         if (ws.tickCounter % ROOM_REFRESH_TICKS == 0) {
             refreshRooms(level, ws, settings, scanPos, rayPos);
+            ws.failedSeeds.clear();
         }
+        discoverRooms(level, ws, settings, scanPos, rayPos);
         applyEnclosedRoomHeating(level, ws, heatMap, settings, roomCapDelta, scanPos, rayPos);
 
         if (heatMap.isEmpty()) {
@@ -515,6 +559,12 @@ public final class ThermalEngine {
             LongIterator it = candidates.iterator();
             while (it.hasNext()) {
                 long key = it.nextLong();
+                float cellBaselineC = ws.baselineMap.get(key);
+                boolean roomCell = !Float.isNaN(cellBaselineC);
+                float cellBaseC = roomCell ? cellBaselineC : EternalSnowState.worldAmbientTempC;
+                float capHere = roomCell
+                        ? Math.max(0.0F, settings.roomComfortCeilingC - cellBaselineC)
+                        : roomCapDelta;
                 int x = BlockPos.getX(key);
                 int y = BlockPos.getY(key);
                 int z = BlockPos.getZ(key);
@@ -607,8 +657,8 @@ public final class ThermalEngine {
                     }
 
                     float updated = (u + netFlow) * (skyHere ? 0.998F : 0.9999F);
-                    if (!skyHere && updated > roomCapDelta) {
-                        updated = roomCapDelta; // comfort ceiling for enclosed air only
+                    if (!skyHere && updated > capHere) {
+                        updated = capHere; // absolute comfort ceiling, measured from this cell's baseline
                     }
                     if (updated >= 0.18F) {
                         nextMap.put(key, updated);
@@ -649,17 +699,17 @@ public final class ThermalEngine {
 
                         if (sub == 1) {
                             if (settings.meltRoofSnowFromWarmBlocks && level.random.nextInt(4) == 0) {
-                                float blockActualTempC = EternalSnowState.worldAmbientTempC + updated;
+                                float blockActualTempC = cellBaseC + updated;
                                 if (blockActualTempC > 2.0F) {
                                     meltOneSnowLayerAt(level, mPos.above());
                                     // Д-2: Occasional natural Icicle growth under warm snow-covered roof eaves!
-                                    if (EternalSnowState.worldAmbientTempC < -2.0F && level.random.nextInt(32) == 0) {
+                                    if (cellBaseC < -2.0F && level.random.nextInt(32) == 0) {
                                         tryGrowEaveIcicle(level, mPos);
                                     }
                                 }
                             }
                             if ((state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK))
-                                    && (EternalSnowState.worldAmbientTempC + updated) > 1.0F
+                                    && (cellBaseC + updated) > 1.0F
                                     && level.random.nextInt(3) == 0) {
                                 meltOneSnowLayerAt(level, mPos);
                             }
@@ -797,6 +847,7 @@ public final class ThermalEngine {
                     float cond = conductivityOf(settings, cat);
                     float kWall = ROOM_WALL_K_BASE + ROOM_WALL_K_COND * cond;
                     resistance += 1.0F / Math.max(0.02F, kWall);
+                    room.envelope.add(tmp2.asLong()); // this wall block shares the room baseline
                     if (step == 0) {
                         room.capacitySum += capacityOf(settings, cat);
                         room.boundaryFaces++;
@@ -824,6 +875,12 @@ public final class ThermalEngine {
         room.leakPerCell = Mth.clamp(
                 (room.conductance / room.volume) * ROOM_LEAK_SCALE * room.inertia,
                 ROOM_LEAK_MIN, ROOM_LEAK_MAX);
+        // v2.5.4: tau = C/U. More wall mass or a thicker/better insulated envelope means a
+        // LONGER memory; a leaky glass box follows the street almost immediately. Both global
+        // multipliers feed this: capacity raises C, conductivity raises U.
+        float envelopeU = Math.max(0.5F, room.conductance);
+        float wallC = Math.max(1.0F, room.capacitySum);
+        room.tauTicks = Mth.clamp((wallC / envelopeU) * ROOM_TAU_SCALE, ROOM_TAU_MIN, ROOM_TAU_MAX);
 
         // Mark these air cells as OWNED by the lumped room model: the fine-grained solver must not
         // apply a second, independent leak to them (that would double-count the heat loss).
@@ -869,7 +926,53 @@ public final class ThermalEngine {
         }
         ws.leakCache.clear();
         for (int i = 0; i < n; i++) {
-            ws.roomCache.put(keys[i], scanRoom(level, ws, keys[i], settings, tmp, tmp2));
+            RoomData old = ws.roomCache.get(keys[i]);
+            RoomData fresh = scanRoom(level, ws, keys[i], settings, tmp, tmp2);
+            if (old != null && !Float.isNaN(old.baselineC)) {
+                fresh.baselineC = old.baselineC;
+            }
+            ws.roomCache.put(keys[i], fresh);
+        }
+    }
+
+    /**
+     * v2.5.4: a room no longer needs a burning fireplace to exist. Players are the seeds:
+     * at most MAX_ROOM_SCANS_PER_TICK bounded flood-fills per thermal tick, so discovery can
+     * never spike TPS. Failed seeds (caves, open air) retry only after the periodic refresh.
+     */
+    private static void discoverRooms(ServerLevel level, LevelThermalWorkspace ws,
+                                      ServerSnowSettings settings,
+                                      BlockPos.MutableBlockPos tmp, BlockPos.MutableBlockPos tmp2) {
+        if (ws.roomCache.size() >= MAX_CACHED_ROOMS) {
+            return;
+        }
+        int scans = 0;
+        for (ServerPlayer player : level.players()) {
+            if (player.isSpectator()) {
+                continue;
+            }
+            tmp.set(player.getBlockX(), player.getBlockY() + 1, player.getBlockZ());
+            long seed = tmp.asLong();
+            if (!Float.isNaN(ws.baselineMap.get(seed)) || ws.failedSeeds.contains(seed)) {
+                continue;
+            }
+            BlockState headState = level.getBlockState(tmp);
+            if (!isAirOrOpenPassage(headState) || level.canSeeSky(tmp)) {
+                continue;
+            }
+            RoomData room = scanRoom(level, ws, seed, settings, tmp, tmp2);
+            if (room.valid) {
+                room.baselineC = EternalSnowState.thermalMassTempC;
+                ws.roomCache.put(seed, room);
+            } else {
+                ws.failedSeeds.add(seed);
+                if (ws.failedSeeds.size() > 256) {
+                    ws.failedSeeds.clear();
+                }
+            }
+            if (++scans >= MAX_ROOM_SCANS_PER_TICK) {
+                return;
+            }
         }
     }
 
@@ -883,12 +986,12 @@ public final class ThermalEngine {
                                                  ServerSnowSettings settings, float roomCapDelta,
                                                  BlockPos.MutableBlockPos tmp,
                                                  BlockPos.MutableBlockPos tmp2) {
+        if (ws.roomCache.size() > MAX_CACHED_ROOMS) {
+            ws.invalidateGeometry();
+        }
         // Reset per-tick power for every known room (rooms with no fire must keep cooling down).
         for (RoomData r : ws.roomCache.values()) {
             r.power = 0.0F;
-        }
-        if (ws.roomCache.size() > 32) {
-            ws.invalidateGeometry();
         }
 
         LongIterator srcIt = ws.seenSources.iterator();
@@ -919,6 +1022,9 @@ public final class ThermalEngine {
                 }
             }
             if (room == null) {
+                if (ws.roomCache.size() >= MAX_CACHED_ROOMS) {
+                    continue; // never blow past the cache bound with an extra flood-fill
+                }
                 room = scanRoom(level, ws, entry, settings, tmp, tmp2);
                 ws.roomCache.put(entry, room);
             }
@@ -927,45 +1033,80 @@ public final class ThermalEngine {
             }
         }
 
-        // Lumped-capacitance update: one uniform room temperature, power in / envelope resistance out.
-        // δT_eq = gain / (2 * leakPerCell). Doubling wall thickness halves leakPerCell, so δT doubles
-        // until the comfort ceiling is reached. Wall capacity scales BOTH gain and leak (inertia),
-        // i.e. it changes warm-up / cool-down time but NOT the steady temperature — correct physics.
+        // v2.5.4: each room owns its OWN wall temperature. tau = C/U is computed once per scan,
+        // so capacity, wall thickness and conductivity all change HOW LONG the room remembers
+        // the old weather, not just how deep the dip is. A long absence (empty dimension, chunk
+        // unload) is caught up in one bounded step instead of freezing the house forever.
+        long now = level.getGameTime();
+        long elapsed = ws.lastThermalGameTime < 0L
+                ? (long) ROOM_THERMAL_STEP_TICKS
+                : now - ws.lastThermalGameTime;
+        ws.lastThermalGameTime = now;
+        if (elapsed < 1L) {
+            elapsed = 1L;
+        }
+        if (elapsed > (long) ROOM_TAU_MAX) {
+            elapsed = (long) ROOM_TAU_MAX;
+        }
+        float dtThermal = (float) elapsed;
+        float ambientC = EternalSnowState.worldAmbientTempC;
+
+        for (RoomData r : ws.roomCache.values()) {
+            if (!r.valid) {
+                continue;
+            }
+            if (Float.isNaN(r.baselineC)) {
+                r.baselineC = EternalSnowState.thermalMassTempC;
+            }
+            r.baselineC += (ambientC - r.baselineC) * Math.min(1.0F, dtThermal / r.tauTicks);
+        }
+
+        // Rebuild cell -> ABSOLUTE baseline once per thermal tick (reused map, no GC). Because the
+        // value is absolute, getDeltaHeatAt() stays exact even on the 9 ticks between updates.
+        ws.baselineMap.clear();
+        for (RoomData r : ws.roomCache.values()) {
+            if (!r.valid || Float.isNaN(r.baselineC)) {
+                continue;
+            }
+            LongIterator it = r.air.iterator();
+            while (it.hasNext()) {
+                ws.baselineMap.put(it.nextLong(), r.baselineC);
+            }
+            it = r.envelope.iterator();
+            while (it.hasNext()) {
+                ws.baselineMap.put(it.nextLong(), r.baselineC);
+            }
+        }
+
+        // Lumped-capacitance update in BASELINE-RELATIVE deltas: room air and room walls now share
+        // one reference, so the fine-grained solver no longer sees a fake temperature difference.
+        // δT_eq = gain / (2 * leakPerCell); capacity still changes warm-up, not equilibrium.
         float powerScale = ROOM_POWER_GAIN * (settings.roomHeatingPowerPercent / 100.0F);
-        // v2.5.3: walls/soil keep yesterday's temperature for minutes. A well-insulated room
-        // inherits most of that offset; a leaky stone hut inherits almost none of it.
-        float massLagC = EternalSnowState.thermalMassTempC - EternalSnowState.worldAmbientTempC;
         for (RoomData room : ws.roomCache.values()) {
             if (!room.valid || room.air.isEmpty()) {
                 continue;
             }
-            float retention = Mth.clamp(
-                    1.0F - 2.5F * room.leakPerCell / Math.max(0.35F, room.inertia),
-                    0.05F, 0.95F);
-            float lagC = massLagC * retention;
-            float capForRoom = Math.max(0.0F, roomCapDelta - lagC);
+            float offsetC = room.baselineC - ambientC;
+            float capForRoom = Math.max(0.0F, roomCapDelta - offsetC);
 
             float sum = 0.0F;
             LongIterator airIt = room.air.iterator();
             while (airIt.hasNext()) {
                 sum += heatMap.get(airIt.nextLong());
             }
-            // Convert stored "above live ambient" deltas back into the room's own baseline.
-            float avg = sum / room.volume - lagC;
+            float avg = sum / room.volume;
             float gain = room.power * powerScale * room.inertia / room.volume;
             float keep = Math.max(0.0F, 1.0F - 2.0F * room.leakPerCell);
-            float val = Math.min(capForRoom, (avg + gain) * keep);
-            // Store back as "above live ambient" so snow/ice, HUD and fine-grained solver agree.
-            float stored = Mth.clamp(val + lagC, 0.0F, roomCapDelta);
+            float val = Mth.clamp((avg + gain) * keep, 0.0F, capForRoom);
 
             airIt = room.air.iterator();
-            if (stored < 0.18F) {
+            if (val < 0.18F) {
                 while (airIt.hasNext()) {
                     heatMap.remove(airIt.nextLong());
                 }
             } else {
                 while (airIt.hasNext()) {
-                    heatMap.put(airIt.nextLong(), stored);
+                    heatMap.put(airIt.nextLong(), val);
                 }
             }
         }
