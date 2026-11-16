@@ -61,7 +61,6 @@ public final class ThermalEngine {
     // so wall material, wall thickness and wall heat capacity all change the measured numbers.
     private static final int MAX_ROOM_CELLS = 2048;
     private static final int MAX_WALL_DEPTH = 4;
-    private static final int MAX_ROOMS_PER_TICK = 8;
     private static final float ROOM_OPEN_FACE_U = 1.20F;   // open door / window / hole in the roof
     private static final float ROOM_WALL_K_BASE = 0.32F;   // compressed conductivity: k = BASE + COND*cond
     private static final float ROOM_WALL_K_COND = 0.68F;   // wool ~0.354, planks ~0.483, stone ~0.810
@@ -130,7 +129,6 @@ public final class ThermalEngine {
         final Long2FloatOpenHashMap leakCache = createLeakMap();
         final LongOpenHashSet roomVisited = new LongOpenHashSet(MAX_ROOM_CELLS);
         final long[] roomQueue = new long[MAX_ROOM_CELLS];
-        final RoomData[] rooms = new RoomData[MAX_ROOMS_PER_TICK];
         float settingsStamp = Float.NaN;
         int tickCounter = 0;
 
@@ -437,11 +435,10 @@ public final class ThermalEngine {
             ws.settingsStamp = stamp;
         }
         ws.tickCounter++;
-        if (ws.tickCounter % ROOM_REFRESH_TICKS == 0) {
-            ws.roomCache.clear();
-        }
-
         float roomCapDelta = Math.max(6.0F, settings.roomComfortCeilingC - EternalSnowState.worldAmbientTempC);
+        if (ws.tickCounter % ROOM_REFRESH_TICKS == 0) {
+            refreshRooms(level, ws, settings, scanPos, rayPos);
+        }
         applyEnclosedRoomHeating(level, ws, heatMap, settings, roomCapDelta, scanPos, rayPos);
 
         if (heatMap.isEmpty()) {
@@ -684,7 +681,7 @@ public final class ThermalEngine {
      * Runs only on a cache miss (block change, settings change or every 20 s), never per tick.
      */
     private static RoomData scanRoom(ServerLevel level, LevelThermalWorkspace ws, long entryKey,
-                                     ServerSnowSettings settings, float roomCapDelta,
+                                     ServerSnowSettings settings,
                                      BlockPos.MutableBlockPos tmp, BlockPos.MutableBlockPos tmp2) {
         RoomData room = new RoomData();
         LongOpenHashSet visited = ws.roomVisited;
@@ -740,7 +737,7 @@ public final class ThermalEngine {
                     tmp2.set(nx + dx * step, ny + dy * step, nz + dz * step);
                     BlockState wall = level.getBlockState(tmp2);
                     if (isAirOrOpenPassage(wall)) {
-                        outside = level.canSeeSky(tmp2);
+                        outside = reachesOutsideAir(level, tmp2.getX(), tmp2.getY(), tmp2.getZ(), dx, dy, dz, tmp2);
                         break;
                     }
                     BlockThermalCategory cat = BlockThermalCategory.classify(wall);
@@ -772,12 +769,52 @@ public final class ThermalEngine {
                 (room.conductance / room.volume) * ROOM_LEAK_SCALE * room.inertia,
                 ROOM_LEAK_MIN, ROOM_LEAK_MAX);
 
-        // Cooling must stay insulation-dependent even after the fire goes out and no room is scanned.
+        // Mark these air cells as OWNED by the lumped room model: the fine-grained solver must not
+        // apply a second, independent leak to them (that would double-count the heat loss).
         LongIterator airIt = room.air.iterator();
         while (airIt.hasNext()) {
-            ws.leakCache.put(airIt.nextLong(), room.leakPerCell);
+            ws.leakCache.put(airIt.nextLong(), 0.0F);
         }
         return room;
+    }
+
+    /**
+     * The air right behind a wall can sit under a roof overhang: canSeeSky() is false there,
+     * but it is still outdoor air. Walk a few blocks further; a second solid means an enclosed
+     * cavity (a real insulator), a sky-visible cell means the wall really loses heat outside.
+     */
+    private static boolean reachesOutsideAir(ServerLevel level, int x, int y, int z,
+                                             int dx, int dy, int dz, BlockPos.MutableBlockPos tmp) {
+        for (int i = 0; i < 3; i++) {
+            tmp.set(x + dx * i, y + dy * i, z + dz * i);
+            BlockState st = level.getBlockState(tmp);
+            if (!isAirOrOpenPassage(st)) {
+                return false;
+            }
+            if (level.canSeeSky(tmp)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Periodic geometry re-scan (snow on the roof, new walls) without losing the room cache. */
+    private static void refreshRooms(ServerLevel level, LevelThermalWorkspace ws,
+                                     ServerSnowSettings settings,
+                                     BlockPos.MutableBlockPos tmp, BlockPos.MutableBlockPos tmp2) {
+        if (ws.roomCache.isEmpty()) {
+            return;
+        }
+        long[] keys = new long[ws.roomCache.size()];
+        int n = 0;
+        LongIterator keyIt = ws.roomCache.keySet().iterator();
+        while (keyIt.hasNext()) {
+            keys[n++] = keyIt.nextLong();
+        }
+        ws.leakCache.clear();
+        for (int i = 0; i < n; i++) {
+            ws.roomCache.put(keys[i], scanRoom(level, ws, keys[i], settings, tmp, tmp2));
+        }
     }
 
     /**
@@ -790,10 +827,13 @@ public final class ThermalEngine {
                                                  ServerSnowSettings settings, float roomCapDelta,
                                                  BlockPos.MutableBlockPos tmp,
                                                  BlockPos.MutableBlockPos tmp2) {
-        if (ws.seenSources.isEmpty()) {
-            return;
+        // Reset per-tick power for every known room (rooms with no fire must keep cooling down).
+        for (RoomData r : ws.roomCache.values()) {
+            r.power = 0.0F;
         }
-        int roomCount = 0;
+        if (ws.roomCache.size() > 32) {
+            ws.invalidateGeometry();
+        }
 
         LongIterator srcIt = ws.seenSources.iterator();
         while (srcIt.hasNext()) {
@@ -812,45 +852,52 @@ public final class ThermalEngine {
                 continue;
             }
 
-            RoomData room = null;
-            for (int i = 0; i < roomCount; i++) {
-                if (ws.rooms[i].air.contains(entry)) {
-                    room = ws.rooms[i];
-                    break;
+            RoomData room = ws.roomCache.get(entry);
+            if (room == null) {
+                // Two different sources in the SAME room must share one RoomData, not scan it twice.
+                for (RoomData known : ws.roomCache.values()) {
+                    if (known.valid && known.air.contains(entry)) {
+                        room = known;
+                        break;
+                    }
                 }
             }
             if (room == null) {
-                room = ws.roomCache.get(entry);
-                if (room == null) {
-                    room = scanRoom(level, ws, entry, settings, roomCapDelta, tmp, tmp2);
-                    ws.roomCache.put(entry, room);
-                }
-                if (!room.valid) {
-                    continue;
-                }
-                if (roomCount >= MAX_ROOMS_PER_TICK) {
-                    break;
-                }
-                ws.rooms[roomCount++] = room;
-                room.power = 0.0F;
+                room = scanRoom(level, ws, entry, settings, tmp, tmp2);
+                ws.roomCache.put(entry, room);
             }
-            room.power += power;
+            if (room.valid) {
+                room.power += power;
+            }
         }
 
+        // Lumped-capacitance update: one uniform room temperature, power in / envelope resistance out.
+        // δT_eq = gain / (2 * leakPerCell). Doubling wall thickness halves leakPerCell, so δT doubles
+        // until the comfort ceiling is reached. Wall capacity scales BOTH gain and leak (inertia),
+        // i.e. it changes warm-up / cool-down time but NOT the steady temperature — correct physics.
         float powerScale = ROOM_POWER_GAIN * (settings.roomHeatingPowerPercent / 100.0F);
-        for (int i = 0; i < roomCount; i++) {
-            RoomData room = ws.rooms[i];
-            if (room.power <= 0.0F) {
+        for (RoomData room : ws.roomCache.values()) {
+            if (!room.valid || room.air.isEmpty()) {
                 continue;
             }
-            float gain = room.power * powerScale * room.inertia / room.volume;
+            float sum = 0.0F;
             LongIterator airIt = room.air.iterator();
             while (airIt.hasNext()) {
-                long key = airIt.nextLong();
-                float cur = heatMap.get(key);
-                float val = Math.min(roomCapDelta, cur + gain);
-                if (val >= 0.18F) {
-                    heatMap.put(key, val);
+                sum += heatMap.get(airIt.nextLong());
+            }
+            float avg = sum / room.volume;
+            float gain = room.power * powerScale * room.inertia / room.volume;
+            float keep = Math.max(0.0F, 1.0F - 2.0F * room.leakPerCell);
+            float val = Math.min(roomCapDelta, (avg + gain) * keep);
+
+            airIt = room.air.iterator();
+            if (val < 0.18F) {
+                while (airIt.hasNext()) {
+                    heatMap.remove(airIt.nextLong());
+                }
+            } else {
+                while (airIt.hasNext()) {
+                    heatMap.put(airIt.nextLong(), val);
                 }
             }
         }
