@@ -115,6 +115,12 @@ public final class ThermalEngine {
         float inertia = 1.0F;
         float power = 0.0F;         // transient: summed source power for THIS tick only
         boolean valid = false;
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+
+        boolean touches(int x, int y, int z) {
+            return x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ;
+        }
     }
 
     private static final class LevelThermalWorkspace {
@@ -161,6 +167,36 @@ public final class ThermalEngine {
 
     public static void clearAll() {
         WORKSPACES.clear();
+    }
+
+    /**
+     * Only rooms whose envelope could have changed are dropped. Re-scanning every cached room on
+     * each placed block would be an O(rooms * 2048) spike — a hard no for the TPS budget.
+     */
+    private static void invalidateGeometryNear(LevelThermalWorkspace ws, BlockPos pos) {
+        if (ws.roomCache.isEmpty()) {
+            return;
+        }
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
+        long[] doomed = new long[Math.min(ws.roomCache.size(), 64)];
+        int n = 0;
+        for (var entry : ws.roomCache.long2ObjectEntrySet()) {
+            RoomData room = entry.getValue();
+            if (room.valid && room.touches(x, y, z)) {
+                doomed[n++] = entry.getLongKey();
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            RoomData room = ws.roomCache.remove(doomed[i]);
+            if (room != null) {
+                LongIterator airIt = room.air.iterator();
+                while (airIt.hasNext()) {
+                    ws.leakCache.remove(airIt.nextLong());
+                }
+            }
+        }
     }
 
     public static boolean isPotentialHeatEmitter(BlockState state) {
@@ -215,7 +251,7 @@ public final class ThermalEngine {
 
     public static void onBlockPlaced(ServerLevel level, BlockPos pos) {
         LevelThermalWorkspace ws = getWorkspace(level);
-        ws.invalidateGeometry(); // a new wall layer must change room envelope resistance immediately
+        invalidateGeometryNear(ws, pos); // a new wall layer changes envelope resistance immediately
         long key = pos.asLong();
         ws.activeMap.remove(key);
         BlockState st = level.getBlockState(pos);
@@ -232,7 +268,7 @@ public final class ThermalEngine {
 
     public static void onBlockBroken(ServerLevel level, BlockPos pos) {
         LevelThermalWorkspace ws = getWorkspace(level);
-        ws.invalidateGeometry();
+        invalidateGeometryNear(ws, pos);
         long key = pos.asLong();
         ws.activeMap.remove(key);
         long cKey = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
@@ -699,6 +735,12 @@ public final class ThermalEngine {
             int y = BlockPos.getY(key);
             int z = BlockPos.getZ(key);
             room.air.add(key);
+            if (x < room.minX) room.minX = x;
+            if (y < room.minY) room.minY = y;
+            if (z < room.minZ) room.minZ = z;
+            if (x > room.maxX) room.maxX = x;
+            if (y > room.maxY) room.maxY = y;
+            if (z > room.maxZ) room.maxZ = z;
 
             for (Direction d : DIRS_6) {
                 int dx = d.getStepX();
@@ -763,6 +805,9 @@ public final class ThermalEngine {
             return room;
         }
         room.volume = Math.max(1.0F, room.air.size());
+        int pad = MAX_WALL_DEPTH + 3;
+        room.minX -= pad; room.minY -= pad; room.minZ -= pad;
+        room.maxX += pad; room.maxY += pad; room.maxZ += pad;
         float capAvg = room.boundaryFaces > 0 ? room.capacitySum / room.boundaryFaces : 2.0F;
         room.inertia = 1.0F / (1.0F + capAvg * ROOM_CAP_INERTIA);
         room.leakPerCell = Mth.clamp(
