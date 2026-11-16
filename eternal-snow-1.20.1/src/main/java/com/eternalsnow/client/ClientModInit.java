@@ -50,6 +50,7 @@ public final class ClientModInit {
         MinecraftForge.EVENT_BUS.addListener(BlizzardFogHandler::onComputeFogColor);
         MinecraftForge.EVENT_BUS.addListener(WinterSoundManager::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(ClientModInit::onBreathVaporTick);
+        MinecraftForge.EVENT_BUS.addListener(BenchSittingHandler::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(ItemTooltipHandler::onItemTooltip);
     }
 

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "minecraft:block/oak_planks"
+    "all": "eternalsnow:block/thermal_shutter"
   }
 }

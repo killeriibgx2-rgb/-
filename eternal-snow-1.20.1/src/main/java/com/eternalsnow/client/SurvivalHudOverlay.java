@@ -15,7 +15,6 @@ import com.eternalsnow.item.ThermometerItem;
 import com.eternalsnow.item.WoodenFirestarterItem;
 import com.eternalsnow.registry.ModRegistry;
 import com.eternalsnow.state.EternalSnowState;
-import com.eternalsnow.state.HeatScanClientData;
 import com.eternalsnow.world.CampfireFuelManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
@@ -178,16 +177,6 @@ public final class SurvivalHudOverlay {
                 || player.getOffhandItem().getItem() instanceof LocalThermometerItem;
         ItemStack scannerStack = HeatScannerItem.getHeldScanner(player);
         boolean holdingScanner = !scannerStack.isEmpty();
-        int scannerMode = holdingScanner ? HeatScannerItem.getMode(scannerStack) : HeatScannerItem.MODE_ALL_AIR;
-
-        // v2.6.0: full-screen thermal pass + two world-anchored markers (cheap 2D GUI work only)
-        if (scannerMode == HeatScannerItem.MODE_THERMAL) {
-            renderThermalScreen(guiGraphics, screenWidth, screenHeight);
-        }
-        if (holdingScanner && HeatScanClientData.markersFresh()) {
-            renderThermalMarkers(guiGraphics, screenWidth, screenHeight, mc.font);
-        }
-
         boolean holdingThermometer = holdingAdmin || holdingLocal;
         if (!holdingThermometer && !holdingScanner) {
             return;
@@ -226,15 +215,12 @@ public final class SurvivalHudOverlay {
         }
 
         if (holdingScanner) {
-            boolean relative = scannerMode == HeatScannerItem.MODE_WALLS
-                    || scannerMode == HeatScannerItem.MODE_THERMAL;
-            Component modeTitle = Component.translatable(HeatScannerItem.getModeHudTranslationKey(scannerMode));
+            boolean warmOnly = HeatScannerItem.isWarmOnlyMode(scannerStack);
+            Component modeTitle = Component.translatable(warmOnly
+                    ? "eternalsnow.scanner.hud.warm_only"
+                    : "eternalsnow.scanner.hud.all_air");
             String localStr = String.format(Locale.ROOT, "%+.1f°C", EternalSnowState.clientLocalTempC);
-            Component localLine = relative
-                    ? Component.translatable("eternalsnow.scanner.hud.local_rel",
-                            String.format(Locale.ROOT, "%+.1f°C", HeatScanClientData.minC),
-                            String.format(Locale.ROOT, "%+.1f°C", HeatScanClientData.maxC))
-                    : Component.translatable("eternalsnow.scanner.hud.local", localStr);
+            Component localLine = Component.translatable("eternalsnow.scanner.hud.local", localStr);
 
             int boxW = Math.max(156, Math.max(font.width(modeTitle), font.width(localLine)) + 14);
             int boxH = 38;
@@ -249,12 +235,8 @@ public final class SurvivalHudOverlay {
             int steps = 32;
             float stepW = (barRight - barLeft) / (float) steps;
             for (int i = 0; i < steps; i++) {
-                float barLo = relative ? HeatScanClientData.minC : -25.0F;
-                float barHi = relative ? HeatScanClientData.maxC : 55.0F;
-                float t = Mth.lerp(i / (float) (steps - 1), barLo, barHi);
-                int col = 0xFF000000 | (relative
-                        ? HeatVisionRenderer.relativeToRgb((t - barLo) / Math.max(0.001F, barHi - barLo))
-                        : HeatVisionRenderer.temperatureToRgb(t));
+                float t = Mth.lerp(i / (float) (steps - 1), -25.0F, 55.0F);
+                int col = 0xFF000000 | HeatVisionRenderer.temperatureToRgb(t);
                 int x0 = barLeft + Math.round(i * stepW);
                 int x1 = Math.max(x0 + 1, barLeft + Math.round((i + 1) * stepW));
                 guiGraphics.fill(x0, barTop, x1, barTop + 5, col);
@@ -289,62 +271,6 @@ public final class SurvivalHudOverlay {
         g.drawString(font, l2, boxX + 6, boxY + 16, 0xFFC6D6E6, true);
         g.drawString(font, l3, boxX + 6, boxY + 28,
                 trend > 0.30F ? 0xFFFF9A4A : (trend < -0.30F ? 0xFF69B6FF : 0xFFB8C4CE), true);
-    }
-
-    /**
-     * Cheap "shader" mode: one coarse 12x8 translucent colour pass over the screen.
-     * Colours are precomputed ONCE per 2-second server packet in HeatScanClientData — no per-frame
-     * block iteration, no chunk rebuilds and no GLSL program for the weak client.
-     */
-    private static void renderThermalScreen(GuiGraphics g, int screenW, int screenH) {
-        int[] bins = HeatScanClientData.thermalBins;
-        int cols = HeatScanClientData.THERMAL_COLS;
-        int rows = HeatScanClientData.THERMAL_ROWS;
-        float cw = screenW / (float) cols;
-        float ch = screenH / (float) rows;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                int argb = bins[r * cols + c];
-                if (argb == 0) {
-                    continue;
-                }
-                int x0 = Math.round(c * cw);
-                int y0 = Math.round(r * ch);
-                int x1 = Math.max(x0 + 1, Math.round((c + 1) * cw));
-                int y1 = Math.max(y0 + 1, Math.round((r + 1) * ch));
-                g.fill(x0, y0, x1, y1, argb);
-            }
-        }
-    }
-
-    /** Two HUD dots: hottest and coldest. World-anchored, so turning away leaves them behind. */
-    private static void renderThermalMarkers(GuiGraphics g, int screenW, int screenH, Font font) {
-        if (HeatScanClientData.hotVisible) {
-            drawThermalMarker(g, font, HeatScanClientData.hotScreenX, HeatScanClientData.hotScreenY,
-                    0xFFFF4538, "▲", HeatScanClientData.hotC, screenW, screenH);
-        }
-        if (HeatScanClientData.coldVisible) {
-            drawThermalMarker(g, font, HeatScanClientData.coldScreenX, HeatScanClientData.coldScreenY,
-                    0xFF4B9BFF, "▼", HeatScanClientData.coldC, screenW, screenH);
-        }
-    }
-
-    private static void drawThermalMarker(GuiGraphics g, Font font, float sx, float sy, int color,
-                                          String glyph, float tempC, int screenW, int screenH) {
-        int x = Math.round(sx);
-        int y = Math.round(sy);
-        if (x < 2 || y < 2 || x > screenW - 2 || y > screenH - 2) {
-            return; // behind the camera / off-screen — stays anchored to its world position
-        }
-        g.fill(x - 4, y - 4, x + 4, y + 4, 0xDD101820);
-        g.renderOutline(x - 4, y - 4, 8, 8, color);
-        g.fill(x - 2, y - 2, x + 2, y + 2, color);
-        String label = glyph + " " + String.format(Locale.ROOT, "%+.1f°C", tempC);
-        int lw = font.width(label);
-        int lx = Mth.clamp(x + 8, 2, screenW - lw - 2);
-        int ly = Mth.clamp(y - 12, 2, screenH - 12);
-        g.fill(lx - 2, ly - 1, lx + lw + 2, ly + 10, 0xAA0B111A);
-        g.drawString(font, label, lx, ly, color, true);
     }
 
     private static void renderFirestarterRubHud(

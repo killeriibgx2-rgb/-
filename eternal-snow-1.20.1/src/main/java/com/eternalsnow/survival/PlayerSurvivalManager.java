@@ -373,14 +373,7 @@ public final class PlayerSurvivalManager {
             ));
 
             if (HeatScannerItem.isHoldingScanner(player)) {
-                ItemStack scannerStack = HeatScannerItem.getHeldScanner(player);
-                int mode = HeatScannerItem.getMode(scannerStack);
-                // Air modes refresh once a second; wall/thermal modes (heavier capture) every 2 s.
-                int period = mode >= HeatScannerItem.MODE_WALLS ? 40 : 20;
-                if (player.tickCount % period == 0) {
-                    PacketHandler.sendToPlayer(player,
-                            ClientboundHeatGridPacket.captureFor(level, player, mode));
-                }
+                PacketHandler.sendToPlayer(player, ClientboundHeatGridPacket.captureAround(level, samplePos));
             }
         }
     }

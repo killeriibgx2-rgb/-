@@ -75,7 +75,7 @@ public final class ThermalEngine {
     private static final int ROOM_REFRESH_TICKS = 40;      // re-scan geometry every 20 s
 
     // --- v2.5.4: per-room thermal baseline (real C/U time constant) -------------------------
-    private static final int MAX_CACHED_ROOMS = 32;
+    private static final int MAX_CACHED_ROOMS = 64;
     private static final int MAX_ROOM_SCANS_PER_TICK = 1;   // hard TPS bound on flood-fills
     private static final float ROOM_TAU_SCALE = 250.0F;     // ticks per (wallCapacity / envelopeU)
     private static final float ROOM_TAU_MIN = 600.0F;       // 30 s
@@ -133,6 +133,14 @@ public final class ThermalEngine {
 
         boolean touches(int x, int y, int z) {
             return x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ;
+        }
+
+        long squaredDistanceTo(double px, double py, double pz) {
+            double cx = (minX + maxX) * 0.5D;
+            double cy = (minY + maxY) * 0.5D;
+            double cz = (minZ + maxZ) * 0.5D;
+            double dx = cx - px, dy = cy - py, dz = cz - pz;
+            return (long) (dx * dx + dy * dy + dz * dz);
         }
     }
 
@@ -944,6 +952,47 @@ public final class ThermalEngine {
     }
 
     /**
+     * v2.6.4: multiplayer fairness — when the room cache is full, only the room that nobody is near
+     * is discarded. Previously one extra warm room wiped the whole cache and every player lost the
+     * thermal inertia of their house at once.
+     */
+    private static void evictFarthestRoom(LevelThermalWorkspace ws, ServerLevel level) {
+        long worstKey = Long.MIN_VALUE;
+        long worstDist = -1L;
+        var players = level.players();
+        for (var entry : ws.roomCache.long2ObjectEntrySet()) {
+            RoomData room = entry.getValue();
+            long dist = Long.MAX_VALUE;
+            for (ServerPlayer p : players) {
+                dist = Math.min(dist, room.squaredDistanceTo(p.getX(), p.getY(), p.getZ()));
+            }
+            if (players.isEmpty()) {
+                dist = 0L;
+            }
+            if (dist > worstDist) {
+                worstDist = dist;
+                worstKey = entry.getLongKey();
+            }
+        }
+        if (worstKey != Long.MIN_VALUE) {
+            RoomData removed = ws.roomCache.remove(worstKey);
+            if (removed != null) {
+                LongIterator airIt = removed.air.iterator();
+                while (airIt.hasNext()) {
+                    long cell = airIt.nextLong();
+                    ws.leakCache.remove(cell);
+                    ws.baselineMap.remove(cell);
+                }
+                LongIterator wallIt = removed.envelope.iterator();
+                while (wallIt.hasNext()) {
+                    ws.baselineMap.remove(wallIt.nextLong());
+                }
+            }
+            ws.failedSeeds.clear();
+        }
+    }
+
+    /**
      * v2.5.4: a room no longer needs a burning fireplace to exist. Players are the seeds:
      * at most MAX_ROOM_SCANS_PER_TICK bounded flood-fills per thermal tick, so discovery can
      * never spike TPS. Failed seeds (caves, open air) retry only after the periodic refresh.
@@ -995,7 +1044,8 @@ public final class ThermalEngine {
                                                  BlockPos.MutableBlockPos tmp,
                                                  BlockPos.MutableBlockPos tmp2) {
         if (ws.roomCache.size() > MAX_CACHED_ROOMS) {
-            ws.invalidateGeometry();
+            // v2.6.4: drop only the room farthest from every player instead of nuking the whole cache.
+            evictFarthestRoom(ws, level);
         }
         // Reset per-tick power for every known room (rooms with no fire must keep cooling down).
         for (RoomData r : ws.roomCache.values()) {
