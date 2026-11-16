@@ -3,6 +3,8 @@ on:
   push:
     paths-ignore:
       - 'eternal-snow-1.20.1/release/*.jar'
+      - '**.md'
+      - '.github/workflows/build-mod.yml'
   workflow_dispatch:
 permissions:
   contents: write
