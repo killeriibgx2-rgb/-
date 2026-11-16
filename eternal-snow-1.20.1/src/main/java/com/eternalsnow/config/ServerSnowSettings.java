@@ -20,6 +20,7 @@ public final class ServerSnowSettings {
 
     public boolean infiniteHeight = true;
     public double averagePillarHeight = 3.0D;
+    public static final float MIN_PRECIP_FLOOR = 0.35F; // never fully dry during real snowfall
     public int minAccumulationSpeed = 2;   // Precipitation speed in Light Snow (0..100)
     public int maxAccumulationSpeed = 18;  // Precipitation speed in Blizzard (0..150)
     public int accumulationSpeed = 6;      // Legacy fallback for older saves
@@ -107,7 +108,9 @@ public final class ServerSnowSettings {
         if (snowIntensity <= 0.025F) {
             return 0.0F;
         }
-        float lo = this.minAccumulationSpeed;
+        // v2.6.3: a 0 slider used to mean "no snow at all, forever", which reads like a bug.
+        // A LIGHT_SNOW phase always lays at least a trickle; 0 now means "minimum slow snowfall".
+        float lo = this.minAccumulationSpeed <= 0 ? MIN_PRECIP_FLOOR : this.minAccumulationSpeed;
         float hi = Math.max(lo, this.maxAccumulationSpeed);
         if (snowIntensity < 0.25F) {
             float onset = (snowIntensity - 0.025F) / 0.225F;

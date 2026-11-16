@@ -87,7 +87,7 @@ public class EternalSnowMod {
         EternalSnowSavedData data = EternalSnowSavedData.get(event.getServer());
         EternalSnowState.setServerSettings(data.getSettings());
         EternalSnowState.setServerRunning(true);
-        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.2): enabled={}", data.getSettings().enabled);
+        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.3): enabled={}", data.getSettings().enabled);
     }
 
     private void onServerStopped(final ServerStoppedEvent event) {

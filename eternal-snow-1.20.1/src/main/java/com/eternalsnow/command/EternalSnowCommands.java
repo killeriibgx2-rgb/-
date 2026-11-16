@@ -42,6 +42,8 @@ public final class EternalSnowCommands {
                 .executes(ctx -> sendStatus(ctx.getSource()))
                 .then(Commands.literal("status").executes(ctx -> sendStatus(ctx.getSource())))
                 .then(Commands.literal("temp").executes(ctx -> sendThermometer(ctx.getSource())))
+                .then(Commands.literal("snow")
+                        .then(Commands.literal("fix").executes(ctx -> fixSnowSettings(ctx.getSource()))))
                 .then(Commands.literal("on").executes(ctx -> setEnabled(ctx.getSource(), true)))
                 .then(Commands.literal("off").executes(ctx -> setEnabled(ctx.getSource(), false)))
                 .then(Commands.literal("weather")
@@ -140,11 +142,43 @@ public final class EternalSnowCommands {
         float curPrecip = s.computeCurrentPrecipitationSpeed(ev, EternalSnowState.snowIntensity);
         source.sendSuccess(
                 () -> Component.literal(String.format(Locale.ROOT,
-                                "§b[EternalSnow v2.2]§r Активен: %s | Высота: %s | Осадки: %.1fx (%d..%dx) | Мир: %+.1f°C | Погода: ",
-                                s.enabled, heightLabel, curPrecip, s.minAccumulationSpeed, s.maxAccumulationSpeed, EternalSnowState.worldAmbientTempC))
+                                "§b[EternalSnow v2.6.3]§r Активен: %s | Высота: %s | Осадки: %.2fx (%d..%dx) | Лимит блоков/тик: %d | Мир: %+.1f°C | Погода: ",
+                                s.enabled, heightLabel, curPrecip, s.minAccumulationSpeed, s.maxAccumulationSpeed, s.maxBlockUpdatesPerTick, EternalSnowState.worldAmbientTempC))
                         .append(Component.translatable(ev.getTranslationKey())),
                 false
         );
+        return 1;
+    }
+
+    /**
+     * v2.6.3: one-shot repair for "enabled the mod but no snow falls".
+     * Restores sane precipitation speeds, snow-on-ice/slabs/glass/stairs, forces a real snow phase
+     * and applies the settings on every level. Cleared snow is NOT recreated instantly — it falls.
+     */
+    private static int fixSnowSettings(CommandSourceStack source) {
+        ServerSnowSettings copy = EternalSnowState.getServerSettings().copy();
+        copy.enabled = true;
+        copy.minAccumulationSpeed = Math.max(2, copy.minAccumulationSpeed);
+        copy.maxAccumulationSpeed = Math.max(18, copy.maxAccumulationSpeed);
+        copy.maxBlockUpdatesPerTick = Math.max(140, copy.maxBlockUpdatesPerTick);
+        copy.snowOnIce = true;
+        copy.snowOnSlabs = true;
+        copy.snowOnGlass = true;
+        copy.snowOnStairs = true;
+        copy.freezeWater = true;
+        ServerboundUpdateSettingsPacket.applySettingsOnServer(source.getServer(), copy);
+        WeatherEventManager.forceEvent(source.getServer(), WeatherEventType.HEAVY_SNOW, 4800);
+        PacketHandler.broadcastToAll(new ClientboundWeatherSyncPacket(
+                EternalSnowState.weatherEventId,
+                EternalSnowState.windYawDeg,
+                EternalSnowState.windSpeed,
+                EternalSnowState.snowIntensity,
+                EternalSnowState.worldAmbientTempC,
+                EternalSnowState.eventTicksRemaining
+        ));
+        source.sendSuccess(() -> Component.literal(
+                "§b[EternalSnow]§r Снег включён и усилен: осадки 2..18x, снег на льду/плитах/стекле/ступенях, "
+                        + "форсирован сильный снегопад на 4 минуты. Подожди 10-20 секунд рядом с местом."), true);
         return 1;
     }
 
