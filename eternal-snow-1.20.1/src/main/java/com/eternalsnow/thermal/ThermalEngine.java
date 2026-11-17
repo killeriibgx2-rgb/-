@@ -264,6 +264,18 @@ public final class ThermalEngine {
                 || state.is(Blocks.SOUL_FIRE);
     }
 
+    /**
+     * Drops the per-chunk heat-emitter index of a chunk that just unloaded. Without this the index is
+     * an unbounded leak: it is keyed by chunk pos and never consulted again once you walk away, so a
+     * long exploration session keeps every emitter set of every chunk ever visited in memory.
+     */
+    public static void forgetChunk(ServerLevel level, ChunkPos pos) {
+        LevelThermalWorkspace ws = WORKSPACES.get(level.dimension());
+        if (ws != null) {
+            ws.chunkEmitters.remove(pos.toLong());
+        }
+    }
+
     private static LongOpenHashSet getOrIndexChunkEmitters(ServerLevel level, LevelThermalWorkspace ws, LevelChunk chunk) {
         long cKey = chunk.getPos().toLong();
         LongOpenHashSet set = ws.chunkEmitters.get(cKey);

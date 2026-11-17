@@ -24,10 +24,7 @@ public final class StickSelectionTracker {
         return SELECTED_GOLEM_ENTITY_ID.remove(player.getUUID());
     }
 
-    public static void clearSelection(UUID playerUuid) {
-        SELECTED_GOLEM_ENTITY_ID.remove(playerUuid);
-    }
-
+    /** Drops the picked golem for one player — called on logout so the map cannot outlive a session. */
     public static void clearPlayer(UUID playerUuid) {
         SELECTED_GOLEM_ENTITY_ID.remove(playerUuid);
     }

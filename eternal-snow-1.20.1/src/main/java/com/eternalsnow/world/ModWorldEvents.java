@@ -32,12 +32,23 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.SaplingGrowTreeEvent;
 import net.minecraftforge.eventbus.api.Event;
 
 public final class ModWorldEvents {
 
     private ModWorldEvents() {
+    }
+
+    /**
+     * v2.6.6b — chunk unload hook. The thermal engine keeps a per-chunk index of heat emitters; without
+     * this it grows for every chunk a player has ever visited and never shrinks.
+     */
+    public static void onChunkUnload(ChunkEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            ThermalEngine.forgetChunk(serverLevel, event.getChunk().getPos());
+        }
     }
 
     public static void onBlockPlaced(BlockEvent.EntityPlaceEvent event) {

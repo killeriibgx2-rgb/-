@@ -3,6 +3,7 @@ package com.eternalsnow;
 import com.eternalsnow.client.ClientModInit;
 import com.eternalsnow.command.EternalSnowCommands;
 import com.eternalsnow.entity.FestiveCopperGolemEntity;
+import com.eternalsnow.entity.StickSelectionTracker;
 import com.eternalsnow.network.ClientboundSyncSettingsPacket;
 import com.eternalsnow.network.ClientboundWeatherSyncPacket;
 import com.eternalsnow.network.PacketHandler;
@@ -21,6 +22,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
@@ -69,6 +71,7 @@ public class EternalSnowMod {
         MinecraftForge.EVENT_BUS.addListener(this::onLivingHurt);
         MinecraftForge.EVENT_BUS.addListener(MobArmorHandler::onEntityInteract);
 
+        MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onChunkUnload);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onBlockPlaced);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onBlockBroken);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onLeftClickBlock);
@@ -106,11 +109,14 @@ public class EternalSnowMod {
         EternalSnowState.setServerRunning(false);
         ThermalEngine.clearAll();
         WeatherEventManager.resetClimate();
+        StickSelectionTracker.clearAll();
     }
 
     private void onPlayerLoggedOut(final PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             SnowAccumulationManager.forgetPlayer(player.getUUID());
+            // A golem picked with the stick is keyed by UUID and would otherwise outlive the session.
+            StickSelectionTracker.clearPlayer(player.getUUID());
         }
     }
 
@@ -189,14 +195,16 @@ public class EternalSnowMod {
         if (entity.level().isClientSide || !(entity.level() instanceof ServerLevel serverLevel)) {
             return;
         }
-        // Also covers the "snow walks into a mob" case: a burning mob loses its fire on contact
-        // with snow even when no fire damage is being dealt right now.
-        if (MobSurvivalManager.shouldExtinguishFire(serverLevel, entity) && entity.isOnFire()) {
+        if (!MobSurvivalManager.shouldExtinguishFire(serverLevel, entity)) {
+            return;
+        }
+        // Any burning mob that touches snow simply goes out — no fire ticks left to hurt it.
+        if (entity.isOnFire()) {
             entity.clearFire();
         }
-        if (event.getSource().is(net.minecraft.tags.DamageTypeTags.IS_FIRE)
-                && MobSurvivalManager.shouldExtinguishFire(serverLevel, entity)) {
-            entity.clearFire();
+        // ONLY the "you are burning" damage is dropped. Lava, fireballs, hot-floor (magma) and
+        // campfire damage are real hits and keep hurting: standing in lava in a blizzard kills.
+        if (event.getSource().is(DamageTypes.ON_FIRE) || event.getSource().is(DamageTypes.IN_FIRE)) {
             event.setCanceled(true);
         }
     }

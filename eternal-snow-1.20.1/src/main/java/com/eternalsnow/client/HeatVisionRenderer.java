@@ -20,6 +20,10 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 
 public final class HeatVisionRenderer {
+
+    /** The scanner grid is re-sent every 10 ticks; anything older than this is a stale snapshot. */
+    private static final long STALE_MS = 1500L;
+
     private HeatVisionRenderer() {
     }
 
@@ -45,8 +49,13 @@ public final class HeatVisionRenderer {
         if (offsets.length == 0 || offsets.length != temps.length) {
             return;
         }
-        // Ignore stale grid if player teleported far away
+        // Ignore stale grid if player teleported far away, or if the server stopped streaming it:
+        // the last grid used to stay on screen forever after switching the scanner away/back,
+        // showing temperatures from wherever the player stood minutes ago.
         if (origin.distSqr(player.blockPosition()) > 64.0D * 64.0D) {
+            return;
+        }
+        if (System.currentTimeMillis() - HeatScanClientData.lastUpdateMillis > STALE_MS) {
             return;
         }
 
