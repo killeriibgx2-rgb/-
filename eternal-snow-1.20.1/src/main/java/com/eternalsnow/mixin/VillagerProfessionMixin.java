@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * Client-side, texture swap only: no model rebuild, no extra render layer, no per-tick cost.
  * The lookup and its cache live in {@link VillagerWardrobe} — a mixin must not own static state.
  */
-@Mixin(targets = "net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer")
+@Mixin(value = net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer.class)
 public abstract class VillagerProfessionMixin {
 
     // require = 0: if a future MC/Forge version renames this private helper, villagers simply keep
