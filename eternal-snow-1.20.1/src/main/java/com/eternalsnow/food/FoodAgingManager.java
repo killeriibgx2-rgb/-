@@ -31,23 +31,10 @@ public final class FoodAgingManager {
     /** 10 seconds. Cheap enough to run per level, fast enough that a thaw is never a surprise. */
     public static final int SCAN_INTERVAL = 200;
 
-    private static final List<BlockPos> OPEN_CONTAINERS = new ArrayList<>();
-
-    private FoodAgingManager() {
-    }
-
-    public static void onContainerOpened(BlockPos pos) {
-        if (!OPEN_CONTAINERS.contains(pos)) {
-            OPEN_CONTAINERS.add(pos);
-        }
-    }
-
-    public static void onContainerClosed(BlockPos pos) {
-        OPEN_CONTAINERS.remove(pos);
-    }
+    private FoodAgingManager() {}
 
     public static void clearSession() {
-        OPEN_CONTAINERS.clear();
+        // No global positions: scanning is level-local and uses only loaded chunks.
     }
 
     /** Called from the server tick on every level; does its own 200-tick gating. */
@@ -72,15 +59,6 @@ public final class FoodAgingManager {
             scanContainer(player.getEnderChestInventory(), FoodState.BODY_C, now);
         }
 
-        for (int i = OPEN_CONTAINERS.size() - 1; i >= 0; i--) {
-            BlockPos pos = OPEN_CONTAINERS.get(i);
-            if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof Container container)) {
-                OPEN_CONTAINERS.remove(i);
-                continue;
-            }
-            scanContainer(container, ThermalEngine.getLocalTemperatureC(level, pos), now);
-        }
-
         FoodShelfManager.scanShelvesNearPlayers(level, now);
     }
 
@@ -102,6 +80,9 @@ public final class FoodAgingManager {
                 container.setItem(slot, result);
                 changed = true;
             }
+        }
+        if (changed) {
+            container.setChanged();
         }
         return changed;
     }

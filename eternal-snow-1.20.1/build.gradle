@@ -104,3 +104,8 @@ tasks.withType(JavaExec).configureEach {
         maxHeapSize = '512m'
     }
 }
+
+// Pure thermal regression tests do not launch Minecraft.
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

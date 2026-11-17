@@ -26,6 +26,7 @@ public final class FoodState {
 
     /** Root key on the stack. Kept out of vanilla keys so nothing else touches it. */
     public static final String TAG_ROOT = "eternalsnow_food";
+    private static final String TAG_EXACT_TEMP = "tm"; // milli-degrees, prevents rounding stalls
     private static final String TAG_TEMP = "t";     // whole °C, quantised to TEMP_STEP
     private static final String TAG_SPOIL = "s";    // 0..4
     private static final String TAG_PROGRESS = "p"; // 0..999 of the current spoilage step
@@ -107,7 +108,7 @@ public final class FoodState {
         ServerSnowSettings settings = EternalSnowState.getServerSettings();
 
         CompoundTag existing = root(stack);
-        int oldTemp = existing == null ? Math.round(envC) : existing.getInt(TAG_TEMP);
+        int oldTemp = existing == null ? quantise(BODY_C) : existing.getInt(TAG_TEMP);
         int spoil = existing == null ? 0 : Mth.clamp(existing.getInt(TAG_SPOIL), 0, SPOIL_MAX);
         int progress = existing == null ? 0 : Mth.clamp(existing.getInt(TAG_PROGRESS), 0, 999);
         long stamp = existing == null ? nowTick : existing.getLong(TAG_STAMP);
@@ -118,11 +119,14 @@ public final class FoodState {
         // already equalised with its surroundings.
         elapsed = Math.min(elapsed, (long) (TAU_TICKS * 3.0D));
 
+        // Old saves migrate from their displayed temperature. New food starts warm, but must
+        // receive a stamp even when this first scan has zero elapsed time.
+        int exactTemp = existing != null && existing.contains(TAG_EXACT_TEMP)
+                ? existing.getInt(TAG_EXACT_TEMP) : (existing == null ? Math.round(BODY_C * 1000) : oldTemp * 1000);
         int newTemp = oldTemp;
         if (settings.enableFoodFreezing && elapsed > 0L) {
-            double decay = Math.exp(-elapsed / TAU_TICKS);
-            double next = envC + (oldTemp - envC) * decay;
-            newTemp = quantise(next);
+            exactTemp = FoodCooling.advanceMilliC(exactTemp, envC, elapsed, TAU_TICKS);
+            newTemp = quantise(exactTemp / 1000.0D);
         }
 
         int newProgress = progress;
@@ -137,13 +141,13 @@ public final class FoodState {
             }
         }
 
-        boolean changed = newTemp != oldTemp || newProgress != progress || spoil != (existing == null ? 0 : existing.getInt(TAG_SPOIL));
-        if (!changed) {
-            return; // no tag churn: keeps the container cheap and the stacks mergeable
+        if (existing != null && elapsed == 0L) {
+            return;
         }
 
         CompoundTag root = stack.getOrCreateTag().getCompound(TAG_ROOT);
         root.putInt(TAG_TEMP, newTemp);
+        root.putInt(TAG_EXACT_TEMP, exactTemp);
         root.putInt(TAG_SPOIL, spoil);
         root.putInt(TAG_PROGRESS, newProgress);
         root.putLong(TAG_STAMP, nowTick);
@@ -179,6 +183,7 @@ public final class FoodState {
     public static void setTemp(ItemStack stack, float celsius, long nowTick) {
         CompoundTag root = stack.getOrCreateTag().getCompound(TAG_ROOT);
         root.putInt(TAG_TEMP, quantise(celsius));
+        root.putInt(TAG_EXACT_TEMP, Math.round(celsius * 1000));
         root.putLong(TAG_STAMP, nowTick);
         stack.getOrCreateTag().put(TAG_ROOT, root);
     }
@@ -187,6 +192,7 @@ public final class FoodState {
     public static void markThawed(ItemStack stack, float celsius, long nowTick) {
         CompoundTag root = stack.getOrCreateTag().getCompound(TAG_ROOT);
         root.putInt(TAG_TEMP, quantise(Math.max(celsius, THAWED_AT_C + TEMP_STEP)));
+        root.putInt(TAG_EXACT_TEMP, Math.round(Math.max(celsius, THAWED_AT_C + TEMP_STEP) * 1000));
         root.putLong(TAG_STAMP, nowTick);
         stack.getOrCreateTag().put(TAG_ROOT, root);
     }

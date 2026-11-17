@@ -15,6 +15,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -95,8 +96,14 @@ public final class SnowFootprintRenderer {
             if (entity.tickCount % 4 != 0) {
                 continue; // a mark every 4 ticks = a natural stride
             }
-            BlockPos below = entity.blockPosition().below();
+            // Feet are INSIDE the snow block for layers 1..7 (collision is lower
+            // than the visible surface). Check that cell before the block below it.
+            BlockPos below = entity.blockPosition();
             BlockState under = level.getBlockState(below);
+            if (!under.is(Blocks.SNOW) && !under.is(Blocks.SNOW_BLOCK)) {
+                below = below.below();
+                under = level.getBlockState(below);
+            }
             if (!under.is(Blocks.SNOW) && under.getBlock() != Blocks.SNOW_BLOCK) {
                 continue;
             }
@@ -105,7 +112,7 @@ public final class SnowFootprintRenderer {
             if (speed < 0.045F) {
                 continue;
             }
-            push(entity.getX(), below.getY() + 1.002D, entity.getZ(),
+            push(entity.getX(), below.getY() + under.getShape(level, below).max(Direction.Axis.Y) + 0.002D, entity.getZ(),
                     (float) (Mth.atan2(motion.z, motion.x) * (180.0F / Math.PI)) - 90.0F,
                     level.getGameTime() + (float) (entity.tickCount % 4) / 4.0F,
                     entity instanceof AbstractClientPlayer ? (byte) 0 : (entity.getBbWidth() > 0.85F ? (byte) 2 : (byte) 1));
@@ -132,7 +139,7 @@ public final class SnowFootprintRenderer {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             return;
         }
-        if (!ClientSnowConfig.footprints || head == 0) {
+        if (!ClientSnowConfig.footprints) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();

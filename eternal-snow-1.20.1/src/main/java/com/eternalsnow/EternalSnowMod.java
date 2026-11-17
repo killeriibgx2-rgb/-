@@ -79,8 +79,6 @@ public class EternalSnowMod {
         MinecraftForge.EVENT_BUS.addListener(this::onRegisterCommands);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
-        MinecraftForge.EVENT_BUS.addListener(this::onContainerOpen);
-        MinecraftForge.EVENT_BUS.addListener(this::onContainerClose);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerChangedDimension);
@@ -132,37 +130,6 @@ public class EternalSnowMod {
         WeatherEventManager.resetClimate();
         StickSelectionTracker.clearAll();
         FoodAgingManager.clearSession();
-    }
-
-    /**
-     * Registers the container for the ageing pass while it is open.
-     *
-     * <p>{@code AbstractContainerMenu} does not expose its position, so the block is taken from the
-     * one the player just interacted with; a container opened some other way is not tracked, which is
-     * safe — {@code FoodState.scan} integrates the whole elapsed interval on the next visit anyway.
-     */
-    private void onContainerOpen(final net.minecraftforge.event.entity.player.PlayerContainerEvent.Open event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
-        BlockPos pos = player.blockPosition();
-        for (Direction dir : Direction.values()) {
-            BlockPos candidate = pos.relative(dir);
-            if (player.level().getBlockEntity(candidate) instanceof Container) {
-                FoodAgingManager.onContainerOpened(candidate.immutable());
-                return;
-            }
-        }
-    }
-
-    private void onContainerClose(final net.minecraftforge.event.entity.player.PlayerContainerEvent.Close event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
-        BlockPos pos = player.blockPosition();
-        for (Direction dir : Direction.values()) {
-            FoodAgingManager.onContainerClosed(pos.relative(dir));
-        }
     }
 
     private void onPlayerLoggedOut(final PlayerEvent.PlayerLoggedOutEvent event) {
