@@ -10,7 +10,8 @@
     "ServerLevelMixin",
     "SnowLayerBlockMixin",
     "AbstractFurnaceBlockEntityMixin",
-    "FurnaceCookTimeInvoker"
+    "FurnaceCookTimeInvoker",
+    "CraftingMenuMixin"
   ],
   "client": [
     "LevelRendererMixin",

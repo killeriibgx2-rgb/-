@@ -99,6 +99,7 @@ public class EternalSnowMod {
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onCropGrowPre);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onSaplingGrow);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onItemUseFinish);
+        MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onUseItemStart);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onPlayerClone);
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> EternalSnowClientSetup::init);
