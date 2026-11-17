@@ -53,6 +53,20 @@ import org.slf4j.Logger;
 @Mod(EternalSnowMod.MODID)
 public class EternalSnowMod {
     public static final String MODID = "eternalsnow";
+
+    /**
+     * v2.7.1 — single source of truth for the version shown to players.
+     *
+     * <p>Filled by Forge from {@code gradle.properties} at load time. The status command used to carry
+     * a hard-coded string and had drifted 4 minor versions behind, so the game was telling players
+     * "v2.6.3" long after that was false.
+     */
+    public static String modVersion() {
+        return net.minecraftforge.fml.ModList.get()
+                .getModContainerById(MODID)
+                .map(container -> container.getModInfo().getVersion().toString())
+                .orElse("dev");
+    }
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final String STARTER_PILL_GIVEN_TAG = "EternalSnowStarterPillGiven";
 

@@ -129,6 +129,7 @@
   "eternalsnow.gui.surv.base_temp": "Min Outdoor Winter Temp: ",
   "eternalsnow.gui.surv.convection": "Convection (cold floor)",
   "eternalsnow.gui.surv.convection_strength": "Convection strength",
+  "eternalsnow.gui.surv.cooking_tweaks": "Furnace: one portion + thaw",
   "eternalsnow.gui.surv.custom_drinks": "Custom Drinks",
   "eternalsnow.gui.surv.custom_drinks_hint": "e.g. farmersdelight:apple_cider=6, minecraft:apple=2",
   "eternalsnow.gui.surv.custom_drinks_label": "Extra Drinks (modid:item=points, comma-separated)",

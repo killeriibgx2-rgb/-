@@ -844,6 +844,14 @@ public final class EternalSnowConfigScreen extends Screen {
                 v -> this.workingServer.enableFoodSpoilage = v
         ), y);
         y += 24;
+        // v2.7.1: escape hatch — turn off the vanilla-furnace mixin behaviour at runtime
+        addScrolled(new EternalSnowWidgets.ToggleSwitch(
+                leftX, 0, fullW, 20,
+                Component.translatable("eternalsnow.gui.surv.cooking_tweaks"),
+                this.workingServer.enableCookingTweaks,
+                v -> this.workingServer.enableCookingTweaks = v
+        ), y);
+        y += 24;
         y += 24;
         addScrolled(makeDoubleSlider(
                 leftX, halfW, "eternalsnow.gui.surv.mobs_freeze_rate", "x",

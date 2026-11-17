@@ -59,6 +59,11 @@ public final class ServerSnowSettings {
     public boolean enableFoodFreezing = true;
     public boolean enableFoodSpoilage = true;
 
+    // v2.7.1: master switch for the furnace/food-shelf mixins. The dev environment is pinned to
+    // Forge 47.2.0, so a mixin that applies here can still fail on a newer 47.x runtime; this lets a
+    // player recover a broken world instead of staring at a mixin crash screen.
+    public boolean enableCookingTweaks = true;
+
     public float heatTorch = 14.0F;
     public float heatLantern = 20.0F;
     public float heatFurnace = 48.0F;
@@ -181,6 +186,7 @@ public final class ServerSnowSettings {
         this.roomComfortCeilingC = src.roomComfortCeilingC;
         this.enableFoodFreezing = src.enableFoodFreezing;
         this.enableFoodSpoilage = src.enableFoodSpoilage;
+        this.enableCookingTweaks = src.enableCookingTweaks;
 
         this.heatTorch = src.heatTorch;
         this.heatLantern = src.heatLantern;
@@ -319,6 +325,7 @@ public final class ServerSnowSettings {
         tag.putFloat("roomComfortCeilingC", this.roomComfortCeilingC);
         tag.putBoolean("enableFoodFreezing", this.enableFoodFreezing);
         tag.putBoolean("enableFoodSpoilage", this.enableFoodSpoilage);
+        tag.putBoolean("enableCookingTweaks", this.enableCookingTweaks);
         tag.putFloat("globalConductivityMultiplier", this.globalConductivityMultiplier);
         tag.putFloat("globalCapacityMultiplier", this.globalCapacityMultiplier);
 
@@ -414,6 +421,7 @@ public final class ServerSnowSettings {
         if (tag.contains("roomComfortCeilingC")) this.roomComfortCeilingC = tag.getFloat("roomComfortCeilingC");
         if (tag.contains("enableFoodFreezing")) this.enableFoodFreezing = tag.getBoolean("enableFoodFreezing");
         if (tag.contains("enableFoodSpoilage")) this.enableFoodSpoilage = tag.getBoolean("enableFoodSpoilage");
+        if (tag.contains("enableCookingTweaks")) this.enableCookingTweaks = tag.getBoolean("enableCookingTweaks");
         if (tag.contains("globalConductivityMultiplier")) this.globalConductivityMultiplier = tag.getFloat("globalConductivityMultiplier");
         if (tag.contains("globalCapacityMultiplier")) this.globalCapacityMultiplier = tag.getFloat("globalCapacityMultiplier");
 
@@ -542,6 +550,7 @@ public final class ServerSnowSettings {
         // v2.7 appended at the END (protocol 18)
         buf.writeBoolean(this.enableFoodFreezing);
         buf.writeBoolean(this.enableFoodSpoilage);
+        buf.writeBoolean(this.enableCookingTweaks);
     }
 
     public void readFromBuf(FriendlyByteBuf buf) {
@@ -622,6 +631,7 @@ public final class ServerSnowSettings {
         // v2.7 trailing fields
         this.enableFoodFreezing = !buf.isReadable() || buf.readBoolean();
         this.enableFoodSpoilage = !buf.isReadable() || buf.readBoolean();
+        this.enableCookingTweaks = buf.isReadable() ? buf.readBoolean() : true;
         this.clamp();
     }
 }

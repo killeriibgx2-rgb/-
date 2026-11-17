@@ -141,9 +141,11 @@ public final class EternalSnowCommands {
         WeatherEventType ev = EternalSnowState.getActiveWeatherEvent();
         float curPrecip = s.computeCurrentPrecipitationSpeed(ev, EternalSnowState.snowIntensity);
         source.sendSuccess(
-                () -> Component.literal(String.format(Locale.ROOT,
-                                "§b[EternalSnow v2.6.3]§r Активен: %s | Высота: %s | Осадки: %.2fx (%d..%dx) | Лимит блоков/тик: %d | Мир: %+.1f°C | Погода: ",
-                                s.enabled, heightLabel, curPrecip, s.minAccumulationSpeed, s.maxAccumulationSpeed, s.maxBlockUpdatesPerTick, EternalSnowState.worldAmbientTempC))
+                () -> Component.literal(
+                                "§b[EternalSnow v" + com.eternalsnow.EternalSnowMod.modVersion() + "]§r "
+                        ).append(Component.literal(String.format(Locale.ROOT,
+                                "Активен: %s | Высота: %s | Осадки: %.2fx (%d..%dx) | Лимит блоков/тик: %d | Мир: %+.1f°C | Погода: ",
+                                s.enabled, heightLabel, curPrecip, s.minAccumulationSpeed, s.maxAccumulationSpeed, s.maxBlockUpdatesPerTick, EternalSnowState.worldAmbientTempC)))
                         .append(Component.translatable(ev.getTranslationKey())),
                 false
         );
