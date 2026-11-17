@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -30,9 +29,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(AbstractFurnaceBlockEntity.class)
 public abstract class AbstractFurnaceBlockEntityMixin {
 
-    @Shadow
-    private int cookingTotalTime;
-
     /**
      * One portion at a time: food cannot be stacked into the furnace slot. Hopper automation therefore
      * feeds it one item per cycle instead of dumping a whole stack.
@@ -49,29 +45,34 @@ public abstract class AbstractFurnaceBlockEntityMixin {
     }
 
     /**
-     * Folds the thaw into the total cook time at the moment the food is put in.
+     * Folds the thaw into the total cook time at the exact point vanilla asks for it.
      *
-     * <p>Vanilla re-reads {@code cookingTotalTime} from {@code getTotalCookTime()} whenever the input
-     * slot changes, and streams it to the client as {@code ContainerData} slot 3 — so writing it here
-     * is enough for the progress arrow to slow down; no per-tick correction is needed.
+     * <p>{@code setItem} is the only place that assigns {@code cookingTotalTime} when a fresh stack
+     * arrives, and it does so through this private static helper. Redirecting the CALL means the value
+     * is computed from the recipe plus the thaw every time, so it can never accumulate on repeated
+     * clicks (an "add at TAIL" hook would compound, which is why this is a redirect and not an inject).
+     *
+     * <p>Because the furnace streams {@code cookingTotalTime} to the client as {@code ContainerData}
+     * slot 3, the vanilla progress arrow simply advances slower — no custom GUI, no numbers on screen.
      */
-    @Inject(method = "setItem", at = @At("TAIL"))
-    private void eternalsnow$thawAwareCookTime(int slot, ItemStack stack, CallbackInfo ci) {
-        if (slot != 0) {
-            return;
+    @Redirect(method = "setItem",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;getTotalCookTime(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;)I"))
+    private int eternalsnow$thawAwareCookTime(net.minecraft.world.level.Level level,
+                                              AbstractFurnaceBlockEntity furnace) {
+        int vanilla = AbstractFurnaceBlockEntity.getTotalCookTime(level, furnace);
+        ItemStack input = furnace.getItem(0);
+        if (input.isEmpty() || !FoodState.isFrozen(input)) {
+            return vanilla;
         }
-        AbstractFurnaceBlockEntity furnace = (AbstractFurnaceBlockEntity) (Object) this;
-        if (furnace.getLevel() == null || stack.isEmpty() || !FoodState.isFrozen(stack)) {
-            return;
-        }
-        float furnaceC = furnace.getLevel() instanceof ServerLevel serverLevel
+        float furnaceC = level instanceof ServerLevel serverLevel
                 ? com.eternalsnow.thermal.ThermalEngine.getLocalTemperatureC(serverLevel, furnace.getBlockPos())
                 : FoodState.THAWED_AT_C + FoodState.TEMP_STEP;
-        int thaw = FoodState.ticksToThaw(stack, furnaceC);
+        int thaw = FoodState.ticksToThaw(input, furnaceC);
         if (thaw == Integer.MAX_VALUE) {
-            thaw = 20 * 60 * 5; // this oven cannot thaw it: stall instead of cooking it frozen
+            thaw = 20 * 60 * 5; // this oven cannot thaw it: stall rather than cook it frozen
         }
-        this.cookingTotalTime += Math.min(thaw, 20 * 60 * 5);
+        return Math.min(vanilla + thaw, 20 * 60 * 10);
     }
 
     /**

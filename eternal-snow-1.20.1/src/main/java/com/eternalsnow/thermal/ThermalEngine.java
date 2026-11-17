@@ -85,17 +85,27 @@ public final class ThermalEngine {
     private static final int MAX_CACHED_ROOMS = 64;
     private static final int MAX_ROOM_SCANS_PER_TICK = 1;   // hard TPS bound on flood-fills
     /**
-     * v2.7 — the room time constant is now C/U in real units, with NO hard floor and NO 6-minute cap.
+     * v2.7 — the room time constant is C/U with NO hard floor and NO 6-minute cap.
      *
-     * <p>{@code capacitySum} is a volumetric heat capacity in MJ/(m³·K) summed over the exposed wall
-     * faces, {@code conductance} is W/K. C/U is therefore seconds, and one game tick is 0.05 s, so the
-     * only remaining constant is a unit conversion — not a balance knob.
+     * <p>{@code capacitySum} and {@code conductance} are built from the per-material indices in
+     * {@link BlockThermalCategory} (a dimensionless capacity and a dimensionless conductivity), so
+     * their ratio is dimensionless too. Exactly ONE constant is therefore needed to turn it into ticks
+     * — and that constant is the only tuned number left in the room model.
      *
-     * <p>Reference numbers this produces on a 5×5×3 shell: oak planks 1.35 min (thin, light, leaky),
-     * stone brick 3.4 min, stone wrapped in wool 27 min. Nothing is clamped: a wool-lined stone keep
-     * genuinely holds heat for half an hour, and a plank shed genuinely loses it in a minute.
+     * <p>It is calibrated against the numbers below (5×5×3 shell, one block thick):
+     * <pre>
+     *   planks        ratio  5.2  -> 65 s
+     *   stone         ratio  9.9  ->  2.1 min
+     *   logs          ratio 13.7  ->  2.9 min
+     *   stone + wool  ratio 39.5  ->  8.2 min
+     *   logs, 2 thick ratio 54.8  -> 11.4 min
+     * </pre>
+     * Thickness now feeds BOTH sides of the ratio, as it does in reality: a second layer doubles the
+     * wall mass AND halves the leak, so it does not merely double the memory, it quadruples it.
+     * Nothing is clamped, so an insulated stone keep genuinely holds heat for a long time — but it
+     * always relaxes to the street temperature in the end, it just takes longer.
      */
-    private static final float ROOM_TAU_TICKS_PER_SECOND = 20.0F;
+    private static final float ROOM_TAU_SCALE = 250.0F;
 
     /** A room never equilibrates instantly; this only guards the single-step catch-up after unloads. */
     private static final float ROOM_TAU_FLOOR = 1.0F;
@@ -788,16 +798,15 @@ public final class ThermalEngine {
     /**
      * Room time constant C/U in ticks.
      *
-     * <p>{@code capacitySum} accumulates a volumetric heat capacity (MJ/(m³·K)) over the exposed wall
-     * faces and {@code conductance} accumulates W/K over the same faces, so their ratio is seconds;
-     * multiplying by 20 gives ticks. There is no clamp on the upper end on purpose — the owner's point
-     * was that a room must not "hold heat forever", and that is guaranteed by the physics: the room
-     * always relaxes toward the street temperature, the constant only decides how fast.
+     * <p>No upper clamp on purpose: the owner's point was that a room must not "hold heat forever",
+     * and that is already guaranteed by the relaxation itself — {@code T -> ambient} exponentially,
+     * always. The time constant only decides how fast, and it is a consequence of how the house is
+     * built (material, number of layers, number of exterior faces).
      */
     private static float computeTauTicks(float capacitySum, float conductance) {
         float u = Math.max(0.05F, conductance);
         float c = Math.max(0.001F, capacitySum);
-        return Math.max(ROOM_TAU_FLOOR, (c / u) * ROOM_TAU_TICKS_PER_SECOND);
+        return Math.max(ROOM_TAU_FLOOR, (c / u) * ROOM_TAU_SCALE);
     }
 
     private static float conductivityOf(ServerSnowSettings s, BlockThermalCategory cat) {
@@ -918,8 +927,12 @@ public final class ThermalEngine {
                     float kWall = ROOM_WALL_K_BASE + ROOM_WALL_K_COND * cond;
                     resistance += 1.0F / Math.max(0.02F, kWall);
                     room.envelope.add(tmp2.asLong()); // this wall block shares the room baseline
+                    // Every layer adds BOTH resistance (above) and thermal mass (here): a second
+                    // wall layer must not only halve the leak, it must also double what the room
+                    // has to cool down. Charging capacity per face instead of per layer was the
+                    // reason thick walls felt no warmer than thin ones.
+                    room.capacitySum += capacityOf(settings, cat);
                     if (step == 0) {
-                        room.capacitySum += capacityOf(settings, cat);
                         room.boundaryFaces++;
                     }
                 }
