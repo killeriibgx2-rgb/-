@@ -66,6 +66,13 @@ public final class ThermalEngine {
     private static final float ROOM_OPEN_FACE_U = 1.20F;   // open door / window / hole in the roof
     private static final float ROOM_WALL_K_BASE = 0.32F;   // compressed conductivity: k = BASE + COND*cond
     private static final float ROOM_WALL_K_COND = 0.68F;   // wool ~0.354, planks ~0.483, stone ~0.810
+    /**
+     * v2.7 — the only limit on how hot enclosed air can get. It exists so a pathological fire cannot
+     * produce nonsense numbers, NOT as a comfort setting: everything below it is the result of how much
+     * you burnt. Over-firing is punished by the player's own heat-stroke model, and by the fact that a
+     * hot room loses heat faster (delta T is bigger).
+     */
+    private static final float PHYSICAL_AIR_RAIL_C = 120.0F;
     private static final float ROOM_POWER_GAIN = 1.51F;    // heat power -> delta °C per room cell per tick
     private static final float ROOM_LEAK_SCALE = 0.12F;    // U/volume -> per-substep heat loss
     private static final float ROOM_LEAK_MIN = 0.004F;     // always a tiny leak (no eternal thermos)
@@ -77,9 +84,21 @@ public final class ThermalEngine {
     // --- v2.5.4: per-room thermal baseline (real C/U time constant) -------------------------
     private static final int MAX_CACHED_ROOMS = 64;
     private static final int MAX_ROOM_SCANS_PER_TICK = 1;   // hard TPS bound on flood-fills
-    private static final float ROOM_TAU_SCALE = 250.0F;     // ticks per (wallCapacity / envelopeU)
-    private static final float ROOM_TAU_MIN = 600.0F;       // 30 s
-    private static final float ROOM_TAU_MAX = 7200.0F;      // 6 min
+    /**
+     * v2.7 — the room time constant is now C/U in real units, with NO hard floor and NO 6-minute cap.
+     *
+     * <p>{@code capacitySum} is a volumetric heat capacity in MJ/(m³·K) summed over the exposed wall
+     * faces, {@code conductance} is W/K. C/U is therefore seconds, and one game tick is 0.05 s, so the
+     * only remaining constant is a unit conversion — not a balance knob.
+     *
+     * <p>Reference numbers this produces on a 5×5×3 shell: oak planks 1.35 min (thin, light, leaky),
+     * stone brick 3.4 min, stone wrapped in wool 27 min. Nothing is clamped: a wool-lined stone keep
+     * genuinely holds heat for half an hour, and a plank shed genuinely loses it in a minute.
+     */
+    private static final float ROOM_TAU_TICKS_PER_SECOND = 20.0F;
+
+    /** A room never equilibrates instantly; this only guards the single-step catch-up after unloads. */
+    private static final float ROOM_TAU_FLOOR = 1.0F;
     private static final float ROOM_THERMAL_STEP_TICKS = 10.0F;
     // v2.6.6 Thermal convection: warm air is buoyant, so within ONE room the ceiling is warmer
     // than the floor. The tilt is ZERO-MEAN (average temperature is untouched), so no heat is
@@ -124,7 +143,7 @@ public final class ThermalEngine {
         final LongOpenHashSet air = new LongOpenHashSet();
         final LongOpenHashSet envelope = new LongOpenHashSet(); // wall blocks that own the baseline
         float baselineC = Float.NaN;   // absolute temperature of this room's walls/air reference
-        float tauTicks = ROOM_TAU_MIN; // C/U: how slowly the room follows the street
+        float tauTicks = 1200.0F;      // C/U in ticks; recomputed on every geometry scan
         float conductance = 0.0F;   // Σ 1/Σ(1/kWall) over all exterior faces
         float capacitySum = 0.0F;
         int boundaryFaces = 0;
@@ -546,7 +565,10 @@ public final class ThermalEngine {
             ws.settingsStamp = stamp;
         }
         ws.tickCounter++;
-        float roomCapDelta = Math.max(6.0F, settings.roomComfortCeilingC - EternalSnowState.worldAmbientTempC);
+        // v2.7: there is no admin "max room temperature" any more. How warm a room gets is decided by
+        // how much you burn and how much heat the envelope lets out; the only remaining limit is a
+        // physical sanity rail far above any fire you can build indoors (+120 °C air).
+        float roomCapDelta = Math.max(6.0F, PHYSICAL_AIR_RAIL_C - EternalSnowState.worldAmbientTempC);
         if (ws.tickCounter % ROOM_REFRESH_TICKS == 0) {
             refreshRooms(level, ws, settings, scanPos, rayPos);
             ws.failedSeeds.clear();
@@ -596,7 +618,7 @@ public final class ThermalEngine {
                 boolean roomCell = !Float.isNaN(cellBaselineC);
                 float cellBaseC = roomCell ? cellBaselineC : EternalSnowState.worldAmbientTempC;
                 float capHere = roomCell
-                        ? Math.max(0.0F, settings.roomComfortCeilingC - cellBaselineC)
+                        ? Math.max(0.0F, PHYSICAL_AIR_RAIL_C - cellBaselineC)
                         : roomCapDelta;
                 int x = BlockPos.getX(key);
                 int y = BlockPos.getY(key);
@@ -691,7 +713,7 @@ public final class ThermalEngine {
 
                     float updated = (u + netFlow) * (skyHere ? 0.998F : 0.9999F);
                     if (!skyHere && updated > capHere) {
-                        updated = capHere; // absolute comfort ceiling, measured from this cell's baseline
+                        updated = capHere; // physical rail only: over-firing has consequences, not a cap
                     }
                     if (updated >= 0.18F) {
                         nextMap.put(key, updated);
@@ -763,6 +785,21 @@ public final class ThermalEngine {
     // =====================================================================================
 
     /** v2.5.3: one shared multiplier for every material (admin "general thermal" section). */
+    /**
+     * Room time constant C/U in ticks.
+     *
+     * <p>{@code capacitySum} accumulates a volumetric heat capacity (MJ/(m³·K)) over the exposed wall
+     * faces and {@code conductance} accumulates W/K over the same faces, so their ratio is seconds;
+     * multiplying by 20 gives ticks. There is no clamp on the upper end on purpose — the owner's point
+     * was that a room must not "hold heat forever", and that is guaranteed by the physics: the room
+     * always relaxes toward the street temperature, the constant only decides how fast.
+     */
+    private static float computeTauTicks(float capacitySum, float conductance) {
+        float u = Math.max(0.05F, conductance);
+        float c = Math.max(0.001F, capacitySum);
+        return Math.max(ROOM_TAU_FLOOR, (c / u) * ROOM_TAU_TICKS_PER_SECOND);
+    }
+
     private static float conductivityOf(ServerSnowSettings s, BlockThermalCategory cat) {
         return s.blockConductivity[cat.ordinal()] * s.globalConductivityMultiplier;
     }
@@ -911,9 +948,10 @@ public final class ThermalEngine {
         // v2.5.4: tau = C/U. More wall mass or a thicker/better insulated envelope means a
         // LONGER memory; a leaky glass box follows the street almost immediately. Both global
         // multipliers feed this: capacity raises C, conductivity raises U.
-        float envelopeU = Math.max(0.5F, room.conductance);
-        float wallC = Math.max(1.0F, room.capacitySum);
-        room.tauTicks = Mth.clamp((wallC / envelopeU) * ROOM_TAU_SCALE, ROOM_TAU_MIN, ROOM_TAU_MAX);
+        // tau = C/U, in real units. Both numbers are summed by the geometry scan, so the value is a
+        // consequence of the build, not a tuned constant: heavy walls with a poor envelope hold heat,
+        // a single plank layer does not.
+        room.tauTicks = computeTauTicks(room.capacitySum, room.conductance);
 
         // Mark these air cells as OWNED by the lumped room model: the fine-grained solver must not
         // apply a second, independent leak to them (that would double-count the heat loss).
@@ -1120,8 +1158,18 @@ public final class ThermalEngine {
         if (elapsed < 1L) {
             elapsed = 1L;
         }
-        if (elapsed > (long) ROOM_TAU_MAX) {
-            elapsed = (long) ROOM_TAU_MAX;
+        // Catching up after an unload: past three time constants of the SLOWEST cached room, that room
+        // has already equalised with the street and integrating further changes nothing. The cap is
+        // derived from the rooms themselves — there is no "6 minutes" constant any more.
+        float slowestTau = ROOM_TAU_FLOOR;
+        for (RoomData r : ws.roomCache.values()) {
+            if (r.valid && r.tauTicks > slowestTau) {
+                slowestTau = r.tauTicks;
+            }
+        }
+        long catchUpLimit = Math.max(20L * 60L, (long) (3.0F * slowestTau));
+        if (elapsed > catchUpLimit) {
+            elapsed = catchUpLimit;
         }
         float dtThermal = (float) elapsed;
         float ambientC = EternalSnowState.worldAmbientTempC;

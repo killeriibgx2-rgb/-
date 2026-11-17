@@ -8,7 +8,8 @@
     "BiomeMixin",
     "LevelMixin",
     "ServerLevelMixin",
-    "SnowLayerBlockMixin"
+    "SnowLayerBlockMixin",
+    "AbstractFurnaceBlockEntityMixin"
   ],
   "client": [
     "LevelRendererMixin",

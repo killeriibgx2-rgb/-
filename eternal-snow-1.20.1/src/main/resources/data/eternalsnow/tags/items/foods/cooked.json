@@ -1,0 +1,23 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:cooked_beef",
+    "minecraft:cooked_porkchop",
+    "minecraft:cooked_chicken",
+    "minecraft:cooked_mutton",
+    "minecraft:cooked_rabbit",
+    "minecraft:cooked_cod",
+    "minecraft:cooked_salmon",
+    "minecraft:rabbit_stew",
+    "minecraft:mushroom_stew",
+    "minecraft:beetroot_soup",
+    "minecraft:suspicious_stew",
+    { "id": "farmersdelight:beef_stew", "required": false },
+    { "id": "farmersdelight:chicken_soup", "required": false },
+    { "id": "farmersdelight:roast_chicken", "required": false },
+    { "id": "farmersdelight:honey_glazed_ham", "required": false },
+    { "id": "farmersdelight:bacon_and_eggs", "required": false },
+    { "id": "farmersdelight:grilled_salmon", "required": false },
+    { "id": "farmersdelight:steak_and_potatoes", "required": false }
+  ]
+}
