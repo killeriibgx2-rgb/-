@@ -68,6 +68,7 @@ public final class ClientModInit {
             ItemBlockRenderTypes.setRenderLayer(ModRegistry.WALL_THERMOMETER.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModRegistry.COCOA_POT.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModRegistry.ICICLE.get(), RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(ModRegistry.FOOD_SHELF.get(), RenderType.cutout());
         });
     }
 
@@ -79,6 +80,7 @@ public final class ClientModInit {
         event.registerEntityRenderer(ModRegistry.FESTIVE_COPPER_GOLEM.get(), FestiveCopperGolemRenderer::new);
         event.registerBlockEntityRenderer(ModRegistry.COCOA_POT_BE.get(), CocoaPotRenderer::new);
         event.registerBlockEntityRenderer(ModRegistry.FIREPLACE_BE.get(), FireplaceRenderer::new);
+        event.registerBlockEntityRenderer(ModRegistry.FOOD_SHELF_BE.get(), FoodShelfRenderer::new);
     }
 
     private static void onRegisterGuiOverlays(final RegisterGuiOverlaysEvent event) {

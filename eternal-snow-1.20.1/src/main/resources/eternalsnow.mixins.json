@@ -8,7 +8,9 @@
     "BiomeMixin",
     "LevelMixin",
     "ServerLevelMixin",
-    "SnowLayerBlockMixin"
+    "SnowLayerBlockMixin",
+    "AbstractFurnaceBlockEntityMixin",
+    "FurnaceCookTimeInvoker"
   ],
   "client": [
     "LevelRendererMixin",

@@ -53,7 +53,11 @@ public final class ServerSnowSettings {
 
     // v2.5.2: enclosed-room lumped heat model (power in / envelope resistance out)
     public int roomHeatingPowerPercent = 100;          // 0..300: how strongly a fire heats the ROOM (not just nearby voxels)
-    public float roomComfortCeilingC = 26.0F;          // absolute cap of enclosed air temperature
+    public float roomComfortCeilingC = 26.0F;          // LEGACY (2.6.x): kept for old saves, physics ignores it since 2.7
+
+    // v2.7: food freezing + spoilage
+    public boolean enableFoodFreezing = true;
+    public boolean enableFoodSpoilage = true;
 
     public float heatTorch = 14.0F;
     public float heatLantern = 20.0F;
@@ -175,6 +179,8 @@ public final class ServerSnowSettings {
         this.globalHeatingSpeedMultiplier = src.globalHeatingSpeedMultiplier;
         this.roomHeatingPowerPercent = src.roomHeatingPowerPercent;
         this.roomComfortCeilingC = src.roomComfortCeilingC;
+        this.enableFoodFreezing = src.enableFoodFreezing;
+        this.enableFoodSpoilage = src.enableFoodSpoilage;
 
         this.heatTorch = src.heatTorch;
         this.heatLantern = src.heatLantern;
@@ -266,6 +272,8 @@ public final class ServerSnowSettings {
         this.shovelDurability = Mth.clamp(this.shovelDurability, 64, 4096);
         this.golemSwingIntervalTicks = Mth.clamp(this.golemSwingIntervalTicks, 10, 200);
         this.golemMaxRadius = Mth.clamp(this.golemMaxRadius, 4, 48);
+        // v2.7 legacy: the room ceiling no longer caps physics, it is only kept for old saves
+        this.roomComfortCeilingC = Mth.clamp(this.roomComfortCeilingC, -5.0F, 60.0F);
     }
 
     public void saveToTag(CompoundTag tag) {
@@ -309,6 +317,8 @@ public final class ServerSnowSettings {
         tag.putFloat("globalHeatingSpeedMultiplier", this.globalHeatingSpeedMultiplier);
         tag.putInt("roomHeatingPowerPercent", this.roomHeatingPowerPercent);
         tag.putFloat("roomComfortCeilingC", this.roomComfortCeilingC);
+        tag.putBoolean("enableFoodFreezing", this.enableFoodFreezing);
+        tag.putBoolean("enableFoodSpoilage", this.enableFoodSpoilage);
         tag.putFloat("globalConductivityMultiplier", this.globalConductivityMultiplier);
         tag.putFloat("globalCapacityMultiplier", this.globalCapacityMultiplier);
 
@@ -402,6 +412,8 @@ public final class ServerSnowSettings {
         if (tag.contains("globalHeatingSpeedMultiplier")) this.globalHeatingSpeedMultiplier = tag.getFloat("globalHeatingSpeedMultiplier");
         if (tag.contains("roomHeatingPowerPercent")) this.roomHeatingPowerPercent = tag.getInt("roomHeatingPowerPercent");
         if (tag.contains("roomComfortCeilingC")) this.roomComfortCeilingC = tag.getFloat("roomComfortCeilingC");
+        if (tag.contains("enableFoodFreezing")) this.enableFoodFreezing = tag.getBoolean("enableFoodFreezing");
+        if (tag.contains("enableFoodSpoilage")) this.enableFoodSpoilage = tag.getBoolean("enableFoodSpoilage");
         if (tag.contains("globalConductivityMultiplier")) this.globalConductivityMultiplier = tag.getFloat("globalConductivityMultiplier");
         if (tag.contains("globalCapacityMultiplier")) this.globalCapacityMultiplier = tag.getFloat("globalCapacityMultiplier");
 
@@ -527,6 +539,9 @@ public final class ServerSnowSettings {
         buf.writeFloat(this.mobFreezeRateMultiplier);
         buf.writeBoolean(this.enableConvection);
         buf.writeVarInt(this.convectionStrengthPercent);
+        // v2.7 appended at the END (protocol 18)
+        buf.writeBoolean(this.enableFoodFreezing);
+        buf.writeBoolean(this.enableFoodSpoilage);
     }
 
     public void readFromBuf(FriendlyByteBuf buf) {
@@ -604,6 +619,9 @@ public final class ServerSnowSettings {
         this.mobFreezeRateMultiplier = buf.isReadable() ? buf.readFloat() : 0.20F;
         this.enableConvection = !buf.isReadable() || buf.readBoolean();
         this.convectionStrengthPercent = buf.isReadable() ? buf.readVarInt() : 100;
+        // v2.7 trailing fields
+        this.enableFoodFreezing = !buf.isReadable() || buf.readBoolean();
+        this.enableFoodSpoilage = !buf.isReadable() || buf.readBoolean();
         this.clamp();
     }
 }

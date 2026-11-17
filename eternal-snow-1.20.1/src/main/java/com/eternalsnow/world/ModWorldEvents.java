@@ -142,6 +142,15 @@ public final class ModWorldEvents {
 
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         ItemStack held = event.getItemStack();
+
+        // v2.7: left click on a food shelf takes the item off the hook you are aiming at. Vanilla
+        // routes BOTH mouse buttons through Block.use(), so the "take" half lives here.
+        if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player
+                && event.getLevel().getBlockState(event.getPos()).getBlock() instanceof com.eternalsnow.block.FoodShelfBlock) {
+            takeFromShelf(player, event);
+            return;
+        }
+
         if (held.getItem() instanceof SnowShovelItem) {
             BlockState state = event.getLevel().getBlockState(event.getPos());
             if (!SnowShovelItem.isSnowTarget(state)) {
@@ -155,6 +164,17 @@ public final class ModWorldEvents {
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
         BlockState clickedState = level.getBlockState(pos);
+
+        // v2.7: frozen food cannot be eaten — the "use item" path must never start on a frozen stack.
+        // This is checked before anything else so no interaction can sneak around it.
+        if (event.getEntity() instanceof ServerPlayer eater
+                && !held.isEmpty()
+                && com.eternalsnow.food.FoodState.isFrozen(held)
+                && com.eternalsnow.food.FoodProfiles.profileOf(held) >= 0) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.CONSUME);
+            return;
+        }
 
         // 1. Stick Golem Anchor Selection (takes priority if player actively clicked a Festive Copper Golem first!)
         if (held.is(Items.STICK)
@@ -211,6 +231,40 @@ public final class ModWorldEvents {
     /**
      * Б-2: Crops pause growth in sub-zero cold (< 1.5°C) and grow indoors where room temp >= +2°C!
      */
+    /** Pops one hook's contents into the player's hand (or drops it, when the hand is full). */
+    private static void takeFromShelf(net.minecraft.server.level.ServerPlayer player,
+                                      PlayerInteractEvent.LeftClickBlock event) {
+        if (!(event.getLevel().getBlockEntity(event.getPos()) instanceof com.eternalsnow.block.FoodShelfBlockEntity shelf)) {
+            return;
+        }
+        // Project the player's real look ray onto the shelf so the hook we take is the hook they
+        // aimed at, not "whatever was nearest the block centre".
+        net.minecraft.world.level.block.state.BlockState shelfState = event.getLevel().getBlockState(event.getPos());
+        net.minecraft.world.phys.Vec3 eye = player.getEyePosition(1.0F);
+        net.minecraft.world.phys.Vec3 look = player.getViewVector(1.0F).scale(5.0D);
+        net.minecraft.world.phys.Vec3 hitPoint = shelfState.getShape(event.getLevel(), event.getPos())
+                .bounds()
+                .move(event.getPos())
+                .clip(eye, eye.add(look))
+                .orElse(event.getPos().getCenter());
+        net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(
+                hitPoint, event.getFace() == null ? net.minecraft.core.Direction.UP : event.getFace(),
+                event.getPos(), false);
+        int hook = com.eternalsnow.food.FoodShelfManager.hookFromHit(
+                event.getLevel().getBlockState(event.getPos()), event.getPos(), hit);
+        ItemStack hanging = shelf.getHook(hook);
+        if (hanging.isEmpty()) {
+            return;
+        }
+        shelf.setHook(hook, ItemStack.EMPTY);
+        if (!player.getInventory().add(hanging)) {
+            player.drop(hanging, false);
+        }
+        event.getLevel().playSound(null, event.getPos(),
+                net.minecraft.sounds.SoundEvents.ITEM_FRAME_REMOVE_ITEM,
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.0F);
+    }
+
     public static void onCropGrowPre(BlockEvent.CropGrowEvent.Pre event) {
         if (!(event.getLevel() instanceof ServerLevel serverLevel)) {
             return;

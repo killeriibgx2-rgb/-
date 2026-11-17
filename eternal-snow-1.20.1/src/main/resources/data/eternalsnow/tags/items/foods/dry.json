@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:bread",
+    "minecraft:cookie",
+    "minecraft:pumpkin_pie",
+    "minecraft:cake",
+    "minecraft:golden_apple",
+    "minecraft:enchanted_golden_apple",
+    "eternalsnow:candy_yellow",
+    "eternalsnow:candy_red",
+    "eternalsnow:candy_green",
+    "eternalsnow:candy_blue",
+    "eternalsnow:candy_purple",
+    "eternalsnow:candy_rainbow"
+  ]
+}

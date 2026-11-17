@@ -8,6 +8,8 @@ import com.eternalsnow.block.FireplaceBlock;
 import com.eternalsnow.block.FireplaceBlockEntity;
 import com.eternalsnow.block.FireplacePartBlock;
 import com.eternalsnow.block.HeatAccumulatorBlock;
+import com.eternalsnow.block.FoodShelfBlock;
+import com.eternalsnow.block.FoodShelfBlockEntity;
 import com.eternalsnow.block.HeatAccumulatorBlockEntity;
 import com.eternalsnow.block.IcicleBlock;
 import com.eternalsnow.block.ThermalShutterBlock;
@@ -161,10 +163,25 @@ public final class ModRegistry {
                     .pushReaction(PushReaction.DESTROY))
     );
 
+    public static final RegistryObject<Block> FOOD_SHELF = BLOCKS.register(
+            "food_shelf",
+            () -> new FoodShelfBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(0.8F)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion()
+                    .noCollission()
+                    .pushReaction(PushReaction.DESTROY))
+    );
+
     // Block Entities
     public static final RegistryObject<BlockEntityType<CocoaPotBlockEntity>> COCOA_POT_BE = BLOCK_ENTITIES.register(
             "cocoa_pot",
             () -> BlockEntityType.Builder.of(CocoaPotBlockEntity::new, COCOA_POT.get()).build(null)
+    );
+    public static final RegistryObject<BlockEntityType<FoodShelfBlockEntity>> FOOD_SHELF_BE = BLOCK_ENTITIES.register(
+            "food_shelf",
+            () -> BlockEntityType.Builder.of(FoodShelfBlockEntity::new, FOOD_SHELF.get()).build(null)
     );
     public static final RegistryObject<BlockEntityType<WallThermometerBlockEntity>> WALL_THERMOMETER_BE = BLOCK_ENTITIES.register(
             "wall_thermometer",
@@ -300,6 +317,10 @@ public final class ModRegistry {
             "wall_thermometer",
             () -> new BlockItem(WALL_THERMOMETER.get(), new Item.Properties())
     );
+    public static final RegistryObject<Item> FOOD_SHELF_ITEM = ITEMS.register(
+            "food_shelf",
+            () -> new BlockItem(FOOD_SHELF.get(), new Item.Properties())
+    );
     public static final RegistryObject<Item> COCOA_POT_ITEM = ITEMS.register(
             "cocoa_pot",
             () -> new BlockItem(COCOA_POT.get(), new Item.Properties())
@@ -391,6 +412,7 @@ public final class ModRegistry {
                         output.accept(THERMOMETER.get());
                         output.accept(LOCAL_THERMOMETER.get());
                         output.accept(WALL_THERMOMETER_ITEM.get());
+                        output.accept(FOOD_SHELF_ITEM.get());
                         output.accept(HEAT_SCANNER.get());
                         output.accept(THERMAL_SHUTTER_ITEM.get());
                         output.accept(HEAT_ACCUMULATOR_ITEM.get());

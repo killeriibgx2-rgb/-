@@ -23,6 +23,26 @@ public final class ItemTooltipHandler {
         }
         List<Component> tooltip = event.getToolTip();
 
+        // 0. v2.7 food state goes FIRST — it is the most consequential line on a steak: the owner
+        //    explicitly asked for state only, no advice like "warm it up by the fire".
+        if (com.eternalsnow.food.FoodState.hasState(stack)) {
+            if (com.eternalsnow.food.FoodState.isRotten(stack)) {
+                tooltip.add(Component.translatable("eternalsnow.tooltip.food.rotten").withStyle(ChatFormatting.DARK_GREEN));
+            } else {
+                int spoil = com.eternalsnow.food.FoodState.spoil(stack);
+                if (spoil == 3) {
+                    tooltip.add(Component.translatable("eternalsnow.tooltip.food.rotten_pending").withStyle(ChatFormatting.DARK_GREEN));
+                } else if (spoil == 2) {
+                    tooltip.add(Component.translatable("eternalsnow.tooltip.food.spoiled").withStyle(ChatFormatting.YELLOW));
+                } else if (spoil == 1) {
+                    tooltip.add(Component.translatable("eternalsnow.tooltip.food.stale").withStyle(ChatFormatting.GRAY));
+                }
+                if (com.eternalsnow.food.FoodState.isFrozen(stack)) {
+                    tooltip.add(Component.translatable("eternalsnow.tooltip.food.frozen").withStyle(ChatFormatting.AQUA));
+                }
+            }
+        }
+
         // 1. Armor Cold-Protection & 3-Tier Leather Insulation Tooltips
         if (ArmorInsulationHelper.isArmor(stack)) {
             int tier = ArmorInsulationHelper.getInsulationTier(stack);

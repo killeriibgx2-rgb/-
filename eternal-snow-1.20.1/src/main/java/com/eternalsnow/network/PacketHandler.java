@@ -14,7 +14,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class PacketHandler {
-    private static final String PROTOCOL_VERSION = "17"; // v2.6.6: mob freezing + convection settings appended to the sync packet
+    private static final String PROTOCOL_VERSION = "18"; // v2.7: food freezing + spoilage toggles appended to the settings packet
     private static boolean registered = false;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

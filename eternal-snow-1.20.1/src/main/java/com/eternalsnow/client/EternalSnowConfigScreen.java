@@ -615,13 +615,6 @@ public final class EternalSnowConfigScreen extends Screen {
         ), y);
         y += 23;
 
-        addScrolled(makeDoubleSlider(
-                leftX, fullW, "eternalsnow.gui.therm.room_ceiling", "°C",
-                -5.0D, 60.0D, this.workingServer.roomComfortCeilingC, 1.0D, 0,
-                v -> this.workingServer.roomComfortCeilingC = v.floatValue()
-        ), y);
-        y += 23;
-
         // v2.5.3: own section for the two GLOBAL material multipliers.
         addScrolled(new EternalSnowWidgets.SectionHeader(
                 leftX, 0, fullW, Component.translatable("eternalsnow.gui.sec.therm_global_mult")), y);
@@ -835,6 +828,22 @@ public final class EternalSnowConfigScreen extends Screen {
                 this.workingServer.enableMobFreezing,
                 v -> this.workingServer.enableMobFreezing = v
         ), y);
+
+        // v2.7: food systems, switchable separately — some players want freezing without rot
+        addScrolled(new EternalSnowWidgets.ToggleSwitch(
+                leftX, 0, fullW, 20,
+                Component.translatable("eternalsnow.gui.surv.food_freezing"),
+                this.workingServer.enableFoodFreezing,
+                v -> this.workingServer.enableFoodFreezing = v
+        ), y);
+        y += 24;
+        addScrolled(new EternalSnowWidgets.ToggleSwitch(
+                leftX, 0, fullW, 20,
+                Component.translatable("eternalsnow.gui.surv.food_spoilage"),
+                this.workingServer.enableFoodSpoilage,
+                v -> this.workingServer.enableFoodSpoilage = v
+        ), y);
+        y += 24;
         y += 24;
         addScrolled(makeDoubleSlider(
                 leftX, halfW, "eternalsnow.gui.surv.mobs_freeze_rate", "x",

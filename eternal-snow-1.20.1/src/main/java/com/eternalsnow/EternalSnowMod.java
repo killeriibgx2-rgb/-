@@ -4,6 +4,7 @@ import com.eternalsnow.client.ClientModInit;
 import com.eternalsnow.command.EternalSnowCommands;
 import com.eternalsnow.entity.FestiveCopperGolemEntity;
 import com.eternalsnow.entity.StickSelectionTracker;
+import com.eternalsnow.food.FoodAgingManager;
 import com.eternalsnow.network.ClientboundSyncSettingsPacket;
 import com.eternalsnow.network.ClientboundWeatherSyncPacket;
 import com.eternalsnow.network.PacketHandler;
@@ -19,9 +20,12 @@ import com.eternalsnow.world.EternalSnowSavedData;
 import com.eternalsnow.world.ModWorldEvents;
 import com.eternalsnow.world.SnowAccumulationManager;
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -61,6 +65,8 @@ public class EternalSnowMod {
         MinecraftForge.EVENT_BUS.addListener(this::onRegisterCommands);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
+        MinecraftForge.EVENT_BUS.addListener(this::onContainerOpen);
+        MinecraftForge.EVENT_BUS.addListener(this::onContainerClose);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerChangedDimension);
@@ -110,6 +116,38 @@ public class EternalSnowMod {
         ThermalEngine.clearAll();
         WeatherEventManager.resetClimate();
         StickSelectionTracker.clearAll();
+        FoodAgingManager.clearSession();
+    }
+
+    /**
+     * Registers the container for the ageing pass while it is open.
+     *
+     * <p>{@code AbstractContainerMenu} does not expose its position, so the block is taken from the
+     * one the player just interacted with; a container opened some other way is not tracked, which is
+     * safe — {@code FoodState.scan} integrates the whole elapsed interval on the next visit anyway.
+     */
+    private void onContainerOpen(final net.minecraftforge.event.entity.player.PlayerContainerEvent.Open event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        BlockPos pos = player.blockPosition();
+        for (Direction dir : Direction.values()) {
+            BlockPos candidate = pos.relative(dir);
+            if (player.level().getBlockEntity(candidate) instanceof Container) {
+                FoodAgingManager.onContainerOpened(candidate.immutable());
+                return;
+            }
+        }
+    }
+
+    private void onContainerClose(final net.minecraftforge.event.entity.player.PlayerContainerEvent.Close event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        BlockPos pos = player.blockPosition();
+        for (Direction dir : Direction.values()) {
+            FoodAgingManager.onContainerClosed(pos.relative(dir));
+        }
     }
 
     private void onPlayerLoggedOut(final PlayerEvent.PlayerLoggedOutEvent event) {
@@ -175,6 +213,7 @@ public class EternalSnowMod {
             ThermalEngine.tickLevelThermal(serverLevel);
             SnowAccumulationManager.tickLevelSnow(serverLevel);
             CampfireFuelManager.tickCampfires(serverLevel);
+            FoodAgingManager.tickLevel(serverLevel);
         }
     }
 
