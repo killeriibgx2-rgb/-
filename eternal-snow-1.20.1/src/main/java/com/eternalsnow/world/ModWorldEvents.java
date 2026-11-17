@@ -294,6 +294,37 @@ public final class ModWorldEvents {
         }
     }
 
+    /**
+     * v2.7.2 — frozen food cannot be eaten, for real this time.
+     *
+     * <p>The 2.7.0 gate sat on {@code RightClickBlock}, which only fires when the player right-clicks
+     * a block. Eating in front of you, in the open air, never reaches that handler: the client just
+     * sends {@code ServerboundUseItemPacket} and the item is consumed. So the whole "frozen food is
+     * inedible" rule could be bypassed by looking at the sky — the one thing players do with food.
+     *
+     * <p>{@code LivingEntityUseItemEvent.Start} is raised from {@code LivingEntity.startUsingItem},
+     * which is on the path for both hands and both sides, and Forge honours the cancellation by not
+     * beginning the use at all. That is the only hook early enough: {@code Finish} fires <em>after</em>
+     * {@code finishUsingItem}, i.e. after the hunger has been restored, so cancelling it would only
+     * block our own bookkeeping.
+     *
+     * <p>The block path keeps its own early return, so right-clicking a chest with frozen meat does
+     * not even start the eating animation.
+     */
+    public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
+        if (!(event.getEntity() instanceof ServerPlayer)) {
+            return;
+        }
+        ItemStack using = event.getItem();
+        if (using.isEmpty() || !com.eternalsnow.food.FoodState.isFrozen(using)) {
+            return;
+        }
+        if (com.eternalsnow.food.FoodProfiles.profileOf(using) < 0) {
+            return;
+        }
+        event.setCanceled(true);
+    }
+
     public static void onItemUseFinish(LivingEntityUseItemEvent.Finish event) {
         if (event.getEntity() instanceof ServerPlayer sp) {
             PlayerSurvivalManager.onItemConsumed(sp, event.getItem());
