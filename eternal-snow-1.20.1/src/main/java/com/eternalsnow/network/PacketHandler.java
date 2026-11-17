@@ -14,7 +14,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class PacketHandler {
-    private static final String PROTOCOL_VERSION = "15"; // v2.6.4: thermal imager reverted to 2 modes
+    private static final String PROTOCOL_VERSION = "16"; // v2.6.5: snow rate in blocks/sec + real recipe advancements
     private static boolean registered = false;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

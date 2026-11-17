@@ -278,3 +278,13 @@
 **Новый блок** `wooden_bench` (лавочка, крафт 5 досок): `WoodenBenchBlock` с `FACING`/`HALF`, модель из 5 элементов. Сидение — **чисто клиентское** (`BenchSittingHandler` + `ClientSnowConfig.benchSitting`): ПКМ с Shift сажает, Shift/шаг в сторону встаёт. Сервер о посадке не знает, застрять нельзя, в мультиплеере безопасно.
 
 `PROTOCOL_VERSION = "15"`, `mod_version = 2.6.4`.
+
+---
+
+## 14. Что изменено в `v2.6.5` (реальная книга рецептов, снег бл/сек, лавочка удалена)
+
+1. **Книга рецептов теперь действительно работает.** У мода **не было ни одного файла advancement**, поэтому `RecipeUnlockHelper` (v2.6.2) перебирал пустой список и ничего не выдавал. Создано `data/eternalsnow/advancements/recipes/root.json` (триггер `minecraft:tick`) + по одному файлу на каждый рецепт: `parent = eternalsnow:recipes/root`, критерий `minecraft:recipe_unlocked` с `conditions.recipe = eternalsnow:<id>`, `rewards.recipes = [eternalsnow:<id>]`. Файлов 25 (root + 24 рецепта). В `/advancement grant @s only eternalsnow:recipes/cocoa_pot` теперь тоже есть что выдавать.
+2. **Скорость снега в блоках в секунду.** `maxBlockUpdatesPerTick` остался тем же полем (для совместимости с сейвами/NBT/буфером), но теперь трактуется как **блоков в секунду (пик)**: `SnowAccumulationManager.resetTickBudget()` переводит его в бюджет на тик `round(perSecond/20 * (0.25 + 1.25 * precip/maxAccum))`, т.е. при лёгком снеге сыплет спокойно, в метель — плотно. Клэмп `10..1200`. Новый ползунок «Скорость выпадения снега» (`eternalsnow.gui.admin.snow_rate`, шаг 10) добавлен рядом со скоростями осадков; юнит `eternalsnow.gui.unit.blocks_per_sec` локализуется (в `makeIntSlider` суффикс с точкой трактуется как ключ перевода).
+3. **Лавочка удалена** (блок, предмет, модель, текстура, рецепт, лут, `BenchSittingHandler`, опция `benchSitting` в клиентском конфиге, ключи локализации).
+
+`PROTOCOL_VERSION = "16"`, `mod_version = 2.6.5`.

@@ -24,6 +24,7 @@ public final class ServerSnowSettings {
     public int minAccumulationSpeed = 2;   // Precipitation speed in Light Snow (0..100)
     public int maxAccumulationSpeed = 18;  // Precipitation speed in Blizzard (0..150)
     public int accumulationSpeed = 6;      // Legacy fallback for older saves
+    /** v2.6.5: peak snow blocks placed per SECOND (GUI slider 10..1200). */
     public int maxBlockUpdatesPerTick = 140;
     public boolean smoothDrifts = true;
     public boolean autoThawExcess = true;
@@ -206,7 +207,7 @@ public final class ServerSnowSettings {
             this.maxAccumulationSpeed = this.minAccumulationSpeed;
         }
         this.accumulationSpeed = Mth.clamp(this.accumulationSpeed, 1, 100);
-        this.maxBlockUpdatesPerTick = Mth.clamp(this.maxBlockUpdatesPerTick, 10, 2000);
+        this.maxBlockUpdatesPerTick = Mth.clamp(this.maxBlockUpdatesPerTick, 10, 1200);
         this.trampleChancePercent = Mth.clamp(this.trampleChancePercent, 0, 100);
         this.leavesMode = Mth.clamp(this.leavesMode, 0, 2);
 

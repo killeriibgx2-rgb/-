@@ -44,10 +44,19 @@ public final class SnowAccumulationManager {
 
     public static void resetTickBudget() {
         ServerSnowSettings settings = EternalSnowState.getServerSettings();
+        if (!settings.enabled) {
+            remainingBudgetThisTick = 0;
+            return;
+        }
         WeatherEventType ev = EternalSnowState.getActiveWeatherEvent();
         float precip = settings.computeCurrentPrecipitationSpeed(ev, EternalSnowState.snowIntensity);
-        // Е: Smart automatic per-tick block update budget scaled dynamically from live precipitation!
-        remainingBudgetThisTick = Mth.clamp(Math.round(36.0F + precip * 10.5F), 28, 600);
+        // v2.6.5: the slider is "snow blocks per SECOND (peak)". Convert to a per-tick budget and
+        // scale it with live precipitation, so light snow is calm and a blizzard is dense.
+        int perSecond = Math.max(10, settings.maxBlockUpdatesPerTick);
+        float intensityScale = 0.25F + 1.25F * Mth.clamp(
+                precip / Math.max(1.0F, settings.maxAccumulationSpeed), 0.0F, 1.0F);
+        int perTick = Math.round((perSecond / 20.0F) * intensityScale);
+        remainingBudgetThisTick = Mth.clamp(perTick, 1, perSecond);
     }
 
     /**
