@@ -1,5 +1,5 @@
-24:/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/mixin/VillagerProfessionMixin.java:27: warning: Mixin target net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer is public and should be specified in value
-31:/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/mixin/AbstractFurnaceBlockEntityMixin.java:58: error: cannot find symbol
+31:/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/mixin/AbstractFurnaceBlockEntityMixin.java:64: error: getTotalCookTime(Level,AbstractFurnaceBlockEntity) has private access in AbstractFurnaceBlockEntity
+
 Welcome to Gradle 8.8!
 
 Here are the highlights of this release:
@@ -22,23 +22,19 @@ MixinGradle did not locate the diffplug APT plugin, skipping eclipse task config
 > Task :compileJava
 Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
 Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
-/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/mixin/VillagerProfessionMixin.java:27: warning: Mixin target net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer is public and should be specified in value
-@Mixin(targets = "net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer")
-^
 Note: Loading searge mappings from /home/runner/work/-/-/eternal-snow-1.20.1/build/createMcpToSrg/output.tsrg
 Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
 Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
 Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
-/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/mixin/AbstractFurnaceBlockEntityMixin.java:58: error: cannot find symbol
-    @Redirect(method = "setItem",
-     ^
-  symbol:   class Redirect
-  location: class AbstractFurnaceBlockEntityMixin
 Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
 Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
 Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
+/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/mixin/AbstractFurnaceBlockEntityMixin.java:64: error: getTotalCookTime(Level,AbstractFurnaceBlockEntity) has private access in AbstractFurnaceBlockEntity
+        int vanilla = AbstractFurnaceBlockEntity.getTotalCookTime(level, furnace);
+                                                ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
 1 error
-1 warning
 
 > Task :compileJava FAILED
 
@@ -58,5 +54,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 29s
+BUILD FAILED in 22s
 4 actionable tasks: 4 executed
