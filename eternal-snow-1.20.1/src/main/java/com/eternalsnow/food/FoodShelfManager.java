@@ -100,9 +100,18 @@ public final class FoodShelfManager {
                         continue;
                     }
                     for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
-                        if (blockEntity instanceof FoodShelfBlockEntity shelf
-                                && seen.add(shelf.getBlockPos())) {
+                        if (!seen.add(blockEntity.getBlockPos())) {
+                            continue;
+                        }
+                        if (blockEntity instanceof FoodShelfBlockEntity shelf) {
                             ageShelf(level, shelf, now);
+                        } else if (blockEntity instanceof net.minecraft.world.level.block.entity.ChestBlockEntity
+                                || blockEntity instanceof net.minecraft.world.level.block.entity.BarrelBlockEntity
+                                || blockEntity instanceof net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity) {
+                            // Includes BOTH halves of a double chest, even while closed. Do not
+                            // apply room temperature to active furnaces or third-party machines.
+                            FoodAgingManager.scanContainer((net.minecraft.world.Container) blockEntity,
+                                    ThermalEngine.getLocalTemperatureC(level, blockEntity.getBlockPos()), now);
                         }
                     }
                 }

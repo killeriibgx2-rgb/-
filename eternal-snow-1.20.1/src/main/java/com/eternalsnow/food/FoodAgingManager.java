@@ -2,52 +2,28 @@ package com.eternalsnow.food;
 
 import com.eternalsnow.config.ServerSnowSettings;
 import com.eternalsnow.state.EternalSnowState;
-import com.eternalsnow.thermal.ThermalEngine;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * v2.7 — the "aging pass": walks the containers that are actually worth walking.
- *
- * <p>No per-item ticker. Every {@link #SCAN_INTERVAL} ticks the server visits
- * <ul>
- *   <li>every online player's inventory (which already covers armor + offhand) and ender chest,
- *       with the environment set to body temperature,</li>
- *   <li>every open container, with the environment taken from the block's own temperature,</li>
- *   <li>food shelves within reach of a player.</li>
- * </ul>
- * An unloaded chest costs nothing: it is caught up analytically on the next visit, because
- * {@link FoodState#scan} integrates the elapsed time in one closed-form step.
+ * Runs every 200 ticks: player inventories at body temperature, plus shelves and
+ * storage block entities in loaded chunks near players at their local temperature.
+ * Closed chests, barrels and shulker boxes do not require a GUI to age.
+ * Unloaded chunks are never force-loaded; existing timestamps catch up on the next scan.
  */
 public final class FoodAgingManager {
 
     /** 10 seconds. Cheap enough to run per level, fast enough that a thaw is never a surprise. */
     public static final int SCAN_INTERVAL = 200;
 
-    private static final List<BlockPos> OPEN_CONTAINERS = new ArrayList<>();
-
-    private FoodAgingManager() {
-    }
-
-    public static void onContainerOpened(BlockPos pos) {
-        if (!OPEN_CONTAINERS.contains(pos)) {
-            OPEN_CONTAINERS.add(pos);
-        }
-    }
-
-    public static void onContainerClosed(BlockPos pos) {
-        OPEN_CONTAINERS.remove(pos);
-    }
+    private FoodAgingManager() {}
 
     public static void clearSession() {
-        OPEN_CONTAINERS.clear();
+        // No global positions: scanning is level-local and uses only loaded chunks.
     }
 
     /** Called from the server tick on every level; does its own 200-tick gating. */
@@ -72,15 +48,6 @@ public final class FoodAgingManager {
             scanContainer(player.getEnderChestInventory(), FoodState.BODY_C, now);
         }
 
-        for (int i = OPEN_CONTAINERS.size() - 1; i >= 0; i--) {
-            BlockPos pos = OPEN_CONTAINERS.get(i);
-            if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof Container container)) {
-                OPEN_CONTAINERS.remove(i);
-                continue;
-            }
-            scanContainer(container, ThermalEngine.getLocalTemperatureC(level, pos), now);
-        }
-
         FoodShelfManager.scanShelvesNearPlayers(level, now);
     }
 
@@ -102,6 +69,9 @@ public final class FoodAgingManager {
                 container.setItem(slot, result);
                 changed = true;
             }
+        }
+        if (changed) {
+            container.setChanged();
         }
         return changed;
     }
