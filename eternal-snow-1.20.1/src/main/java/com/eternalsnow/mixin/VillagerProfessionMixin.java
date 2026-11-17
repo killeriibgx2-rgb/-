@@ -1,10 +1,8 @@
 package com.eternalsnow.mixin;
 
-import com.eternalsnow.EternalSnowMod;
+import com.eternalsnow.client.VillagerWardrobe;
 import com.eternalsnow.state.EternalSnowState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,11 +22,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  *   ... one palette per job, all with a stitched hem.
  *
  * Client-side, texture swap only: no model rebuild, no extra render layer, no per-tick cost.
+ * The lookup and its cache live in {@link VillagerWardrobe} — a mixin must not own static state.
  */
 @Mixin(targets = "net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer")
 public abstract class VillagerProfessionMixin {
-
-    private static final String WARDROBE_ROOT = "textures/entity/villager/profession/";
 
     // require = 0: if a future MC/Forge version renames this private helper, villagers simply keep
     // their vanilla clothes instead of crashing the client.
@@ -41,15 +38,9 @@ public abstract class VillagerProfessionMixin {
         if (!EternalSnowState.getEffectiveSettings().enabled) {
             return;
         }
-        ResourceLocation custom = new ResourceLocation(
-                EternalSnowMod.MODID, WARDROBE_ROOT + id.getPath() + ".png");
-        if (custom.equals(id)) {
-            return;
+        ResourceLocation custom = VillagerWardrobe.resolve(id);
+        if (custom != null) {
+            cir.setReturnValue(custom);
         }
-        ResourceManager rm = Minecraft.getInstance().getResourceManager();
-        if (rm == null || rm.getResource(custom).isEmpty()) {
-            return; // modded / unknown profession -> keep vanilla clothes
-        }
-        cir.setReturnValue(custom);
     }
 }

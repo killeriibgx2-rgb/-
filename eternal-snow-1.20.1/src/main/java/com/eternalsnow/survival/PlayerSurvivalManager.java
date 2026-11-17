@@ -153,8 +153,17 @@ public final class PlayerSurvivalManager {
 
         ServerSnowSettings settings = EternalSnowState.getServerSettings();
         BlockPos samplePos = player.blockPosition().above();
-        float localAirTempC = ThermalEngine.getLocalTemperatureC(level, samplePos);
-        float deltaHeat = ThermalEngine.getDeltaHeatAt(level, samplePos);
+
+        // The whole thermal model only advances every 10 ticks, and a temperature sample is not
+        // free (heightmap lookups + two workspace map reads). Sampling it every single tick for
+        // every player was pure waste — and it showed up as GC pressure on big servers.
+        boolean thermalTick = player.tickCount % 10 == 0;
+        float localAirTempC = 0.0F;
+        float deltaHeat = 0.0F;
+        if (thermalTick) {
+            localAirTempC = ThermalEngine.getLocalTemperatureC(level, samplePos);
+            deltaHeat = ThermalEngine.getDeltaHeatAt(level, samplePos);
+        }
 
         CompoundTag tag = getOrCreateTag(player);
         float bodyState = tag.getFloat(TAG_BODY_TEMP);
@@ -165,7 +174,7 @@ public final class PlayerSurvivalManager {
         boolean creativeOrSpec = player.isCreative() || player.isSpectator();
 
         // 1. Player Temperature, Wetness (А-1), Windchill (А-3) & Cozy Hearth Simulation (every 10 ticks)
-        if (player.tickCount % 10 == 0) {
+        if (thermalTick) {
             if (!player.isInPowderSnow && player.getTicksFrozen() > 0) {
                 player.setTicksFrozen(0);
             }
@@ -300,7 +309,7 @@ public final class PlayerSurvivalManager {
         }
 
         // 2. Player Thirst Simulation
-        if (player.tickCount % 10 == 0) {
+        if (thermalTick) {
             if (!settings.enabled || !settings.enableThirst || creativeOrSpec) {
                 thirst = 20;
                 thirstSat = 5.0F;
@@ -343,7 +352,7 @@ public final class PlayerSurvivalManager {
         }
 
         // 3. Sync survival + live looked-at Campfire telemetry to client every 10 ticks
-        if (player.tickCount % 10 == 0) {
+        if (thermalTick) {
             long lookedCampPos = Long.MIN_VALUE;
             int lookedCampTicks = 0;
             boolean lookedCampWind = false;

@@ -336,3 +336,18 @@
 - `copper_thermos.png` — исходный медный термос (было перерисовано).
 
 Все три восстановлены из `release/eternalsnow-1.20.1-forge-2.6.3.jar`, `.mcmeta` (frametime 5) на месте. **Правило на будущее: текстуры предметов, нарисованные автором, не перерисовывать — только добавлять новые файлы.**
+
+## Правка 2.6.6c — аудит-проход (исправления по результатам ревью)
+
+Аудит без правок архитектуры; ниже — то, что реально чинилось в коде (все пункты верифицированы по декомпилю 1.20.1 / исходникам Forge).
+
+1. **`EternalSnowMod.onLivingHurt`** — раньше отменялся весь тег `DamageTypeTags.IS_FIRE`. В снегопаде моб в лаве/под огненным шаром не получал урона. Теперь гасятся только `DamageTypes.IN_FIRE` и `DamageTypes.ON_FIRE` (это именно «горит»), а `LAVA` / `HOT_FLOOR` / `FIREBALL` / `UNATTRIBUTED_FIREBALL` бьют как в ванилле. Ранний `return`, если гасить нечего — на порядок меньше работы в горячем пути события.
+2. **`MobSurvivalManager.isSnowedOn` / `tickMob`** — добавлен гейт `EternalSnowState.isOverworldLike(level)`. Без него понижение температуры в Аду начинало морозить блейзов и тушило их огонь.
+3. **`ThermalEngine`** — `chunkEmitters` (индекс источников тепла по чанкам) раньше не чистился никогда: утечка на весь период исследования мира. Добавлен `forgetChunk(ServerLevel, ChunkPos)` + подписка `ChunkEvent.Unload` в `ModWorldEvents.onChunkUnload`.
+4. **`PlayerSurvivalManager.tickPlayer`** — тепловая проба (`getLocalTemperatureC` + `getDeltaHeatAt`, внутри `Heightmap` и два чтения из карт 2048) считалась **каждый** тик, а потребляется только внутри ветки `% 10`. Вынесена за флаг `thermalTick`; все четыре `player.tickCount % 10 == 0` заменены на него.
+5. **`HeatVisionRenderer`** — отсев устаревшего снимка сетки: если последний пакет старше 1.5 с, сетка не рисуется. Раньше картинка «зависала» после переключения сканера.
+6. **`StickSelectionTracker`** — чистка при выходе игрока (`PlayerLoggedOutEvent`) и остановке сервера; устранён дубликат `clearSelection`/`clearPlayer` (делали одно и то же).
+7. **`VillagerWardrobe` + `VillagerWardrobeReloadListener`** — кэш текстур профессий вынесен из миксина в обычный класс (статический инициализатор миксина не мержится в целевой класс — `CACHE` мог приехать `null`), сброс на `RegisterClientReloadListenersEvent`.
+8. **`README.md`** — шапка была на v2.3.0, теперь актуальная версия и changelog.
+
+Проверено: 101 `.java` парсится чисто (tree-sitter), 185+ JSON валидны.

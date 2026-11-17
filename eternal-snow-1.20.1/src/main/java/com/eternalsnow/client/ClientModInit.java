@@ -13,6 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
@@ -55,6 +56,9 @@ public final class ClientModInit {
         MinecraftForge.EVENT_BUS.addListener(FrostedWindowRenderer::onRenderLevelStage);
         MinecraftForge.EVENT_BUS.addListener(SnowFootprintRenderer::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(SnowFootprintRenderer::onRenderLevelStage);
+        // a texture pack reload must not leave stale villager outfits cached
+        modBus.addListener((RegisterClientReloadListenersEvent e) ->
+                e.registerReloadListener(new VillagerWardrobeReloadListener()));
     }
 
     @SuppressWarnings({"deprecation", "removal"})

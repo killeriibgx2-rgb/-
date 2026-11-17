@@ -38,6 +38,11 @@ public final class MobSurvivalManager {
 
     /** True when snow is actually falling on the entity (snowfall event or snow under its feet). */
     public static boolean isSnowedOn(ServerLevel level, LivingEntity entity) {
+        // The Nether/End are never "snowed on" — without this guard a cold-snap setting would
+        // start freezing blazes in the Nether and put their fire out.
+        if (!EternalSnowState.isOverworldLike(level)) {
+            return false;
+        }
         BlockPos pos = entity.blockPosition();
         if (level.getBlockState(pos).is(Blocks.SNOW) || level.getBlockState(pos.below()).is(Blocks.SNOW)) {
             return true;
@@ -52,8 +57,8 @@ public final class MobSurvivalManager {
     }
 
     /**
-     * Called from the damage event: if this mob would catch fire while it is snowed on, the fire
-     * simply does not take. Returning true means "cancelled".
+     * True when the mob would catch / keep fire at all: it has to be a mob, the setting must be on,
+     * and snow must actually be falling on it. Used by the damage hook and the per-tick wipe.
      */
     public static boolean shouldExtinguishFire(ServerLevel level, LivingEntity entity) {
         ServerSnowSettings settings = EternalSnowState.getServerSettings();
@@ -72,7 +77,7 @@ public final class MobSurvivalManager {
             return;
         }
         ServerSnowSettings settings = EternalSnowState.getServerSettings();
-        if (!settings.enabled) {
+        if (!settings.enabled || !EternalSnowState.isOverworldLike(level)) {
             return;
         }
 
