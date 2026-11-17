@@ -1,16 +1,33 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "W W",
-    "WWW",
-    "WWW"
-  ],
-  "key": {
-    "W": {
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
       "tag": "minecraft:wool"
+    },
+    {
+      "tag": "minecraft:wool"
+    },
+    {
+      "tag": "minecraft:wool"
+    },
+    {
+      "tag": "minecraft:wool"
+    },
+    {
+      "tag": "minecraft:wool"
+    },
+    {
+      "tag": "minecraft:wool"
+    },
+    {
+      "item": "minecraft:string"
+    },
+    {
+      "item": "minecraft:string"
     }
-  },
+  ],
   "result": {
-    "item": "eternalsnow:jacket_wool"
+    "item": "eternalsnow:jacket_wool",
+    "count": 1
   }
 }
