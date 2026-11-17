@@ -9,11 +9,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * v2.7 — temperature and spoilage state of one food stack.
  *
- * <p>Everything lives in a single compound tag on the stack, and every field is a SMALL INTEGER on
- * purpose: vanilla merges stacks only when the whole tag matches ({@code ItemStack.isSameItemSameTags}
- * compares {@code tag} with {@code Objects.equals}), so a float that differs in the last bit would
- * turn every steak into its own slot. Integers + a shared "last scanned" stamp mean that food stored
- * side by side quantises to exactly the same tag and keeps stacking.
+ * <p>State uses integer NBT fields. Display temperature is quantised to three degrees;
+ * integration retains milli-degrees separately, so small cooling steps are not discarded.
+ * Stacks with different thermal histories may have different tags and will not merge until
+ * their state agrees. Never trade away thermal accuracy to force unrelated stacks to merge.
  *
  * <p>Temperature follows Newton's law of cooling instead of hard-coded timers, so "colder means
  * faster" falls out of the formula and needs no table:
