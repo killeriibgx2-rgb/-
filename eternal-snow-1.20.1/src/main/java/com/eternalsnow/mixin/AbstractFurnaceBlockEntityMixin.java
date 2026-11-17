@@ -2,7 +2,6 @@ package com.eternalsnow.mixin;
 
 import com.eternalsnow.food.FoodProfiles;
 import com.eternalsnow.food.FoodState;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -12,30 +11,13 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * v2.7.1 — food gets its own rhythm inside a furnace: one portion at a time, a frozen portion must
- * thaw first, and cooking happens IN the food slot instead of a result slot.
- *
- * <h2>Why cooking is not hooked in {@code burn}</h2>
- * {@code burn} is one of the very few private STATIC methods on the vanilla class. Mixin 0.8.5 checks
- * staticness of {@code @Inject} handlers with {@code exactMatch = true}, so a handler for a static
- * target must itself be static — but a static handler cannot see {@code this}, and {@code burn} never
- * receives the block entity at all. Writing the cooked item back therefore cannot happen there.
- *
- * <p>It is moved to the tick instead: when the vanilla cook progress overflows, {@code serverTick}
- * calls {@code burn}, which puts the cooked item into slot 2. One tick later we take it from slot 2 and
- * put it back into slot 0. Same result, no static-injection trap, and no second copy of vanilla's
- * recipe logic to keep in sync.
- *
- * <h2>Thaw</h2>
- * The thaw is folded into {@code cookingTotalTime}, which vanilla streams to the client as
- * {@code ContainerData} slot 3, so the vanilla progress arrow slows down honestly — no custom GUI and
- * no numbers on screen. The constant itself is computed once per stack by a {@code @Redirect} on the
- * exact {@code getTotalCookTime} call inside {@code setItem}; being a redirect (not an "add at TAIL"
- * hook) it can never accumulate on repeated clicks.
+ * Food cooks one portion at a time; frozen input adds thaw time to the vanilla cycle.
+ * Since 2.7.5 the vanilla result slot retains cooked food, just like other smelting output.
+ * Vanilla creates the recipe result rather than copying the frozen input NBT, and handles
+ * output capacity, extraction, XP and automation. No per-tick output rewrite is necessary.
  */
 @Mixin(AbstractFurnaceBlockEntity.class)
 public abstract class AbstractFurnaceBlockEntityMixin {
@@ -96,38 +78,4 @@ public abstract class AbstractFurnaceBlockEntityMixin {
         return Math.min(vanilla + thaw, 20 * 60 * 10);
     }
 
-    /**
-     * Moves a finished food portion from the result slot back into the food slot.
-     *
-     * <p>Runs at the tail of every furnace tick, which is after {@code burn} has deposited the cooked
-     * item. Non-food never matches, so ores, glass and stone keep the vanilla behaviour untouched.
-     */
-    @Inject(method = "serverTick", at = @At("TAIL"))
-    private static void eternalsnow$finishFoodInPlace(Level level, BlockPos pos,
-                                                      net.minecraft.world.level.block.state.BlockState state,
-                                                      AbstractFurnaceBlockEntity furnace,
-                                                      CallbackInfo ci) {
-        if (!com.eternalsnow.state.EternalSnowState.getServerSettings().enableCookingTweaks) {
-            return;
-        }
-        ItemStack result = furnace.getItem(2);
-        if (result.isEmpty() || FoodProfiles.profileOf(result) < 0) {
-            return;
-        }
-        ItemStack food = furnace.getItem(0);
-        if (food.isEmpty()) {
-            food = result.copy();
-        } else if (ItemStack.isSameItemSameTags(food, result)
-                && food.getCount() < food.getMaxStackSize()) {
-            food.grow(result.getCount());
-        } else {
-            return; // the player already put something else in: leave the finished portion alone
-        }
-
-        // The oven is far above freezing, so what comes out is never frozen. The stamp is the current
-        // game time so the next ageing pass integrates from now, not from when it went in.
-        FoodState.markThawed(food, FoodState.BODY_C, level.getGameTime());
-        furnace.setItem(0, food);
-        furnace.setItem(2, ItemStack.EMPTY);
-    }
 }
