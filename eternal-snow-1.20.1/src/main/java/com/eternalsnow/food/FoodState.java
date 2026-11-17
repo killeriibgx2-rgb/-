@@ -52,10 +52,7 @@ public final class FoodState {
 
     /** How long one spoilage step takes at exactly +20 °C, per food profile. */
     private static final int[] TICKS_PER_STEP_AT_20 = {
-            0,      // 0 = preserved: never spoils (bread, cookie, dried goods, modded drinks)
-            14400,  // 1 = raw meat: 12 min per step, ~1 hour to rot
-            22150,  // 2 = fish: fastest of the meats
-            25900,  // 3 = cooked food: keeps noticeably longer
+            0, 14400, 22150, 25900, 10000, 18000, 144000, 288000
     };
 
     private FoodState() {
@@ -124,13 +121,18 @@ public final class FoodState {
                 ? existing.getInt(TAG_EXACT_TEMP) : (existing == null ? Math.round(BODY_C * 1000) : oldTemp * 1000);
         int newTemp = oldTemp;
         if (settings.enableFoodFreezing && elapsed > 0L) {
-            exactTemp = FoodCooling.advanceMilliC(exactTemp, envC, elapsed, TAU_TICKS);
+            exactTemp = FoodCooling.advanceMilliC(exactTemp, envC,
+                    Math.round(elapsed * (envC < exactTemp / 1000.0D
+                            ? settings.foodFreezingSpeedPercent : settings.foodThawingSpeedPercent) / 100.0D), TAU_TICKS);
             newTemp = quantise(exactTemp / 1000.0D);
         }
 
+        int remainder = existing == null ? 0 : Mth.clamp(existing.getInt("pr"), 0, 999);
         int newProgress = progress;
         if (settings.enableFoodSpoilage && profile > 0 && elapsed > 0L) {
-            newProgress = progress + spoilageAmount(elapsed, newTemp, profile);
+            long micro = remainder + spoilageAmount(Math.round(elapsed * settings.foodSpoilageSpeedPercent / 100.0D), newTemp, profile);
+            newProgress = progress + (int) (micro / 1000L);
+            remainder = (int) (micro % 1000L);
             while (newProgress >= 1000 && spoil < SPOIL_MAX) {
                 newProgress -= 1000;
                 spoil++;
@@ -149,24 +151,14 @@ public final class FoodState {
         root.putInt(TAG_EXACT_TEMP, exactTemp);
         root.putInt(TAG_SPOIL, spoil);
         root.putInt(TAG_PROGRESS, newProgress);
+        root.putInt("pr", remainder);
         root.putLong(TAG_STAMP, nowTick);
         stack.getOrCreateTag().put(TAG_ROOT, root);
     }
 
-    /** Progress in 1/1000 of one spoilage step. */
+    /** Progress in millionths of one spoilage step; retained fractions keep long-life food ageing. */
     private static int spoilageAmount(long elapsedTicks, int tempC, int profile) {
-        int ticksPerStep = ticksPerStep(profile);
-        if (ticksPerStep <= 0) {
-            return 0;
-        }
-        // Spoilage only happens above freezing; the rate grows with temperature and flattens out,
-        // so a cold pantry slows it down and a hot room speeds it up.
-        float factor = Mth.clamp(tempC / 20.0F, 0.0F, 3.0F);
-        if (factor <= 0.0F) {
-            return 0;
-        }
-        long amount = (elapsedTicks * 1000L * Math.round(factor * 100.0F)) / (ticksPerStep * 100L);
-        return (int) Math.min(amount, Integer.MAX_VALUE / 2);
+        return FoodCooling.spoilageMicros(elapsedTicks, tempC, ticksPerStep(profile));
     }
 
     private static int ticksPerStep(int profile) {
@@ -210,7 +202,9 @@ public final class FoodState {
         if (ratio <= 0.0D || ratio >= 1.0D) {
             return ratio <= 0.0D ? Integer.MAX_VALUE : 0;
         }
-        return (int) Math.min(Integer.MAX_VALUE, Math.round(-TAU_TICKS * Math.log(ratio)));
+        int speed = EternalSnowState.getServerSettings().foodThawingSpeedPercent;
+        if (speed == 0) return Integer.MAX_VALUE;
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(-TAU_TICKS * Math.log(ratio) * 100.0D / speed));
     }
 
     private static CompoundTag root(ItemStack stack) {

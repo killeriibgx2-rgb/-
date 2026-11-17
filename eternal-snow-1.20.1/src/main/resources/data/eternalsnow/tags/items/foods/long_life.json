@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:cookie",
+    "minecraft:dried_kelp",
+    "eternalsnow:candy_yellow",
+    "eternalsnow:candy_red",
+    "eternalsnow:candy_green",
+    "eternalsnow:candy_blue",
+    "eternalsnow:candy_purple",
+    "eternalsnow:candy_rainbow"
+  ]
+}

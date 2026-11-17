@@ -38,9 +38,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * needs from the target's own parameters, unlike the furnace case in 2.7.1 where the block entity was
  * not passed at all.
  *
- * <p>This covers the crafting table and the 2x2 player grid. Block-driven stations (Farmer's Delight
- * cutting board and pot) are already refused earlier, when the player right-clicks them with frozen
- * food in hand.
+ * <p>This covers the crafting table and the 2x2 player grid (including modded recipes).
+ * Custom machines that bypass these menus need their own integration; block interaction is
+ * deliberately allowed so containers and shelves remain usable with frozen items in hand.
  */
 @Mixin(CraftingMenu.class)
 public abstract class CraftingMenuMixin {

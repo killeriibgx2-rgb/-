@@ -31,4 +31,17 @@ public class FoodCoolingTest {
     @Test public void noTimeNoChange() {
         assertEquals(36600, FoodCooling.advanceMilliC(36600, -42, 0, 4648));
     }
+    @Test public void longLifeFoodStillAgesAtQuarterSpeed() {
+        assertTrue(FoodCooling.spoilageMicros(50, 20, 288000) > 0);
+    }
+
+    @Test public void rotStopsWhenFrozenOrPaused() {
+        assertEquals(0, FoodCooling.spoilageMicros(200, -3, 14400));
+        assertEquals(0, FoodCooling.spoilageMicros(0, 20, 14400));
+    }
+
+    @Test public void quarterSpeedExtendsShelfLife() {
+        assertEquals(FoodCooling.spoilageMicros(200, 20, 14400),
+                4 * FoodCooling.spoilageMicros(50, 20, 14400), 4);
+    }
 }

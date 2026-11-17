@@ -14,7 +14,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class PacketHandler {
-    private static final String PROTOCOL_VERSION = "20"; // v2.7.1: cooking-tweaks switch appended to the settings packet
+    private static final String PROTOCOL_VERSION = "21"; // v2.7.1: cooking-tweaks switch appended to the settings packet
     private static boolean registered = false;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

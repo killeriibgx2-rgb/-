@@ -165,15 +165,12 @@ public final class ModWorldEvents {
         BlockPos pos = event.getPos();
         BlockState clickedState = level.getBlockState(pos);
 
-        // v2.7: frozen food cannot be eaten — the "use item" path must never start on a frozen stack.
-        // This is checked before anything else so no interaction can sneak around it.
-        if (event.getEntity() instanceof ServerPlayer eater
-                && !held.isEmpty()
-                && com.eternalsnow.food.FoodState.isFrozen(held)
-                && com.eternalsnow.food.FoodProfiles.profileOf(held) >= 0) {
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.CONSUME);
-            return;
+        // Deny only the held item's useOn, NEVER the clicked block's use(). This lets
+        // chests open and shelves accept frozen items while preventing seed planting.
+        if (com.eternalsnow.food.FoodState.isFrozen(held)
+                && com.eternalsnow.food.FoodProfiles.canFreeze(held)
+                && com.eternalsnow.food.FrozenItemRules.enabled(level)) {
+            event.setUseItem(net.minecraftforge.eventbus.api.Event.Result.DENY);
         }
 
         // 1. Stick Golem Anchor Selection (takes priority if player actively clicked a Festive Copper Golem first!)
@@ -308,13 +305,14 @@ public final class ModWorldEvents {
      * {@code finishUsingItem}, i.e. after the hunger has been restored, so cancelling it would only
      * block our own bookkeeping.
      *
-     * <p>The block path keeps its own early return, so right-clicking a chest with frozen meat does
-     * not even start the eating animation.
+     * <p>Block interactions remain allowed. Only held-item use is denied, so storage and shelves
+     * still work while holding frozen food.
      */
     public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
         if (!(event.getEntity() instanceof ServerPlayer)) {
             return;
         }
+        if (!com.eternalsnow.food.FrozenItemRules.enabled(event.getEntity().level())) return;
         ItemStack using = event.getItem();
         if (using.isEmpty() || !com.eternalsnow.food.FoodState.isFrozen(using)) {
             return;

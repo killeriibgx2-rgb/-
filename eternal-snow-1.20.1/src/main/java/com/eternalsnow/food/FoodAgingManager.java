@@ -70,6 +70,7 @@ public final class FoodAgingManager {
                 changed = true;
             }
         }
+        changed |= FoodStackNormalizer.normalize(container);
         if (changed) {
             container.setChanged();
         }
@@ -95,8 +96,10 @@ public final class FoodAgingManager {
         FoodState.scan(working, envC, now, profile);
 
         // Fully rotten food turns into rotten flesh, silently — the tooltip already warned at step 4.
-        if (FoodState.isRotten(working)) {
-            return new ItemStack(Items.ROTTEN_FLESH, Math.max(1, working.getCount()));
+        if (FoodState.isRotten(working) && !working.is(Items.ROTTEN_FLESH)) {
+            ItemStack rotten = new ItemStack(Items.ROTTEN_FLESH, Math.max(1, working.getCount()));
+            rotten.setTag(working.getTag().copy());
+            return rotten;
         }
 
         String after = working.getTag() == null ? "" : working.getTag().toString();
