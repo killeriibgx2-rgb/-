@@ -129,6 +129,7 @@
   "eternalsnow.gui.surv.base_temp": "Мин. температура на улице: ",
   "eternalsnow.gui.surv.convection": "Конвекция (холодный пол)",
   "eternalsnow.gui.surv.convection_strength": "Сила конвекции",
+  "eternalsnow.gui.surv.cooking_tweaks": "Печь: одно мясо и разморозка",
   "eternalsnow.gui.surv.custom_drinks": "Свои напитки",
   "eternalsnow.gui.surv.custom_drinks_hint": "например: farmersdelight:apple_cider=6, minecraft:apple=2",
   "eternalsnow.gui.surv.custom_drinks_label": "Доп. напитки (modid:item=очки, через запятую)",
