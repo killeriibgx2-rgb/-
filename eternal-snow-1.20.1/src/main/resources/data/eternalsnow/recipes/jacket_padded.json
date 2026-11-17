@@ -9,9 +9,16 @@
     },
     {
       "item": "minecraft:string"
+    },
+    {
+      "item": "minecraft:feather"
+    },
+    {
+      "item": "minecraft:feather"
     }
   ],
   "result": {
-    "item": "eternalsnow:jacket_padded"
+    "item": "eternalsnow:jacket_padded",
+    "count": 1
   }
 }

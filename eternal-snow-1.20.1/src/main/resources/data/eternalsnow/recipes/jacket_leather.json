@@ -1,16 +1,33 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "L L",
-    "LLL",
-    "LLL"
-  ],
-  "key": {
-    "L": {
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
       "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:leather"
+    },
+    {
+      "item": "minecraft:string"
+    },
+    {
+      "item": "minecraft:string"
     }
-  },
+  ],
   "result": {
-    "item": "eternalsnow:jacket_leather"
+    "item": "eternalsnow:jacket_leather",
+    "count": 1
   }
 }
