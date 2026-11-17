@@ -53,7 +53,11 @@ public final class FoodProfiles {
      */
     public static int profileOf(ItemStack stack) {
         if (stack.isEmpty()) return -1;
-        if (!stack.isEdible()) return canFreeze(stack) ? 0 : -1;
+        if (!stack.isEdible()) {
+            if (stack.is(net.minecraft.world.item.Items.MILK_BUCKET)) return RAW_MEAT;
+            if (stack.is(DRY_TAG)) return DRY; // cake is a placeable item, not edible in hand
+            return canFreeze(stack) ? 0 : -1;
+        }
         if (stack.is(net.minecraft.world.item.Items.ROTTEN_FLESH)) return 0;
         if (stack.is(LONG_LIFE_TAG)) return LONG_LIFE;
         if (stack.is(PRESERVED_TAG) || isModDrink(stack)) {
@@ -74,8 +78,7 @@ public final class FoodProfiles {
         if (stack.is(PRODUCE_TAG)) {
             return PRODUCE;
         }
-        // Unknown edible (a mod we have never seen, or a datapack dish): treat it as preserved.
-        // Better to do nothing than to rot somebody's food they cannot replace.
+        // Unknown modded food participates too; datapacks can opt it into another shelf-life tag.
         return PRODUCE;
     }
 
@@ -88,7 +91,7 @@ public final class FoodProfiles {
 
     /** Everything edible can be frozen, even preserved food — freezing is about temperature, not rot. */
     public static boolean canFreeze(ItemStack stack) {
-        return stack.isEdible() || stack.is(FREEZABLE_TAG)
+        return stack.isEdible() || stack.is(DRY_TAG) || stack.is(FREEZABLE_TAG)
                 || stack.is(net.minecraft.tags.ItemTags.create(new ResourceLocation("forge", "seeds")));
     }
 }

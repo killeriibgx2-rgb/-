@@ -156,20 +156,9 @@ public final class FoodState {
         stack.getOrCreateTag().put(TAG_ROOT, root);
     }
 
-    /** Progress in 1/1000 of one spoilage step. */
+    /** Progress in millionths of one spoilage step; retained fractions keep long-life food ageing. */
     private static int spoilageAmount(long elapsedTicks, int tempC, int profile) {
-        int ticksPerStep = ticksPerStep(profile);
-        if (ticksPerStep <= 0) {
-            return 0;
-        }
-        // Spoilage only happens above freezing; the rate grows with temperature and flattens out,
-        // so a cold pantry slows it down and a hot room speeds it up.
-        float factor = Mth.clamp(tempC / 20.0F, 0.0F, 3.0F);
-        if (factor <= 0.0F) {
-            return 0;
-        }
-        long amount = (elapsedTicks * 1000000L * Math.round(factor * 100.0F)) / (ticksPerStep * 100L);
-        return (int) Math.min(amount, Integer.MAX_VALUE / 2);
+        return FoodCooling.spoilageMicros(elapsedTicks, tempC, ticksPerStep(profile));
     }
 
     private static int ticksPerStep(int profile) {
@@ -213,7 +202,9 @@ public final class FoodState {
         if (ratio <= 0.0D || ratio >= 1.0D) {
             return ratio <= 0.0D ? Integer.MAX_VALUE : 0;
         }
-        return (int) Math.min(Integer.MAX_VALUE, Math.round(-TAU_TICKS * Math.log(ratio)));
+        int speed = EternalSnowState.getServerSettings().foodThawingSpeedPercent;
+        if (speed == 0) return Integer.MAX_VALUE;
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(-TAU_TICKS * Math.log(ratio) * 100.0D / speed));
     }
 
     private static CompoundTag root(ItemStack stack) {

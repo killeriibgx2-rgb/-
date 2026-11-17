@@ -305,8 +305,8 @@ public final class ModWorldEvents {
      * {@code finishUsingItem}, i.e. after the hunger has been restored, so cancelling it would only
      * block our own bookkeeping.
      *
-     * <p>The block path keeps its own early return, so right-clicking a chest with frozen meat does
-     * not even start the eating animation.
+     * <p>Block interactions remain allowed. Only held-item use is denied, so storage and shelves
+     * still work while holding frozen food.
      */
     public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
         if (!(event.getEntity() instanceof ServerPlayer)) {

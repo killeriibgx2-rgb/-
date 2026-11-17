@@ -110,7 +110,13 @@ public final class FoodShelfManager {
                                 || blockEntity instanceof net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity) {
                             // Includes BOTH halves of a double chest, even while closed. Do not
                             // apply room temperature to active furnaces or third-party machines.
-                            FoodAgingManager.scanContainer((net.minecraft.world.Container) blockEntity,
+                            net.minecraft.world.Container storage = (net.minecraft.world.Container) blockEntity;
+                            if (blockEntity.getBlockState().getBlock() instanceof net.minecraft.world.level.block.ChestBlock chest) {
+                                net.minecraft.world.Container combined = net.minecraft.world.level.block.ChestBlock.getContainer(
+                                        chest, blockEntity.getBlockState(), level, blockEntity.getBlockPos(), true);
+                                if (combined != null) storage = combined;
+                            }
+                            FoodAgingManager.scanContainer(storage,
                                     ThermalEngine.getLocalTemperatureC(level, blockEntity.getBlockPos()), now);
                         }
                     }
