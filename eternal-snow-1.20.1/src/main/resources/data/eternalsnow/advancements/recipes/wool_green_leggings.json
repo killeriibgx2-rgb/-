@@ -1,0 +1,21 @@
+{
+  "parent": "eternalsnow:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "eternalsnow:wool_green_leggings"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "eternalsnow:wool_green_leggings"
+    ]
+  }
+}

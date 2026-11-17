@@ -83,6 +83,13 @@ public final class ServerSnowSettings {
     public int golemSwingIntervalTicks = 40; // 2.0 seconds
     public int golemMaxRadius = 24;
 
+    // 6. v2.6.6: Mobs — no burning during snowfall, slow freezing, vertical convection
+    public boolean mobsDoNotBurnInSnow = true;     // snowfall / snow cover extinguishes fire on any mob
+    public boolean enableMobFreezing = true;       // mobs get hypothermia (5x slower than the player)
+    public float mobFreezeRateMultiplier = 0.20F;  // 0.05..1.0 of the player's chill rate
+    public boolean enableConvection = true;        // cold floor / warm ceiling stratification
+    public int convectionStrengthPercent = 100;    // 0..300: how strongly storeys differ in temperature
+
     public ServerSnowSettings() {
         for (BlockThermalCategory cat : BlockThermalCategory.VALUES) {
             this.blockConductivity[cat.ordinal()] = cat.defaultConductivity;
@@ -193,6 +200,12 @@ public final class ServerSnowSettings {
         this.shovelDurability = src.shovelDurability;
         this.golemSwingIntervalTicks = src.golemSwingIntervalTicks;
         this.golemMaxRadius = src.golemMaxRadius;
+
+        this.mobsDoNotBurnInSnow = src.mobsDoNotBurnInSnow;
+        this.enableMobFreezing = src.enableMobFreezing;
+        this.mobFreezeRateMultiplier = src.mobFreezeRateMultiplier;
+        this.enableConvection = src.enableConvection;
+        this.convectionStrengthPercent = src.convectionStrengthPercent;
     }
 
     public void clamp() {
@@ -234,6 +247,8 @@ public final class ServerSnowSettings {
         this.heatFireplace = Mth.clamp(this.heatFireplace, 0.0F, 200.0F);
         this.heatMagma = Mth.clamp(this.heatMagma, 0.0F, 180.0F);
         this.heatLava = Mth.clamp(this.heatLava, 0.0F, 220.0F);
+        this.mobFreezeRateMultiplier = Mth.clamp(this.mobFreezeRateMultiplier, 0.05F, 1.0F);
+        this.convectionStrengthPercent = Mth.clamp(this.convectionStrengthPercent, 0, 300);
 
         for (int i = 0; i < this.blockConductivity.length; i++) {
             this.blockConductivity[i] = Mth.clamp(this.blockConductivity[i], 0.01F, 1.00F);
@@ -325,6 +340,13 @@ public final class ServerSnowSettings {
         tag.putInt("shovelDurability", this.shovelDurability);
         tag.putInt("golemSwingIntervalTicks", this.golemSwingIntervalTicks);
         tag.putInt("golemMaxRadius", this.golemMaxRadius);
+
+        // v2.6.6
+        tag.putBoolean("mobsDoNotBurnInSnow", this.mobsDoNotBurnInSnow);
+        tag.putBoolean("enableMobFreezing", this.enableMobFreezing);
+        tag.putFloat("mobFreezeRateMultiplier", this.mobFreezeRateMultiplier);
+        tag.putBoolean("enableConvection", this.enableConvection);
+        tag.putInt("convectionStrengthPercent", this.convectionStrengthPercent);
     }
 
     public void loadFromTag(CompoundTag tag) {
@@ -419,6 +441,12 @@ public final class ServerSnowSettings {
         if (tag.contains("shovelDurability")) this.shovelDurability = tag.getInt("shovelDurability");
         if (tag.contains("golemSwingIntervalTicks")) this.golemSwingIntervalTicks = tag.getInt("golemSwingIntervalTicks");
         if (tag.contains("golemMaxRadius")) this.golemMaxRadius = tag.getInt("golemMaxRadius");
+        // v2.6.6
+        if (tag.contains("mobsDoNotBurnInSnow")) this.mobsDoNotBurnInSnow = tag.getBoolean("mobsDoNotBurnInSnow");
+        if (tag.contains("enableMobFreezing")) this.enableMobFreezing = tag.getBoolean("enableMobFreezing");
+        if (tag.contains("mobFreezeRateMultiplier")) this.mobFreezeRateMultiplier = tag.getFloat("mobFreezeRateMultiplier");
+        if (tag.contains("enableConvection")) this.enableConvection = tag.getBoolean("enableConvection");
+        if (tag.contains("convectionStrengthPercent")) this.convectionStrengthPercent = tag.getInt("convectionStrengthPercent");
         this.clamp();
     }
 
@@ -493,6 +521,12 @@ public final class ServerSnowSettings {
         // v2.5.3 appended at the END (older protocol versions simply have no trailing bytes)
         buf.writeFloat(this.globalConductivityMultiplier);
         buf.writeFloat(this.globalCapacityMultiplier);
+        // v2.6.6 appended at the END (protocol 17)
+        buf.writeBoolean(this.mobsDoNotBurnInSnow);
+        buf.writeBoolean(this.enableMobFreezing);
+        buf.writeFloat(this.mobFreezeRateMultiplier);
+        buf.writeBoolean(this.enableConvection);
+        buf.writeVarInt(this.convectionStrengthPercent);
     }
 
     public void readFromBuf(FriendlyByteBuf buf) {
@@ -564,6 +598,12 @@ public final class ServerSnowSettings {
         this.roomComfortCeilingC = buf.isReadable() ? buf.readFloat() : 26.0F;
         this.globalConductivityMultiplier = buf.isReadable() ? buf.readFloat() : 1.0F;
         this.globalCapacityMultiplier = buf.isReadable() ? buf.readFloat() : 1.0F;
+        // v2.6.6 trailing fields
+        this.mobsDoNotBurnInSnow = !buf.isReadable() || buf.readBoolean();
+        this.enableMobFreezing = !buf.isReadable() || buf.readBoolean();
+        this.mobFreezeRateMultiplier = buf.isReadable() ? buf.readFloat() : 0.20F;
+        this.enableConvection = !buf.isReadable() || buf.readBoolean();
+        this.convectionStrengthPercent = buf.isReadable() ? buf.readVarInt() : 100;
         this.clamp();
     }
 }

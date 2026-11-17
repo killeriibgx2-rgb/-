@@ -14,7 +14,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class PacketHandler {
-    private static final String PROTOCOL_VERSION = "16"; // v2.6.5: snow rate in blocks/sec + real recipe advancements
+    private static final String PROTOCOL_VERSION = "17"; // v2.6.6: mob freezing + convection settings appended to the sync packet
     private static boolean registered = false;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

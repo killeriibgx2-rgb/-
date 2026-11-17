@@ -20,6 +20,8 @@ public final class ClientSnowConfig {
     public static final ForgeConfigSpec.BooleanValue CFG_CLEAR_SKY_AND_LIGHT;
     public static final ForgeConfigSpec.BooleanValue CFG_FACE_SNOW_OVERLAY;
     public static final ForgeConfigSpec.BooleanValue CFG_SHOW_SURVIVAL_HUD;
+    public static final ForgeConfigSpec.BooleanValue CFG_FROSTED_WINDOWS;
+    public static final ForgeConfigSpec.BooleanValue CFG_FOOTPRINTS;
 
     public static volatile boolean visibleSnowfall = true;
     public static volatile boolean autoWeatherParticles = true;
@@ -31,6 +33,8 @@ public final class ClientSnowConfig {
     public static volatile boolean clearSkyAndLight = true;
     public static volatile boolean faceSnowOverlay = true;
     public static volatile boolean showSurvivalHud = true;
+    public static volatile boolean frostedWindows = true;
+    public static volatile boolean footprints = true;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -46,6 +50,8 @@ public final class ClientSnowConfig {
         CFG_CLEAR_SKY_AND_LIGHT = builder.define("clearSkyAndLight", true);
         CFG_FACE_SNOW_OVERLAY = builder.define("faceSnowOverlay", true);
         CFG_SHOW_SURVIVAL_HUD = builder.define("showSurvivalHud", true);
+        CFG_FROSTED_WINDOWS = builder.define("frostedWindows", true);
+        CFG_FOOTPRINTS = builder.define("footprints", true);
 
         builder.pop();
         CLIENT_SPEC = builder.build();
@@ -85,6 +91,8 @@ public final class ClientSnowConfig {
                 clearSkyAndLight = CFG_CLEAR_SKY_AND_LIGHT.get();
                 faceSnowOverlay = CFG_FACE_SNOW_OVERLAY.get();
                 showSurvivalHud = CFG_SHOW_SURVIVAL_HUD.get();
+                frostedWindows = CFG_FROSTED_WINDOWS.get();
+                footprints = CFG_FOOTPRINTS.get();
             }
         } catch (Exception ignored) {
         }

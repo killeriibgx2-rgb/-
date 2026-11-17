@@ -18,6 +18,10 @@ public final class ArmorInsulationHelper {
         return !stack.isEmpty() && stack.getItem() instanceof ArmorItem;
     }
 
+    /**
+     * v2.6.6: wool / knitted cloth / jackets count as naturally warm — they are the reason
+     * anyone survives a blizzard outdoors. Leather stays warm too (it is what a jacket is made of).
+     */
     public static boolean isNaturallyWarmLeather(ItemStack stack) {
         if (!(stack.getItem() instanceof ArmorItem armor)) {
             return false;
@@ -25,8 +29,20 @@ public final class ArmorInsulationHelper {
         if (armor.getMaterial() == ArmorMaterials.LEATHER) {
             return true;
         }
-        String matName = armor.getMaterial().getName();
-        return matName != null && matName.toLowerCase().contains("leather");
+        return naturallyWarmPerPiece(armor.getMaterial().getName()) > 0.0F;
+    }
+
+    /** v2.6.6: base warmth of one piece before the insulation-tier bonus is added. */
+    public static float naturallyWarmPerPiece(String materialName) {
+        if (materialName == null) {
+            return 0.0F;
+        }
+        String name = com.eternalsnow.item.WoolArmorMaterials.bareName(materialName).toLowerCase();
+        float cloth = com.eternalsnow.item.WoolArmorMaterials.warmthPerPiece(name);
+        if (cloth > 0.0F) {
+            return cloth;
+        }
+        return name.contains("leather") ? 1.25F : 0.0F;
     }
 
     public static int getInsulationTier(ItemStack stack) {
@@ -54,10 +70,24 @@ public final class ArmorInsulationHelper {
         if (!isArmor(stack) || globalMult <= 0.001F) {
             return 0.0F;
         }
-        float base = isNaturallyWarmLeather(stack) ? 1.25F : 0.0F;
+        float base = isNaturallyWarmLeather(stack)
+                ? naturallyWarmPerPiece(((ArmorItem) stack.getItem()).getMaterial().getName())
+                : 0.0F;
         int tier = getInsulationTier(stack);
         float tierBonus = tier * 1.50F;
         return (base + tierBonus) * globalMult;
+    }
+
+    /** v2.6.6: same maths for any living entity (mobs can wear armour too now). */
+    public static float getTotalWarmthPoints(net.minecraft.world.entity.LivingEntity entity, float globalMult) {
+        if (entity == null || globalMult <= 0.001F) {
+            return 0.0F;
+        }
+        float sum = 0.0F;
+        for (ItemStack armorStack : entity.getArmorSlots()) {
+            sum += getPieceWarmthPoints(armorStack, globalMult);
+        }
+        return sum;
     }
 
     public static float getTotalPlayerWarmthPoints(Player player, float globalMult) {

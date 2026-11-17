@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "WWW",
+    "W W"
+  ],
+  "key": {
+    "W": {
+      "item": "minecraft:red_wool"
+    }
+  },
+  "result": {
+    "item": "eternalsnow:wool_red_helmet",
+    "count": 1
+  }
+}

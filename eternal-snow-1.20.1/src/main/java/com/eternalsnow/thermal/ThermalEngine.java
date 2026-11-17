@@ -81,6 +81,11 @@ public final class ThermalEngine {
     private static final float ROOM_TAU_MIN = 600.0F;       // 30 s
     private static final float ROOM_TAU_MAX = 7200.0F;      // 6 min
     private static final float ROOM_THERMAL_STEP_TICKS = 10.0F;
+    // v2.6.6 Thermal convection: warm air is buoyant, so within ONE room the ceiling is warmer
+    // than the floor. The tilt is ZERO-MEAN (average temperature is untouched), so no heat is
+    // created: the room stays exactly as warm, it is just redistributed vertically.
+    private static final float CONVECTION_TILT_OF_HEAT = 0.34F;  // share of the room's own delta
+    private static final float CONVECTION_MAX_TILT_C = 3.0F;     // per side, at 100 % strength
 
     private static final int[] DX26 = new int[26];
     private static final int[] DY26 = new int[26];
@@ -1163,10 +1168,64 @@ public final class ThermalEngine {
                     heatMap.remove(airIt.nextLong());
                 }
             } else {
-                while (airIt.hasNext()) {
-                    heatMap.put(airIt.nextLong(), val);
-                }
+                writeStratifiedRoomAir(room, heatMap, val, capForRoom, settings);
             }
+        }
+    }
+
+    /**
+     * v2.6.6 — Vertical stratification (cold floor / warm ceiling).
+     *
+     * A room is one connected air volume, so a stairwell spanning three storeys is ONE room and
+     * the gradient spans the whole height. Heat is never multiplied: the tilt is zero-mean, so the
+     * room average stays exactly {@code val}. A solid floor splits two rooms apart, so an upper
+     * storey can only be warmed through wall/floor conduction — the attic does not suck the ground
+     * floor dry.
+     */
+    private static void writeStratifiedRoomAir(RoomData room, Long2FloatOpenHashMap heatMap,
+                                               float val, float capForRoom, ServerSnowSettings settings) {
+        float strength = settings.enableConvection
+                ? Mth.clamp(settings.convectionStrengthPercent / 100.0F, 0.0F, 3.0F)
+                : 0.0F;
+        if (strength <= 0.01F || room.maxY <= room.minY) {
+            LongIterator flat = room.air.iterator();
+            while (flat.hasNext()) {
+                heatMap.put(flat.nextLong(), val);
+            }
+            return;
+        }
+
+        float halfHeight = Math.max(1.0F, (room.maxY - room.minY) * 0.5F);
+        float centerY = (room.minY + room.maxY) * 0.5F;
+
+        // The tilt is capped twice: relative to the room's own heat (a barely heated room cannot
+        // show a big gradient) and by an absolute ceiling, so even a 30-block stairwell is only
+        // ~3 °C warmer at the top than at the bottom instead of turning into a chimney.
+        float tilt = Math.min(val * CONVECTION_TILT_OF_HEAT, CONVECTION_MAX_TILT_C * strength);
+
+        // Mean of the normalised offset, so the redistribution is exactly energy-neutral.
+        float offsetSum = 0.0F;
+        int cells = 0;
+        LongIterator it = room.air.iterator();
+        while (it.hasNext()) {
+            long key = it.nextLong();
+            offsetSum += Mth.clamp((BlockPos.getY(key) - centerY) / halfHeight, -1.0F, 1.0F);
+            cells++;
+        }
+        float meanOffset = cells > 0 ? offsetSum / cells : 0.0F;
+
+        it = room.air.iterator();
+        while (it.hasNext()) {
+            long key = it.nextLong();
+            float d = Mth.clamp((BlockPos.getY(key) - centerY) / halfHeight, -1.0F, 1.0F) - meanOffset;
+            float cellVal = val + tilt * d;
+            if (cellVal > capForRoom) {
+                cellVal = capForRoom;
+            }
+            if (cellVal < 0.10F) {
+                cellVal = 0.10F;
+            }
+            heatMap.put(key, cellVal);
         }
     }
 
