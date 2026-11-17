@@ -344,8 +344,6 @@
   "eternalsnow.tooltip.heat_accumulator.craft": "Крафт: Медь + Стекло + Ведро воды",
   "eternalsnow.tooltip.thermal_shutter.desc": "Термоставень: закрывает окно и добавляет стене теплового сопротивления",
   "eternalsnow.tooltip.thermal_shutter.craft": "Крафт: Доски + Шерсть",
-  "block.eternalsnow.wooden_bench": "Деревянная лавочка",
-  "item.eternalsnow.wooden_bench": "Деревянная лавочка",
-  "eternalsnow.tooltip.wooden_bench.desc": "Лавочка для уюта: ПКМ с Shift — присесть, Shift — встать",
-  "eternalsnow.tooltip.wooden_bench.craft": "Крафт: 5 досок"
+  "eternalsnow.gui.admin.snow_rate": "Скорость выпадения снега",
+  "eternalsnow.gui.unit.blocks_per_sec": "бл./сек"
 }

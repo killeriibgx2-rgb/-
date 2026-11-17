@@ -465,6 +465,14 @@ public final class EternalSnowConfigScreen extends Screen {
         ), y);
         y += 24;
 
+        // v2.6.5: how many snow blocks may be placed per second (10 .. 1200)
+        addScrolled(makeIntSlider(
+                leftX, halfW, "eternalsnow.gui.admin.snow_rate", "eternalsnow.gui.unit.blocks_per_sec",
+                10, 1200, this.workingServer.maxBlockUpdatesPerTick, 10,
+                v -> this.workingServer.maxBlockUpdatesPerTick = v
+        ), y);
+        y += 24;
+
         final ForgeSlider[] windDriftRef = new ForgeSlider[1];
         addScrolled(new EternalSnowWidgets.ToggleSwitch(
                 leftX, 0, halfW, 20,
@@ -839,7 +847,10 @@ public final class EternalSnowConfigScreen extends Screen {
         return new ForgeSlider(
                 x, 0, w, 20,
                 Component.translatable(key),
-                suffix.isEmpty() ? Component.empty() : Component.literal(suffix),
+                // v2.6.5: a dotted suffix is treated as a translation key (e.g. blocks/sec units)
+                suffix.isEmpty()
+                        ? Component.empty()
+                        : (suffix.indexOf('.') >= 0 ? Component.translatable(suffix) : Component.literal(suffix)),
                 min, max, current, step, 0, true
         ) {
             @Override

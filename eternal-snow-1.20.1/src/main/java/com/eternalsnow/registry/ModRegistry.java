@@ -11,7 +11,6 @@ import com.eternalsnow.block.HeatAccumulatorBlock;
 import com.eternalsnow.block.HeatAccumulatorBlockEntity;
 import com.eternalsnow.block.IcicleBlock;
 import com.eternalsnow.block.ThermalShutterBlock;
-import com.eternalsnow.block.WoodenBenchBlock;
 import com.eternalsnow.block.WallThermometerBlock;
 import com.eternalsnow.block.WallThermometerBlockEntity;
 import com.eternalsnow.effect.ColdImmunityEffect;
@@ -113,14 +112,6 @@ public final class ModRegistry {
                     .mapColor(MapColor.WOOD)
                     .strength(0.8F)
                     .sound(SoundType.WOOD))
-    );
-    public static final RegistryObject<Block> WOODEN_BENCH = BLOCKS.register(
-            "wooden_bench",
-            () -> new WoodenBenchBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.WOOD)
-                    .strength(0.7F)
-                    .sound(SoundType.WOOD)
-                    .noOcclusion())
     );
     public static final RegistryObject<Block> HEAT_ACCUMULATOR = BLOCKS.register(
             "heat_accumulator",
@@ -265,10 +256,6 @@ public final class ModRegistry {
             "thermal_shutter",
             () -> new BlockItem(THERMAL_SHUTTER.get(), new Item.Properties())
     );
-    public static final RegistryObject<Item> WOODEN_BENCH_ITEM = ITEMS.register(
-            "wooden_bench",
-            () -> new BlockItem(WOODEN_BENCH.get(), new Item.Properties())
-    );
     public static final RegistryObject<Item> HEAT_ACCUMULATOR_ITEM = ITEMS.register(
             "heat_accumulator",
             () -> new BlockItem(HEAT_ACCUMULATOR.get(), new Item.Properties())
@@ -366,7 +353,6 @@ public final class ModRegistry {
                         output.accept(WALL_THERMOMETER_ITEM.get());
                         output.accept(HEAT_SCANNER.get());
                         output.accept(THERMAL_SHUTTER_ITEM.get());
-                        output.accept(WOODEN_BENCH_ITEM.get());
                         output.accept(HEAT_ACCUMULATOR_ITEM.get());
                         output.accept(SNOW_SHOVEL.get());
                         output.accept(FESTIVE_COPPER_GOLEM_SPAWN_EGG.get());

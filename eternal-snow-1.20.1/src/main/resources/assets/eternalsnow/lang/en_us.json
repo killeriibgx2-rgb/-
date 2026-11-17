@@ -344,8 +344,6 @@
   "eternalsnow.tooltip.heat_accumulator.craft": "Craft: Copper + Glass + Water Bucket",
   "eternalsnow.tooltip.thermal_shutter.desc": "Thermal shutter: covers windows and adds wall resistance",
   "eternalsnow.tooltip.thermal_shutter.craft": "Craft: Planks + Wool",
-  "block.eternalsnow.wooden_bench": "Wooden Bench",
-  "item.eternalsnow.wooden_bench": "Wooden Bench",
-  "eternalsnow.tooltip.wooden_bench.desc": "Cosy bench: right-click with Shift to sit, Shift to stand",
-  "eternalsnow.tooltip.wooden_bench.craft": "Craft: 5 planks"
+  "eternalsnow.gui.admin.snow_rate": "Snow fall rate",
+  "eternalsnow.gui.unit.blocks_per_sec": "blocks/sec"
 }
