@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public final class FoodShelfRenderer implements BlockEntityRenderer<FoodShelfBlockEntity> {
 
-    private static final float ITEM_SCALE = 0.55F;
+    private static final float ITEM_SCALE = 0.275F;
 
     public FoodShelfRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -52,13 +52,17 @@ public final class FoodShelfRenderer implements BlockEntityRenderer<FoodShelfBlo
             pose.pushPose();
             // Centre of the block, then offset along the shelf and drop onto the hook.
             pose.translate(0.5D, 0.0D, 0.5D);
-            pose.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
+            pose.mulPose(Axis.YP.rotationDegrees(180.0F - facing.toYRot()));
 
             float along = FoodShelfManager.hookCenterAlong(hook) - 0.5F;
-            pose.translate(along, 0.62D, 0.42D);
+            // North model hooks sit at z=14.2..15.4px. Put the item just in front,
+            // with its upper edge near the hook bottom (y=11px).
+            pose.translate(along, 0.57D, 0.37D);
 
             // Face the item outward (the shelf hangs on the wall, the item sticks out of it).
-            pose.mulPose(Axis.XP.rotationDegrees(90.0F));
+            // FIXED item models already stand in XY. Only turn the face toward NORTH;
+            // an X rotation here would lay the sprite horizontally.
+            pose.mulPose(Axis.YP.rotationDegrees(180.0F));
             pose.scale(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE);
 
             itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, packedLight,
