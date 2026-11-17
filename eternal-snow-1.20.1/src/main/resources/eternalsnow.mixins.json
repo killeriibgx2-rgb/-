@@ -13,7 +13,8 @@
   "client": [
     "LevelRendererMixin",
     "CampfireSmokeParticleMixin",
-    "BaseAshSmokeParticleMixin"
+    "BaseAshSmokeParticleMixin",
+    "VillagerProfessionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

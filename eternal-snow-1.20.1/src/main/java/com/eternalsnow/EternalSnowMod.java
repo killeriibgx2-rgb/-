@@ -8,6 +8,8 @@ import com.eternalsnow.network.ClientboundWeatherSyncPacket;
 import com.eternalsnow.network.PacketHandler;
 import com.eternalsnow.registry.ModRegistry;
 import com.eternalsnow.state.EternalSnowState;
+import com.eternalsnow.survival.MobArmorHandler;
+import com.eternalsnow.survival.MobSurvivalManager;
 import com.eternalsnow.survival.PlayerSurvivalManager;
 import com.eternalsnow.thermal.ThermalEngine;
 import com.eternalsnow.weather.WeatherEventManager;
@@ -19,6 +21,8 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,6 +30,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -59,6 +65,9 @@ public class EternalSnowMod {
         MinecraftForge.EVENT_BUS.addListener(this::onServerTick);
         MinecraftForge.EVENT_BUS.addListener(this::onLevelTick);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerTick);
+        MinecraftForge.EVENT_BUS.addListener(this::onLivingTick);
+        MinecraftForge.EVENT_BUS.addListener(this::onLivingHurt);
+        MinecraftForge.EVENT_BUS.addListener(MobArmorHandler::onEntityInteract);
 
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onBlockPlaced);
         MinecraftForge.EVENT_BUS.addListener(ModWorldEvents::onBlockBroken);
@@ -90,7 +99,7 @@ public class EternalSnowMod {
         EternalSnowSavedData data = EternalSnowSavedData.get(event.getServer());
         EternalSnowState.setServerSettings(data.getSettings());
         EternalSnowState.setServerRunning(true);
-        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.5): enabled={}", data.getSettings().enabled);
+        LOGGER.info("[EternalSnow] Loaded world settings (v2.6.6): enabled={}", data.getSettings().enabled);
     }
 
     private void onServerStopped(final ServerStoppedEvent event) {
@@ -160,6 +169,35 @@ public class EternalSnowMod {
             ThermalEngine.tickLevelThermal(serverLevel);
             SnowAccumulationManager.tickLevelSnow(serverLevel);
             CampfireFuelManager.tickCampfires(serverLevel);
+        }
+    }
+
+    /** v2.6.6: every mob (not just players) now feels the cold — five times slower. */
+    private void onLivingTick(final LivingEvent.LivingTickEvent event) {
+        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof Mob mob)) {
+            return;
+        }
+        MobSurvivalManager.tickMob(mob);
+    }
+
+    /**
+     * v2.6.6: nothing burns while snow is falling on it. Fire damage and fire ignition are both
+     * dropped for mobs that stand in snow / under an active snowfall.
+     */
+    private void onLivingHurt(final LivingHurtEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (entity.level().isClientSide || !(entity.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        // Also covers the "snow walks into a mob" case: a burning mob loses its fire on contact
+        // with snow even when no fire damage is being dealt right now.
+        if (MobSurvivalManager.shouldExtinguishFire(serverLevel, entity) && entity.isOnFire()) {
+            entity.clearFire();
+        }
+        if (event.getSource().is(net.minecraft.tags.DamageTypeTags.IS_FIRE)
+                && MobSurvivalManager.shouldExtinguishFire(serverLevel, entity)) {
+            entity.clearFire();
+            event.setCanceled(true);
         }
     }
 

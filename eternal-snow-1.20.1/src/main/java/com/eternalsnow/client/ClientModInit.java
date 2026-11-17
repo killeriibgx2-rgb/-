@@ -51,6 +51,10 @@ public final class ClientModInit {
         MinecraftForge.EVENT_BUS.addListener(WinterSoundManager::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(ClientModInit::onBreathVaporTick);
         MinecraftForge.EVENT_BUS.addListener(ItemTooltipHandler::onItemTooltip);
+        // v2.6.6: frosted windows + footprints in fresh snow
+        MinecraftForge.EVENT_BUS.addListener(FrostedWindowRenderer::onRenderLevelStage);
+        MinecraftForge.EVENT_BUS.addListener(SnowFootprintRenderer::onClientTick);
+        MinecraftForge.EVENT_BUS.addListener(SnowFootprintRenderer::onRenderLevelStage);
     }
 
     @SuppressWarnings({"deprecation", "removal"})
@@ -85,6 +89,7 @@ public final class ClientModInit {
         HeatScanClientData.clear();
         WinterSoundManager.fadeOutAll();
         WindSnowRenderer.resetCache();
+        SnowFootprintRenderer.reset();
     }
 
     /**

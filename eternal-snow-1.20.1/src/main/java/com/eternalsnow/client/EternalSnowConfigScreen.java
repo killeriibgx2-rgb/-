@@ -819,6 +819,44 @@ public final class EternalSnowConfigScreen extends Screen {
         addScrolled(drinksBox, y);
         y += 26;
 
+        addScrolled(new EternalSnowWidgets.SectionHeader(leftX, 0, fullW, Component.translatable("eternalsnow.gui.folder.surv_mobs")), y);
+        y += 18;
+
+        addScrolled(new EternalSnowWidgets.ToggleSwitch(
+                leftX, 0, fullW, 20,
+                Component.translatable("eternalsnow.gui.surv.mobs_no_burn"),
+                this.workingServer.mobsDoNotBurnInSnow,
+                v -> this.workingServer.mobsDoNotBurnInSnow = v
+        ), y);
+        y += 24;
+        addScrolled(new EternalSnowWidgets.ToggleSwitch(
+                leftX, 0, fullW, 20,
+                Component.translatable("eternalsnow.gui.surv.mobs_freeze"),
+                this.workingServer.enableMobFreezing,
+                v -> this.workingServer.enableMobFreezing = v
+        ), y);
+        y += 24;
+        addScrolled(makeDoubleSlider(
+                leftX, halfW, "eternalsnow.gui.surv.mobs_freeze_rate", "x",
+                0.05D, 1.0D, this.workingServer.mobFreezeRateMultiplier, 0.05D, 2,
+                v -> this.workingServer.mobFreezeRateMultiplier = v.floatValue()
+        ), y);
+        y += 26;
+
+        addScrolled(new EternalSnowWidgets.ToggleSwitch(
+                leftX, 0, fullW, 20,
+                Component.translatable("eternalsnow.gui.surv.convection"),
+                this.workingServer.enableConvection,
+                v -> this.workingServer.enableConvection = v
+        ), y);
+        y += 24;
+        addScrolled(makeIntSlider(
+                leftX, halfW, "eternalsnow.gui.surv.convection_strength", "%",
+                0, 300, this.workingServer.convectionStrengthPercent, 10,
+                v -> this.workingServer.convectionStrengthPercent = v
+        ), y);
+        y += 26;
+
         addScrolled(new EternalSnowWidgets.SectionHeader(leftX, 0, fullW, Component.translatable("eternalsnow.gui.folder.surv_golem")), y);
         y += 18;
 

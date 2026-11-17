@@ -26,9 +26,11 @@ import com.eternalsnow.item.EmptyCupItem;
 import com.eternalsnow.item.HeatScannerItem;
 import com.eternalsnow.item.LocalThermometerItem;
 import com.eternalsnow.item.HotDrinkCupItem;
+import com.eternalsnow.item.JacketItem;
 import com.eternalsnow.item.SnowShovelItem;
 import com.eternalsnow.item.ThermometerItem;
 import com.eternalsnow.item.WarmingPillItem;
+import com.eternalsnow.item.WoolArmorItem;
 import com.eternalsnow.item.WoodenFirestarterItem;
 import com.eternalsnow.menu.CocoaPotMenu;
 import com.eternalsnow.recipe.ArmorInsulationRecipe;
@@ -49,6 +51,8 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 import net.minecraft.world.item.enchantment.Enchantment;
+import com.eternalsnow.item.WoolArmorMaterials;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -227,6 +231,38 @@ public final class ModRegistry {
             "heat_scanner",
             () -> new HeatScannerItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE))
     );
+    // v2.6.6: wool armour in several colours + winter jackets
+    public static final RegistryObject<Item> WOOL_HELMET = woolItem("wool_helmet", ArmorItem.Type.HELMET, WoolArmorMaterials.WOOL);
+    public static final RegistryObject<Item> WOOL_CHESTPLATE = woolItem("wool_chestplate", ArmorItem.Type.CHESTPLATE, WoolArmorMaterials.WOOL);
+    public static final RegistryObject<Item> WOOL_LEGGINGS = woolItem("wool_leggings", ArmorItem.Type.LEGGINGS, WoolArmorMaterials.WOOL);
+    public static final RegistryObject<Item> WOOL_BOOTS = woolItem("wool_boots", ArmorItem.Type.BOOTS, WoolArmorMaterials.WOOL);
+    public static final RegistryObject<Item> WOOL_RED_HELMET = woolItem("wool_red_helmet", ArmorItem.Type.HELMET, WoolArmorMaterials.WOOL_RED);
+    public static final RegistryObject<Item> WOOL_RED_CHESTPLATE = woolItem("wool_red_chestplate", ArmorItem.Type.CHESTPLATE, WoolArmorMaterials.WOOL_RED);
+    public static final RegistryObject<Item> WOOL_RED_LEGGINGS = woolItem("wool_red_leggings", ArmorItem.Type.LEGGINGS, WoolArmorMaterials.WOOL_RED);
+    public static final RegistryObject<Item> WOOL_RED_BOOTS = woolItem("wool_red_boots", ArmorItem.Type.BOOTS, WoolArmorMaterials.WOOL_RED);
+    public static final RegistryObject<Item> WOOL_BLUE_HELMET = woolItem("wool_blue_helmet", ArmorItem.Type.HELMET, WoolArmorMaterials.WOOL_BLUE);
+    public static final RegistryObject<Item> WOOL_BLUE_CHESTPLATE = woolItem("wool_blue_chestplate", ArmorItem.Type.CHESTPLATE, WoolArmorMaterials.WOOL_BLUE);
+    public static final RegistryObject<Item> WOOL_BLUE_LEGGINGS = woolItem("wool_blue_leggings", ArmorItem.Type.LEGGINGS, WoolArmorMaterials.WOOL_BLUE);
+    public static final RegistryObject<Item> WOOL_BLUE_BOOTS = woolItem("wool_blue_boots", ArmorItem.Type.BOOTS, WoolArmorMaterials.WOOL_BLUE);
+    public static final RegistryObject<Item> WOOL_GREEN_HELMET = woolItem("wool_green_helmet", ArmorItem.Type.HELMET, WoolArmorMaterials.WOOL_GREEN);
+    public static final RegistryObject<Item> WOOL_GREEN_CHESTPLATE = woolItem("wool_green_chestplate", ArmorItem.Type.CHESTPLATE, WoolArmorMaterials.WOOL_GREEN);
+    public static final RegistryObject<Item> WOOL_GREEN_LEGGINGS = woolItem("wool_green_leggings", ArmorItem.Type.LEGGINGS, WoolArmorMaterials.WOOL_GREEN);
+    public static final RegistryObject<Item> WOOL_GREEN_BOOTS = woolItem("wool_green_boots", ArmorItem.Type.BOOTS, WoolArmorMaterials.WOOL_GREEN);
+    public static final RegistryObject<Item> WOOL_YELLOW_HELMET = woolItem("wool_yellow_helmet", ArmorItem.Type.HELMET, WoolArmorMaterials.WOOL_YELLOW);
+    public static final RegistryObject<Item> WOOL_YELLOW_CHESTPLATE = woolItem("wool_yellow_chestplate", ArmorItem.Type.CHESTPLATE, WoolArmorMaterials.WOOL_YELLOW);
+    public static final RegistryObject<Item> WOOL_YELLOW_LEGGINGS = woolItem("wool_yellow_leggings", ArmorItem.Type.LEGGINGS, WoolArmorMaterials.WOOL_YELLOW);
+    public static final RegistryObject<Item> WOOL_YELLOW_BOOTS = woolItem("wool_yellow_boots", ArmorItem.Type.BOOTS, WoolArmorMaterials.WOOL_YELLOW);
+    public static final RegistryObject<Item> WOOL_PURPLE_HELMET = woolItem("wool_purple_helmet", ArmorItem.Type.HELMET, WoolArmorMaterials.WOOL_PURPLE);
+    public static final RegistryObject<Item> WOOL_PURPLE_CHESTPLATE = woolItem("wool_purple_chestplate", ArmorItem.Type.CHESTPLATE, WoolArmorMaterials.WOOL_PURPLE);
+    public static final RegistryObject<Item> WOOL_PURPLE_LEGGINGS = woolItem("wool_purple_leggings", ArmorItem.Type.LEGGINGS, WoolArmorMaterials.WOOL_PURPLE);
+    public static final RegistryObject<Item> WOOL_PURPLE_BOOTS = woolItem("wool_purple_boots", ArmorItem.Type.BOOTS, WoolArmorMaterials.WOOL_PURPLE);
+    public static final RegistryObject<Item> JACKET_LEATHER = ITEMS.register("jacket_leather",
+            () -> new JacketItem(WoolArmorMaterials.JACKET_LEATHER, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final RegistryObject<Item> JACKET_WOOL = ITEMS.register("jacket_wool",
+            () -> new JacketItem(WoolArmorMaterials.JACKET_WOOL, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final RegistryObject<Item> JACKET_PADDED = ITEMS.register("jacket_padded",
+            () -> new JacketItem(WoolArmorMaterials.JACKET_PADDED, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+
     public static final RegistryObject<Item> SNOW_SHOVEL = ITEMS.register(
             "snow_shovel",
             () -> new SnowShovelItem(new Item.Properties().durability(512))
@@ -338,6 +374,10 @@ public final class ModRegistry {
     public static final RegistryObject<SoundEvent> FROST_SHIVER = registerSound("frost_shiver");
     public static final RegistryObject<SoundEvent> SCANNER_TOGGLE = registerSound("scanner_toggle");
 
+    private static RegistryObject<Item> woolItem(String id, ArmorItem.Type type, net.minecraft.world.item.ArmorMaterial material) {
+        return ITEMS.register(id, () -> new WoolArmorItem(material, type, new Item.Properties()));
+    }
+
     // Creative Tab
     public static final RegistryObject<CreativeModeTab> CREATIVE_TAB = TABS.register(
             "eternalsnow_tab",
@@ -355,6 +395,18 @@ public final class ModRegistry {
                         output.accept(THERMAL_SHUTTER_ITEM.get());
                         output.accept(HEAT_ACCUMULATOR_ITEM.get());
                         output.accept(SNOW_SHOVEL.get());
+                        output.accept(WOOL_HELMET.get());
+                        output.accept(WOOL_CHESTPLATE.get());
+                        output.accept(WOOL_LEGGINGS.get());
+                        output.accept(WOOL_BOOTS.get());
+                        output.accept(WOOL_RED_CHESTPLATE.get());
+                        output.accept(WOOL_BLUE_CHESTPLATE.get());
+                        output.accept(WOOL_GREEN_CHESTPLATE.get());
+                        output.accept(WOOL_YELLOW_CHESTPLATE.get());
+                        output.accept(WOOL_PURPLE_CHESTPLATE.get());
+                        output.accept(JACKET_LEATHER.get());
+                        output.accept(JACKET_WOOL.get());
+                        output.accept(JACKET_PADDED.get());
                         output.accept(FESTIVE_COPPER_GOLEM_SPAWN_EGG.get());
                         output.accept(WARMING_PILL.get());
                         output.accept(COCOA_POT_ITEM.get());
