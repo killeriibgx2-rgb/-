@@ -829,6 +829,7 @@ public final class EternalSnowConfigScreen extends Screen {
                 v -> this.workingServer.enableMobFreezing = v
         ), y);
 
+        y += 24;
         // v2.7: food systems, switchable separately — some players want freezing without rot
         addScrolled(new EternalSnowWidgets.ToggleSwitch(
                 leftX, 0, fullW, 20,
@@ -844,6 +845,24 @@ public final class EternalSnowConfigScreen extends Screen {
                 v -> this.workingServer.enableFoodSpoilage = v
         ), y);
         y += 24;
+        addScrolled(makeIntSlider(
+                leftX, fullW, "eternalsnow.gui.surv.foodSpoilageSpeedPercent", "%",
+                0, 400, this.workingServer.foodSpoilageSpeedPercent, 5,
+                v -> this.workingServer.foodSpoilageSpeedPercent = v
+        ), y);
+        y += 26;
+        addScrolled(makeIntSlider(
+                leftX, fullW, "eternalsnow.gui.surv.foodFreezingSpeedPercent", "%",
+                0, 400, this.workingServer.foodFreezingSpeedPercent, 5,
+                v -> this.workingServer.foodFreezingSpeedPercent = v
+        ), y);
+        y += 26;
+        addScrolled(makeIntSlider(
+                leftX, fullW, "eternalsnow.gui.surv.foodThawingSpeedPercent", "%",
+                0, 400, this.workingServer.foodThawingSpeedPercent, 5,
+                v -> this.workingServer.foodThawingSpeedPercent = v
+        ), y);
+        y += 26;
         // v2.7.1: escape hatch — turn off the vanilla-furnace mixin behaviour at runtime
         addScrolled(new EternalSnowWidgets.ToggleSwitch(
                 leftX, 0, fullW, 20,

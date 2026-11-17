@@ -17,7 +17,10 @@ import net.minecraft.world.item.ItemStack;
 public final class FoodProfiles {
 
     /** Never spoils: our drinks, candy, anything the player does not expect to rot. */
-    public static final int PRESERVED = 0;
+    public static final int PRESERVED = 7;
+    public static final int LONG_LIFE = 6;
+    public static final TagKey<Item> FREEZABLE_TAG = tag("freezable");
+    public static final TagKey<Item> LONG_LIFE_TAG = tag("foods/long_life");
     /** Raw meat — the main reason the whole system exists. */
     public static final int RAW_MEAT = 1;
     /** Fish goes off first. */
@@ -49,9 +52,10 @@ public final class FoodProfiles {
      *         whole system should leave it alone.
      */
     public static int profileOf(ItemStack stack) {
-        if (stack.isEmpty() || !stack.isEdible()) {
-            return -1;
-        }
+        if (stack.isEmpty()) return -1;
+        if (!stack.isEdible()) return canFreeze(stack) ? 0 : -1;
+        if (stack.is(net.minecraft.world.item.Items.ROTTEN_FLESH)) return 0;
+        if (stack.is(LONG_LIFE_TAG)) return LONG_LIFE;
         if (stack.is(PRESERVED_TAG) || isModDrink(stack)) {
             return PRESERVED;
         }
@@ -72,7 +76,7 @@ public final class FoodProfiles {
         }
         // Unknown edible (a mod we have never seen, or a datapack dish): treat it as preserved.
         // Better to do nothing than to rot somebody's food they cannot replace.
-        return PRESERVED;
+        return PRODUCE;
     }
 
     /** Our own hot drinks must never spoil — they are the heat mechanic itself. */
@@ -84,6 +88,7 @@ public final class FoodProfiles {
 
     /** Everything edible can be frozen, even preserved food — freezing is about temperature, not rot. */
     public static boolean canFreeze(ItemStack stack) {
-        return stack.isEdible();
+        return stack.isEdible() || stack.is(FREEZABLE_TAG)
+                || stack.is(net.minecraft.tags.ItemTags.create(new ResourceLocation("forge", "seeds")));
     }
 }

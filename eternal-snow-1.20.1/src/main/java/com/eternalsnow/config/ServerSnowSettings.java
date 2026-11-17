@@ -56,6 +56,9 @@ public final class ServerSnowSettings {
     public float roomComfortCeilingC = 26.0F;          // LEGACY (2.6.x): kept for old saves, physics ignores it since 2.7
 
     // v2.7: food freezing + spoilage
+    public int foodSpoilageSpeedPercent = 25;
+    public int foodFreezingSpeedPercent = 100;
+    public int foodThawingSpeedPercent = 100;
     public boolean enableFoodFreezing = true;
     public boolean enableFoodSpoilage = true;
 
@@ -184,6 +187,9 @@ public final class ServerSnowSettings {
         this.globalHeatingSpeedMultiplier = src.globalHeatingSpeedMultiplier;
         this.roomHeatingPowerPercent = src.roomHeatingPowerPercent;
         this.roomComfortCeilingC = src.roomComfortCeilingC;
+        this.foodSpoilageSpeedPercent = src.foodSpoilageSpeedPercent;
+        this.foodFreezingSpeedPercent = src.foodFreezingSpeedPercent;
+        this.foodThawingSpeedPercent = src.foodThawingSpeedPercent;
         this.enableFoodFreezing = src.enableFoodFreezing;
         this.enableFoodSpoilage = src.enableFoodSpoilage;
         this.enableCookingTweaks = src.enableCookingTweaks;
@@ -221,6 +227,9 @@ public final class ServerSnowSettings {
     }
 
     public void clamp() {
+        this.foodThawingSpeedPercent = Mth.clamp(this.foodThawingSpeedPercent, 0, 400);
+        this.foodFreezingSpeedPercent = Mth.clamp(this.foodFreezingSpeedPercent, 0, 400);
+        this.foodSpoilageSpeedPercent = Mth.clamp(this.foodSpoilageSpeedPercent, 0, 400);
         this.forcedEventOrdinal = Mth.clamp(this.forcedEventOrdinal, 0, 4);
         this.weatherChangeMinutes = Mth.clamp(this.weatherChangeMinutes, 2, 60);
         this.manualWindAngleDeg = ((this.manualWindAngleDeg % 360) + 360) % 360;
@@ -323,6 +332,9 @@ public final class ServerSnowSettings {
         tag.putFloat("globalHeatingSpeedMultiplier", this.globalHeatingSpeedMultiplier);
         tag.putInt("roomHeatingPowerPercent", this.roomHeatingPowerPercent);
         tag.putFloat("roomComfortCeilingC", this.roomComfortCeilingC);
+        tag.putInt("foodSpoilageSpeedPercent", this.foodSpoilageSpeedPercent);
+        tag.putInt("foodFreezingSpeedPercent", this.foodFreezingSpeedPercent);
+        tag.putInt("foodThawingSpeedPercent", this.foodThawingSpeedPercent);
         tag.putBoolean("enableFoodFreezing", this.enableFoodFreezing);
         tag.putBoolean("enableFoodSpoilage", this.enableFoodSpoilage);
         tag.putBoolean("enableCookingTweaks", this.enableCookingTweaks);
@@ -419,6 +431,9 @@ public final class ServerSnowSettings {
         if (tag.contains("globalHeatingSpeedMultiplier")) this.globalHeatingSpeedMultiplier = tag.getFloat("globalHeatingSpeedMultiplier");
         if (tag.contains("roomHeatingPowerPercent")) this.roomHeatingPowerPercent = tag.getInt("roomHeatingPowerPercent");
         if (tag.contains("roomComfortCeilingC")) this.roomComfortCeilingC = tag.getFloat("roomComfortCeilingC");
+        if (tag.contains("foodSpoilageSpeedPercent")) this.foodSpoilageSpeedPercent = tag.getInt("foodSpoilageSpeedPercent");
+        if (tag.contains("foodFreezingSpeedPercent")) this.foodFreezingSpeedPercent = tag.getInt("foodFreezingSpeedPercent");
+        if (tag.contains("foodThawingSpeedPercent")) this.foodThawingSpeedPercent = tag.getInt("foodThawingSpeedPercent");
         if (tag.contains("enableFoodFreezing")) this.enableFoodFreezing = tag.getBoolean("enableFoodFreezing");
         if (tag.contains("enableFoodSpoilage")) this.enableFoodSpoilage = tag.getBoolean("enableFoodSpoilage");
         if (tag.contains("enableCookingTweaks")) this.enableCookingTweaks = tag.getBoolean("enableCookingTweaks");
@@ -551,6 +566,10 @@ public final class ServerSnowSettings {
         buf.writeBoolean(this.enableFoodFreezing);
         buf.writeBoolean(this.enableFoodSpoilage);
         buf.writeBoolean(this.enableCookingTweaks);
+        buf.writeVarInt(this.foodSpoilageSpeedPercent);
+        buf.writeVarInt(this.foodFreezingSpeedPercent);
+        buf.writeVarInt(this.foodThawingSpeedPercent);
+
     }
 
     public void readFromBuf(FriendlyByteBuf buf) {
@@ -632,6 +651,10 @@ public final class ServerSnowSettings {
         this.enableFoodFreezing = !buf.isReadable() || buf.readBoolean();
         this.enableFoodSpoilage = !buf.isReadable() || buf.readBoolean();
         this.enableCookingTweaks = buf.isReadable() ? buf.readBoolean() : true;
+        this.foodSpoilageSpeedPercent = buf.isReadable() ? buf.readVarInt() : 25;
+        this.foodFreezingSpeedPercent = buf.isReadable() ? buf.readVarInt() : 100;
+        this.foodThawingSpeedPercent = buf.isReadable() ? buf.readVarInt() : 100;
+
         this.clamp();
     }
 }

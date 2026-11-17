@@ -390,5 +390,8 @@
   "item.eternalsnow.wool_yellow_chestplate": "Yellow Wool Vest",
   "item.eternalsnow.wool_yellow_helmet": "Yellow Wool Hood",
   "item.eternalsnow.wool_yellow_leggings": "Yellow Wool Trousers",
-  "itemGroup.eternalsnow": "Eternal Snow"
+  "itemGroup.eternalsnow": "Eternal Snow",
+  "eternalsnow.gui.surv.foodSpoilageSpeedPercent": "Food spoilage speed",
+  "eternalsnow.gui.surv.foodFreezingSpeedPercent": "Item cooling speed",
+  "eternalsnow.gui.surv.foodThawingSpeedPercent": "Item thawing speed"
 }
