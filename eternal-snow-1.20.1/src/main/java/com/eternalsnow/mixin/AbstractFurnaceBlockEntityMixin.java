@@ -61,7 +61,14 @@ public abstract class AbstractFurnaceBlockEntityMixin {
                     target = "Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;getTotalCookTime(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;)I"))
     private int eternalsnow$thawAwareCookTime(net.minecraft.world.level.Level level,
                                               AbstractFurnaceBlockEntity furnace) {
-        int vanilla = AbstractFurnaceBlockEntity.getTotalCookTime(level, furnace);
+        int vanilla;
+        try {
+            vanilla = FurnaceCookTimeInvoker.eternalsnow$getTotalCookTime(level, furnace);
+        } catch (Throwable notApplied) {
+            // The accessor is a convenience, never a requirement: a furnace must keep working even
+            // if a future Minecraft version renames the private helper.
+            vanilla = 200;
+        }
         ItemStack input = furnace.getItem(0);
         if (input.isEmpty() || !FoodState.isFrozen(input)) {
             return vanilla;
