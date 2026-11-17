@@ -43,28 +43,23 @@ public final class FoodShelfManager {
         Vec3 location = hit.getLocation();
         double local = alongShelf(facing, location.x - pos.getX(), location.z - pos.getZ());
 
-        float spacing = 1.0F / FoodShelfBlock.HOOKS;
-        float clamped = Mth.clamp((float) local, spacing * 0.5F, 1.0F - spacing * 0.5F);
-        int hook = Math.round((clamped / spacing) - 0.5F);
+        // Model centres are 1.6, 4.6, 7.6, 10.6, 13.6 pixels, NOT a 3.2px grid.
+        int hook = (int) Math.round((local * 16.0D - 1.6D) / 3.0D);
         return Mth.clamp(hook, 0, FoodShelfBlock.HOOKS - 1);
     }
 
-    /**
-     * Position of a hook centre in 0..1 along the shelf, in block-local coordinates.
-     * Used by the renderer so the item hangs exactly where the click math says it does.
-     */
+    /** Centre in the unrotated (north-facing) JSON model. */
     public static float hookCenterAlong(int hook) {
-        float spacing = 1.0F / FoodShelfBlock.HOOKS;
-        return spacing * (hook + 0.5F);
+        return (1.6F + 3.0F * hook) / 16.0F;
     }
 
-    /** Converts a block-local hit into the 0..1 coordinate the hooks are spaced on. */
+    /** Inverse of the blockstate model rotation, shared with the item placement convention. */
     private static double alongShelf(Direction facing, double localX, double localZ) {
         return switch (facing) {
-            case NORTH -> 1.0D - localX; // shelf faces south-to-north: X runs right to left
-            case SOUTH -> localX;
+            case NORTH -> localX;
+            case SOUTH -> 1.0D - localX;
             case WEST -> 1.0D - localZ;
-            default -> localZ;
+            default -> localZ; // EAST
         };
     }
 

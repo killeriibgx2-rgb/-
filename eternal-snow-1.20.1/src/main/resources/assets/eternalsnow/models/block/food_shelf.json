@@ -1,8 +1,8 @@
 {
   "ambientocclusion": false,
   "textures": {
-    "particle": "eternalsnow:block/food_shelf",
-    "wood": "eternalsnow:block/food_shelf",
+    "particle": "minecraft:block/spruce_planks",
+    "wood": "minecraft:block/spruce_planks",
     "iron": "minecraft:block/iron_block"
   },
   "elements": [
