@@ -165,7 +165,7 @@ public class AdaptiveThermalTest {
         var g=new AdaptiveThermalGraph(List.of(a,b));
         g.addPower(a,0,68);
         for(int i=0;i<20;i++)g.step(.5,-30);
-        double before=g.solver.totalEnergy(),aTemperature=g.solver.temperature(a.node+5),bMean=b.mean();
+        double aTemperature=g.solver.temperature(a.node+5),bMean=b.mean();
         assertTrue(g.canRefreshInPlace(tile(0,0,0,0,true)));
         assertFalse(g.canRefreshInPlace(tile(0,0,0,0,false)));
         // A single edited block replaces this tile's materials; nothing else may move.
@@ -173,13 +173,14 @@ public class AdaptiveThermalTest {
         double[] capacities=filled(1);capacities[5]=9;
         edited.configure(true,capacities,filled(2),filled(0),filled(1),filled(0));
         g.refreshInPlace(edited);
-        assertEquals(before,g.solver.totalEnergy(),1e-9);
+        // Editing capacity legitimately changes stored E=C*T; temperatures must not reset.
         assertEquals(aTemperature,g.solver.temperature(a.node+5),0);
         assertEquals(bMean,b.mean(),0);
         assertEquals(513,g.solver.size());
+        double afterRefresh=g.solver.totalEnergy();
         g.clearPower();
         for(int i=0;i<50;i++)g.step(.5,-30);
-        assertEquals(before,g.solver.totalEnergy(),1e-7);
+        assertEquals(afterRefresh,g.solver.totalEnergy(),1e-7);
         assertTrue(b.mean()>-20);
     }
 }
