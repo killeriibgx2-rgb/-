@@ -65,6 +65,8 @@ public final class ClientModInit {
     private static void onClientSetup(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(ModRegistry.COCOA_POT_MENU.get(), CocoaPotScreen::new);
+            com.eternalsnow.registry.InsulatedRegistry.ITEMS.forEach(item ->
+                    ItemBlockRenderTypes.setRenderLayer(((net.minecraft.world.item.BlockItem)item.get()).getBlock(), RenderType.cutout()));
             ItemBlockRenderTypes.setRenderLayer(ModRegistry.WALL_THERMOMETER.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModRegistry.COCOA_POT.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModRegistry.ICICLE.get(), RenderType.cutout());
