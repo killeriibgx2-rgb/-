@@ -64,4 +64,21 @@ public class ConservativeHeatSolverTest {
         assertEquals(energy+340,s.totalEnergy(),1e-5);assertEquals(2,s.lastSubsteps());
         System.out.println("Conservative million-cell test 10 steps ms="+(System.nanoTime()-start)/1e6);
     }
+    @Test(timeout=30000) public void threeDimensionalMixingGridConservesInjectedPower() {
+        int side=64,n=side*side*side;
+        double[] t=new double[n],c=new double[n];Arrays.fill(t,-20);Arrays.fill(c,1);
+        var s=new CellHeatSolver(t,c,new CellHeatSolver.Edge[0]);
+        for(int z=0;z<side;z++)for(int y=0;y<side;y++)for(int x=0;x<side;x++) {
+            int a=x+side*(y+side*z);
+            if(x+1<side)s.setConnection(a,a+1,3);
+            if(y+1<side)s.setConnection(a,a+side,3);
+            if(z+1<side)s.setConnection(a,a+side*side,3);
+        }
+        s.setPower(n/2,68);double initial=s.totalEnergy();
+        long start=System.nanoTime();
+        for(int step=0;step<20;step++)s.stepConservative(.5);
+        assertEquals(initial+680,s.totalEnergy(),1e-5);
+        assertEquals(774144,s.edgeCount());
+        System.out.println("Conservative 64^3 G=3 20 steps ms="+(System.nanoTime()-start)/1e6);
+    }
 }

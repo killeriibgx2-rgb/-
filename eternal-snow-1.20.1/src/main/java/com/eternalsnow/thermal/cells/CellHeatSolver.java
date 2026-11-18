@@ -27,7 +27,7 @@ public final class CellHeatSolver {
     private double[] edgeG;
     private int activeCount, lastSubsteps;
     private boolean topologyDirty=true;
-    private double[] pairTransfer=new double[0], externalScale=new double[0];
+    private double[] pairTransfer=new double[0], externalScale=new double[0], inverseCapacity;
     private double splitHalf=Double.NaN;
     private boolean splitDirty=true;
     private final it.unimi.dsi.fastutil.ints.IntOpenHashSet splitEdgesDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
@@ -41,6 +41,7 @@ public final class CellHeatSolver {
         if (temperature.length != capacity.length) throw new IllegalArgumentException("Cell count mismatch");
         this.temperature = temperature.clone();
         this.capacity = capacity.clone();
+        inverseCapacity=new double[capacity.length];
         edgeA=new int[edges.length];edgeB=new int[edges.length];edgeG=new double[edges.length];
         activeEdges=new int[0];
         int n = temperature.length; cellCount=n; edgeCount=edges.length;
@@ -49,7 +50,7 @@ public final class CellHeatSolver {
         Arrays.fill(loaded, true);
         for (int i = 0; i < n; i++) {
             finite(temperature[i]);
-            positive(capacity[i]);
+            positive(capacity[i]);inverseCapacity[i]=1/capacity[i];
         }
         // Long.hashCode((a << 32) | b) == a ^ b. Grid neighbours therefore
         // collapse into a handful of HashSet bins (all even a -> a+1 hash to 1).
@@ -81,17 +82,18 @@ public final class CellHeatSolver {
         if(cellCount==temperature.length) {
             int n=Math.max(16,cellCount+Math.max(1,cellCount/2));
             temperature=Arrays.copyOf(temperature,n);capacity=Arrays.copyOf(capacity,n);
+            inverseCapacity=Arrays.copyOf(inverseCapacity,n);
             power=Arrays.copyOf(power,n);boundaryG=Arrays.copyOf(boundaryG,n);
             boundaryT=Arrays.copyOf(boundaryT,n);
             if(rates.length>0)rates=Arrays.copyOf(rates,n);
             if(deltaEnergy.length>0)deltaEnergy=Arrays.copyOf(deltaEnergy,n);
             loaded=Arrays.copyOf(loaded,n);
         }
-        int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;loaded[i]=true;topologyDirty=true;externalDirty.add(i);
+        int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;inverseCapacity[i]=1/heatCapacity;loaded[i]=true;topologyDirty=true;externalDirty.add(i);
         return i;
     }
     public void setCapacity(int cell,double value) {
-        positive(value);if(capacity[cell]!=value){capacity[cell]=value;splitDirty=true;}
+        positive(value);if(capacity[cell]!=value){capacity[cell]=value;inverseCapacity[cell]=1/value;splitDirty=true;}
     }
     private static long pair(int a,int b) {return ((long)Math.min(a,b)<<32)|Math.max(a,b);}
     /** Existing edge is updated, new edge is added once; primitive mixed hashing avoids Long.hashCode. */
@@ -223,7 +225,7 @@ public final class CellHeatSolver {
         splitEdgesDirty.clear();externalDirty.clear();splitDirty=false;
     }
     private void preparePair(int e) {
-        double inverse=1/capacity[edgeA[e]]+1/capacity[edgeB[e]];
+        double inverse=inverseCapacity[edgeA[e]]+inverseCapacity[edgeB[e]];
         pairTransfer[e]=-Math.expm1(-edgeG[e]*inverse*splitHalf)/inverse;
     }
     private void prepareExternal(int i) {
@@ -234,7 +236,7 @@ public final class CellHeatSolver {
         int a=edgeA[e],b=edgeB[e];if(!loaded[a]||!loaded[b])return;
         double difference=temperature[b]-temperature[a];if(difference==0)return;
         double q=pairTransfer[e]*difference;
-        temperature[a]+=q/capacity[a];temperature[b]-=q/capacity[b];
+        temperature[a]+=q*inverseCapacity[a];temperature[b]-=q*inverseCapacity[b];
     }
     private void externalHalf() {
         for(int i=0;i<cellCount;i++)if(loaded[i])
