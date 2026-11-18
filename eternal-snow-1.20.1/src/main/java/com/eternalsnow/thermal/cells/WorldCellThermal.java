@@ -41,6 +41,7 @@ public final class WorldCellThermal {
         double[] conductivity = new double[0];
         double[] powers = new double[0];
         boolean[] air = new boolean[0];
+        final it.unimi.dsi.fastutil.ints.IntArrayList emitters = new it.unimi.dsi.fastutil.ints.IntArrayList();
         boolean dirty = true;
         long expansionCursor;
         int settingsHash;
@@ -201,7 +202,8 @@ public final class WorldCellThermal {
         Arrays.fill(w.powers,0);
         // Split existing flame power between its support and directly touching air.
         // A campfire was previously treated entirely as a massive stone voxel.
-        for(int i=0;i<w.positions.length;i++) {
+        for(int e=0;e<w.emitters.size();e++) {
+            int i=w.emitters.getInt(e);
             BlockPos p=w.positions[i];
             if(!ready(level,p))continue;
             BlockState state=w.states[i];
@@ -261,11 +263,12 @@ public final class WorldCellThermal {
         }
         int n=cells.size();
         w.positions=cells.toArray(BlockPos[]::new); w.states=new BlockState[n]; w.conductivity=new double[n];
-        w.powers=new double[n]; w.air=new boolean[n];
+        w.powers=new double[n]; w.air=new boolean[n]; w.emitters.clear();
         double[] t=new double[n],cap=new double[n];
         w.indices=new Long2IntOpenHashMap(n);w.indices.defaultReturnValue(-1);
         for(int i=0;i<n;i++) {
             BlockPos p=w.positions[i];BlockState state=level.getBlockState(p);w.states[i]=state;
+            if(ThermalEngine.isPotentialHeatEmitter(state))w.emitters.add(i);
             var map=data.chunk(chunkKey(p));
             BlockState previous=w.lastStates.put(p.asLong(),state);
             if(previous!=null && previous.getBlock()!=state.getBlock()) map.put(p.asLong(),localAir(level,data,p));
