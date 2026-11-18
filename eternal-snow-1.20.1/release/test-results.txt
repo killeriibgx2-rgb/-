@@ -1,0 +1,26 @@
+Thermal build regression results (synthetic; not Minecraft TPS)
+com.eternalsnow.config.FoodSettingsTest: tests=4, failures=0, errors=0, seconds=0.781
+2026-11-18 15:40:54,914 Test worker WARN Advanced terminal features are not available in this environment
+com.eternalsnow.config.WinterPresetTest: tests=3, failures=0, errors=0, seconds=0.001
+com.eternalsnow.food.FoodCoolingTest: tests=8, failures=0, errors=0, seconds=0.001
+com.eternalsnow.thermal.RoomThermalBalanceTest: tests=5, failures=0, errors=0, seconds=0.001
+com.eternalsnow.thermal.cells.AdaptiveThermalTest: tests=13, failures=0, errors=0, seconds=3.066
+Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=2094.348906
+Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=558.065399
+com.eternalsnow.thermal.cells.AirHeatTransferTest: tests=4, failures=0, errors=0, seconds=0.272
+Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
+Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
+Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
+Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
+com.eternalsnow.thermal.cells.CellHeatSolverScaleTest: tests=3, failures=0, errors=0, seconds=0.193
+Thermal regression: 3 x 262144 cells / 774144 edges + steps: 118 ms (CI, not Minecraft TPS)
+com.eternalsnow.thermal.cells.CellHeatSolverTest: tests=12, failures=0, errors=0, seconds=0.003
+com.eternalsnow.thermal.cells.CellTemperatureSnapshotTest: tests=6, failures=0, errors=0, seconds=0.002
+com.eternalsnow.thermal.cells.CellThermalSavedDataTest: tests=3, failures=0, errors=0, seconds=0.001
+com.eternalsnow.thermal.cells.ConservativeHeatSolverTest: tests=7, failures=0, errors=0, seconds=0.656
+Conservative million-cell test 10 steps ms=186.294706
+Conservative 64^3 G=3 20 steps ms=241.670774
+com.eternalsnow.thermal.cells.IncrementalHeatGraphTest: tests=4, failures=0, errors=0, seconds=0.044
+com.eternalsnow.thermal.cells.PackedHeatSolverTest: tests=3, failures=0, errors=0, seconds=0.701
+THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=305.670144ms packed=217.928382ms; synthetic, not server TPS
+com.eternalsnow.village.ConfectionerPolicyTest: tests=3, failures=0, errors=0, seconds=0.001

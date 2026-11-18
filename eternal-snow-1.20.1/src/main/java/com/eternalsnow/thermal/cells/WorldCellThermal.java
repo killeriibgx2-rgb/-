@@ -7,465 +7,311 @@ import com.eternalsnow.state.EternalSnowState;
 import com.eternalsnow.thermal.BlockThermalCategory;
 import com.eternalsnow.thermal.ThermalEngine;
 import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-/** Minecraft adapter. Single server-thread owner; reads never force chunks to load. */
+/** Adaptive finite volumes: retained temperatures are NOT synonymous with solver nodes. */
 public final class WorldCellThermal {
-    private static final Map<ResourceKey<Level>, Workspace> WORLDS = new ConcurrentHashMap<>();
-    private static final Direction[] FORWARD = {Direction.EAST,Direction.UP,Direction.SOUTH};
-    private static final Direction[] ALL = Direction.values();
-    private static final int EXPANSION_BUDGET = 512;
-
+    private static final Map<ResourceKey<Level>,Workspace> WORLDS=new ConcurrentHashMap<>();
+    private static final Direction[] DIRECTIONS=Direction.values();
+    private static final int DETAIL_HOLD_TICKS=200;
+    private static final class Region {
+        final AdaptiveThermalTile field;
+        final IntArrayList sources=new IntArrayList();
+        long detailedUntil;
+        boolean powered;
+        Region(AdaptiveThermalTile field){this.field=field;}
+    }
+    private record Material(double capacity,double conductivity,boolean air) {}
     private static final class Workspace {
-        final Set<Long> pending = ConcurrentHashMap.newKeySet();
-        final ConcurrentLinkedQueue<Long> pendingOrder = new ConcurrentLinkedQueue<>();
-        final LongOpenHashSet loaded = new LongOpenHashSet();
-        final LongOpenHashSet sources = new LongOpenHashSet();
-        final LongLinkedOpenHashSet scanQueue = new LongLinkedOpenHashSet();
-        final LongOpenHashSet seeded = new LongOpenHashSet();
-        final LongLinkedOpenHashSet frontier = new LongLinkedOpenHashSet();
-        final Long2ObjectOpenHashMap<it.unimi.dsi.fastutil.ints.IntArrayList> columns = new Long2ObjectOpenHashMap<>();
-        final LongOpenHashSet dirtyColumns = new LongOpenHashSet();
-        final Long2ObjectOpenHashMap<LevelChunk> tickChunks = new Long2ObjectOpenHashMap<>();
-        final Long2ObjectOpenHashMap<BlockState> lastStates = new Long2ObjectOpenHashMap<>();
-        CellHeatSolver solver;
-        BlockPos[] positions = new BlockPos[0];
-        int size, addedLast;
-        long lastNanos, solverNanos, maxNanos, rebuilds, updates;
-        Long2IntOpenHashMap indices = new Long2IntOpenHashMap();
-        BlockState[] states = new BlockState[0];
-        double[] conductivity = new double[0];
-        double[] powers = new double[0];
-        boolean[] air = new boolean[0],live = new boolean[0];
-        double[] outsideG = new double[0], ambientSlope = new double[0], ambientOffset = new double[0];
-        long stateCursor;
-        final it.unimi.dsi.fastutil.ints.IntOpenHashSet emitters = new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
-        final LongOpenHashSet changed = new LongOpenHashSet();
-        final LongOpenHashSet replaced = new LongOpenHashSet();
-        final LongOpenHashSet imported = new LongOpenHashSet();
-        final IdentityHashMap<BlockState,Material> materials = new IdentityHashMap<>();
-        boolean dirty = true;
-        long expansionCursor;
-        int settingsHash;
+        final Set<Long> pending=ConcurrentHashMap.newKeySet();
+        final ConcurrentLinkedQueue<Long> pendingOrder=new ConcurrentLinkedQueue<>();
+        final LongLinkedOpenHashSet scans=new LongLinkedOpenHashSet(), background=new LongLinkedOpenHashSet(), urgent=new LongLinkedOpenHashSet();
+        final LongOpenHashSet loaded=new LongOpenHashSet(),dirty=new LongOpenHashSet(),wanted=new LongOpenHashSet();
+        final Long2ObjectOpenHashMap<Region> regions=new Long2ObjectOpenHashMap<>();
+        final IdentityHashMap<BlockState,Material> materials=new IdentityHashMap<>();
+        AdaptiveThermalGraph graph;
+        boolean rebuild=true;
+        int settingsHash,initializedLast;
+        long lastNanos,solverNanos,maxNanos,rebuilds,expansionCursor;
     }
-    private static Workspace ws(ServerLevel level) { return WORLDS.computeIfAbsent(level.dimension(), k -> new Workspace()); }
-    public static void clearAll() { WORLDS.clear(); }
-    public static void load(ServerLevel level,long chunk) {
-        Workspace w=ws(level);
-        if(w.pending.add(chunk))w.pendingOrder.add(chunk);
-    }
-    public static void forgetLevel(ServerLevel level) {WORLDS.remove(level.dimension());}
+    private static Workspace ws(ServerLevel level){return WORLDS.computeIfAbsent(level.dimension(),k->new Workspace());}
+    public static void clearAll(){WORLDS.clear();}
+    public static void forgetLevel(ServerLevel level){WORLDS.remove(level.dimension());}
+    private static long chunkKey(BlockPos p){return ChunkPos.asLong(p.getX()>>4,p.getZ()>>4);}
+    static long tileKey(BlockPos p){return BlockPos.asLong(p.getX()&~7,p.getY()&~7,p.getZ()&~7);}
+    private static int local(BlockPos p){return AdaptiveThermalTile.index(p.getX()&7,p.getY()&7,p.getZ()&7);}
+    private static BlockPos at(AdaptiveThermalTile t,int i){return new BlockPos(t.x+(i&7),t.y+(i>>6),t.z+((i>>3)&7));}
+    private static boolean ready(ServerLevel l,BlockPos p){return !l.isOutsideBuildHeight(p)&&l.getChunkSource().getChunkNow(p.getX()>>4,p.getZ()>>4)!=null;}
+    public static void load(ServerLevel level,long chunk){var w=ws(level);if(w.pending.add(chunk))w.pendingOrder.add(chunk);}
     public static void unload(ServerLevel level,long chunk) {
-        Workspace w=ws(level);
-        boolean admitted=w.loaded.remove(chunk);
-        w.pending.remove(chunk);w.pendingOrder.removeIf(key -> key.longValue()==chunk);
-        w.imported.remove(chunk);w.scanQueue.remove(chunk);w.tickChunks.remove(chunk);
-        // Source halos crossing this boundary must be retried after a future reload.
-        w.seeded.removeIf(key -> Math.abs((BlockPos.of(key).getX()>>4)-ChunkPos.getX(chunk))<=1
-                && Math.abs((BlockPos.of(key).getZ()>>4)-ChunkPos.getZ(chunk))<=1);
-        var stored=CellThermalSavedData.get(level).chunks.get(chunk);
-        // Empty terrain chunks have no graph topology to compact.
-        if(admitted && stored!=null && !stored.isEmpty())w.dirty=true;
-        w.sources.removeIf(key -> chunkKey(BlockPos.of(key))==chunk);
-        w.lastStates.keySet().removeIf(key -> chunkKey(BlockPos.of(key))==chunk);
+        Workspace w=WORLDS.get(level.dimension());if(w==null)return;
+        w.pending.remove(chunk);w.pendingOrder.removeIf(k->k.longValue()==chunk);w.loaded.remove(chunk);w.scans.remove(chunk);
+        w.background.removeIf(k->chunkKey(BlockPos.of(k))==chunk);w.urgent.removeIf(k->chunkKey(BlockPos.of(k))==chunk);
+        w.dirty.removeIf(k->chunkKey(BlockPos.of(k))==chunk);w.wanted.removeIf(k->chunkKey(BlockPos.of(k))==chunk);
+        if(w.regions.keySet().removeIf(k->chunkKey(BlockPos.of(k))==chunk))w.rebuild=true;
+        // Each completed step has already captured temperatures into SavedData; no unload catch-up.
     }
-    private static long chunkKey(BlockPos pos) { return ChunkPos.asLong(pos.getX()>>4,pos.getZ()>>4); }
-    private static boolean ready(ServerLevel level,BlockPos pos) {
-        return !level.isOutsideBuildHeight(pos) && level.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4)!=null;
+    private static void request(ServerLevel level,Workspace w,long key,boolean urgent) {
+        if(w.regions.containsKey(key)||!ready(level,BlockPos.of(key)))return;
+        if(urgent){w.background.remove(key);w.urgent.add(key);}else if(!w.urgent.contains(key))w.background.add(key);
     }
-    private static void admit(ServerLevel level,Workspace w,BlockPos pos) {
-        long key=chunkKey(pos);
-        if (w.loaded.add(key)) { w.scanQueue.add(key); w.imported.add(key); }
+    private static void halo(ServerLevel level,Workspace w,BlockPos p) {
+        for(Direction d:DIRECTIONS)request(level,w,tileKey(p.relative(d,8)),false);
     }
     public static double temperature(ServerLevel level,BlockPos pos) {
-        if (!ready(level,pos)) {
-            var stored=CellThermalSavedData.get(level).chunks.get(chunkKey(pos));
-            double t=stored==null?Double.NaN:stored.get(pos.asLong());
-            return Double.isNaN(t)?EternalSnowState.worldAmbientTempC:t;
-        }
-        Workspace w=ws(level); admit(level,w,pos);
-        return ensure(level,w,CellThermalSavedData.get(level),pos);
+        // Pure read: thermometers, crops, mobs and snow must not materialize the whole world.
+        var data=CellThermalSavedData.get(level);var state=data.tiles.get(tileKey(pos));
+        if(state!=null)return state.get(local(pos));
+        var old=data.chunks.get(chunkKey(pos));double t=old==null?Double.NaN:old.get(pos.asLong());
+        if(!Double.isNaN(t))return t;
+        return ready(level,pos)?ThermalEngine.computeBaseAmbientC(level,pos):EternalSnowState.worldAmbientTempC;
     }
-    private static double ensure(ServerLevel level,Workspace w,CellThermalSavedData data,BlockPos pos) {
-        var cells=data.chunk(chunkKey(pos)); double t=cells.get(pos.asLong());
-        if (Double.isNaN(t)) {
-            t=ThermalEngine.computeBaseAmbientC(level,pos);
-            if (level.getBlockEntity(pos) instanceof HeatAccumulatorBlockEntity accumulator)
-                t+=Math.max(0,accumulator.getHeatC()); // one-time migration; existing cell wins thereafter
-            cells.put(pos.asLong(),t); data.setDirty(); w.changed.add(pos.asLong());
-        }
-        return t;
-    }
-    private static double localAir(ServerLevel level,CellThermalSavedData data,BlockPos pos) {
-        double sum=0; int count=0;
-        for (Direction d:ALL) {
-            BlockPos n=pos.relative(d);
-            if (!ready(level,n) || !ThermalEngine.isAirOrOpenPassage(level.getBlockState(n))) continue;
-            var cells=data.chunks.get(chunkKey(n));
-            double t=cells==null?Double.NaN:cells.get(n.asLong());
-            if (!Double.isNaN(t)) { sum+=t; count++; }
+    private static double localAir(ServerLevel level,BlockPos pos) {
+        double sum=0;int count=0;
+        for(Direction d:DIRECTIONS) {
+            BlockPos q=pos.relative(d);
+            if(ready(level,q)&&ThermalEngine.isAirOrOpenPassage(level.getBlockState(q))) {sum+=temperature(level,q);count++;}
         }
         return count==0?ThermalEngine.computeBaseAmbientC(level,pos):sum/count;
     }
     public static void replaced(ServerLevel level,BlockPos pos) {
-        if (!ready(level,pos)) return;
-        Workspace w=ws(level); admit(level,w,pos);
-        var data=CellThermalSavedData.get(level);
-        data.chunk(chunkKey(pos)).put(pos.asLong(),localAir(level,data,pos));
-        data.setDirty(); w.changed.add(pos.asLong()); w.replaced.add(pos.asLong()); w.lastStates.remove(pos.asLong());
-        w.sources.add(pos.asLong()); // validate after the placement/break event completes
+        if(!ready(level,pos)||!EternalSnowState.isOverworldLike(level))return;
+        var data=CellThermalSavedData.get(level);long key=tileKey(pos);var state=data.tiles.get(key);
+        boolean emitter=ThermalEngine.isPotentialHeatEmitter(level.getBlockState(pos));
+        var old=data.chunks.get(chunkKey(pos));
+        if(state==null && !emitter && (old==null||!old.containsKey(pos.asLong())))return;
+        double t=localAir(level,pos);
+        if(state!=null)state.set(local(pos),t);else data.chunk(chunkKey(pos)).put(pos.asLong(),t);
+        data.setDirty();Workspace w=ws(level);w.dirty.add(key);request(level,w,key,true);
     }
-    public static void blockChanged(ServerLevel level, BlockPos pos, BlockState before, BlockState after) {
-        if (!EternalSnowState.isOverworldLike(level) || !ready(level,pos)) return;
-        Workspace w=ws(level);
-        if(w.columns.containsKey(columnKey(pos)))w.dirtyColumns.add(columnKey(pos));
-        w.seeded.remove(pos.asLong());
+    public static void blockChanged(ServerLevel level,BlockPos pos,BlockState before,BlockState after) {
+        if(!EternalSnowState.isOverworldLike(level)||!ready(level,pos))return;
+        Workspace w=WORLDS.get(level.dimension());
         boolean emitter=ThermalEngine.isPotentialHeatEmitter(after);
-        // Do not materialise every natural snowfall block. Only existing thermal cells
-        // and newly introduced emitters need state; source indexing handles loaded chunks.
-        var map=CellThermalSavedData.get(level).chunks.get(chunkKey(pos));
-        if (!emitter && (map==null || !map.containsKey(pos.asLong()))) return;
-        if (before.getBlock()!=after.getBlock()) replaced(level,pos);
-        else w.changed.add(pos.asLong());
-        // This mutation has already been handled, don't reset it a second time on rebuild.
-        w.lastStates.put(pos.asLong(),after);
-        if(emitter) w.sources.add(pos.asLong());
-        else w.sources.remove(pos.asLong());
+        if(w==null&&!emitter)return;
+        if(w==null)w=ws(level);
+        long key=tileKey(pos);
+        if(before.getBlock()!=after.getBlock())replaced(level,pos);
+        var settings=EternalSnowState.getServerSettings();
+        boolean materialChange=!material(w,before,settings).equals(material(w,after,settings));
+        boolean sourceChange=ThermalEngine.isPotentialHeatEmitter(before)!=emitter;
+        if(w.regions.containsKey(key)&&(materialChange||sourceChange))w.dirty.add(key);
+        // Do not rescan every vertical tile for fuel/lit changes or snow-layer count changes.
+        BlockPos origin=BlockPos.of(key);
+        boolean exposureChange=before.isAir()!=after.isAir()
+                || before.getLightBlock(level,pos)!=after.getLightBlock(level,pos)
+                || before.getFluidState().isEmpty()!=after.getFluidState().isEmpty();
+        if(exposureChange)for(int y=level.getMinBuildHeight()&~7;y<level.getMaxBuildHeight();y+=8) {
+            long affected=BlockPos.asLong(origin.getX(),y,origin.getZ());
+            if(w.regions.containsKey(affected))w.dirty.add(affected);
+        }
+        if(emitter){request(level,w,key,true);halo(level,w,origin);}
     }
     public static void sourceChanged(ServerLevel level,BlockPos pos) {
-        if (!ready(level,pos)) return;
-        Workspace w=ws(level); admit(level,w,pos);
-        w.sources.add(pos.asLong());
-        ensure(level,w,CellThermalSavedData.get(level),pos); // never resets an existing temperature
+        if(!ready(level,pos))return;Workspace w=ws(level);long key=tileKey(pos);
+        request(level,w,key,true);
+        Region region=w.regions.get(key);
+        // Fuel/active changes are read every step; only membership needs a rescan.
+        if(region!=null && region.sources.contains(local(pos))
+                !=ThermalEngine.isPotentialHeatEmitter(level.getBlockState(pos)))w.dirty.add(key);
+        halo(level,w,BlockPos.of(key));
     }
-    private static void seed(ServerLevel level,Workspace w,CellThermalSavedData data,BlockPos center,int radius) {
-        for (int x=-radius;x<=radius;x++) for(int y=-radius;y<=radius;y++) for(int z=-radius;z<=radius;z++) {
-            BlockPos p=center.offset(x,y,z);
-            if (ready(level,p)) { admit(level,w,p); ensure(level,w,data,p); }
+    private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
+        return w.materials.computeIfAbsent(state,s->{
+            boolean air=ThermalEngine.isAirOrOpenPassage(s);
+            if(air)return new Material(1,settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1,true);
+            var category=BlockThermalCategory.classify(s);
+            double c=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
+            if(s.getBlock() instanceof HeatAccumulatorBlock)c*=4;
+            return new Material(c,Math.max(.001,settings.blockConductivity[category.ordinal()]*settings.globalConductivityMultiplier),false);
+        });
+    }
+    private static Region initialize(ServerLevel level,Workspace w,CellThermalSavedData data,long key,boolean detail) {
+        BlockPos origin=BlockPos.of(key);if(!ready(level,origin))return null;
+        var chunk=level.getChunkSource().getChunkNow(origin.getX()>>4,origin.getZ()>>4);
+        var state=data.tiles.get(key);boolean fresh=state==null;
+        double[] temperatures=fresh?new double[512]:null;
+        var old=data.chunks.get(chunkKey(origin));
+        double[] c=new double[512],k=new double[512],g=new double[512],slope=new double[512],offset=new double[512];
+        var sources=new IntArrayList();var settings=EternalSnowState.getServerSettings();
+        double[] raw=new double[512];boolean[] air=new boolean[512];
+        double mixing=settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1;
+        for(int i=0;i<512;i++) {
+            BlockPos p=origin.offset(i&7,i>>6,(i>>3)&7);BlockState block=chunk.getBlockState(p);
+            Material m=material(w,block,settings);c[i]=m.capacity;k[i]=m.conductivity;raw[i]=m.air?1:m.conductivity;air[i]=m.air;
+            boolean sky=level.canSeeSky(p);int surface=level.getHeight(Heightmap.Types.MOTION_BLOCKING,p.getX(),p.getZ());
+            g[i]=(m.air?sky:p.getY()>=surface-1)?(m.air?1:Math.min(1,m.conductivity)):0;
+            double blend=p.getY()<52&&!sky?Math.max(0,Math.min(.85,(surface-p.getY()-8)/36.0)):0;
+            slope[i]=1-blend;offset[i]=(p.getY()>85?-(p.getY()-85)*.12:0)*(1-blend)+6*blend;
+            if(fresh) {
+                double retained=old==null?Double.NaN:old.get(p.asLong());
+                temperatures[i]=Double.isNaN(retained)?slope[i]*EternalSnowState.worldAmbientTempC+offset[i]:retained;
+                if(Double.isNaN(retained)&&block.getBlock() instanceof HeatAccumulatorBlock&&level.getBlockEntity(p) instanceof HeatAccumulatorBlockEntity accumulator)
+                    temperatures[i]+=Math.max(0,accumulator.getHeatC());
+            }
+            if(ThermalEngine.isPotentialHeatEmitter(block))sources.add(i);
+        }
+        if(fresh) {
+            state=data.migrateTile(key,temperatures);
+        }
+        Region previous=w.regions.get(key);
+        Region region=new Region(new AdaptiveThermalTile(origin.getX(),origin.getY(),origin.getZ(),state));
+        region.field.configure(detail,c,k,g,slope,offset);region.field.fineMaterials(raw,air,mixing);region.sources.addAll(sources);
+        region.detailedUntil=previous==null?0:previous.detailedUntil;
+        if(detail&&w.wanted.contains(key))region.detailedUntil=level.getGameTime()+DETAIL_HOLD_TICKS;
+        w.regions.put(key,region);w.rebuild=true;w.initializedLast++;
+        return region;
+    }
+    private static void admitChunks(ServerLevel level,Workspace w,CellThermalSavedData data) {
+        int attempts=Math.min(64,w.pending.size());
+        for(int i=0;i<attempts;i++) {
+            Long key=w.pendingOrder.poll();if(key==null)break;if(!w.pending.contains(key))continue;
+            if(level.getChunkSource().getChunkNow(ChunkPos.getX(key),ChunkPos.getZ(key))==null){w.pendingOrder.add(key);continue;}
+            w.pending.remove(key);if(!w.loaded.add(key))continue;w.scans.add(key);
+            var legacy=data.chunks.get(key);
+            if(legacy!=null)for(long p:legacy.keySet())request(level,w,tileKey(BlockPos.of(p)),false);
+            var retained=data.tileChunks.get(key);
+            if(retained!=null)for(long p:retained)request(level,w,p,false);
         }
     }
     private static void scanSources(ServerLevel level,Workspace w) {
-        // At most one chunk index per thermal step. Palettes skip sections with no emitters.
-        if (w.scanQueue.isEmpty()) return;
-        long key=w.scanQueue.removeFirstLong();
-        LevelChunk chunk=level.getChunkSource().getChunkNow(ChunkPos.getX(key),ChunkPos.getZ(key));
-        if(chunk==null || !w.loaded.contains(key)) return;
-        var sections=chunk.getSections();
-        for(int i=0;i<sections.length;i++) {
-            var section=sections[i];
-            if(section.hasOnlyAir() || !section.maybeHas(ThermalEngine::isPotentialHeatEmitter)) continue;
-            int baseY=(chunk.getMinSection()+i)*16;
-            for(int y=0;y<16;y++) for(int z=0;z<16;z++) for(int x=0;x<16;x++)
+        if(w.scans.isEmpty())return;long key=w.scans.removeFirstLong();
+        var chunk=level.getChunkSource().getChunkNow(ChunkPos.getX(key),ChunkPos.getZ(key));if(chunk==null)return;
+        var sections=chunk.getSections();var sourceTiles=new LongOpenHashSet();
+        for(int sectionIndex=0;sectionIndex<sections.length;sectionIndex++) {
+            var section=sections[sectionIndex];
+            if(section.hasOnlyAir()||!section.maybeHas(ThermalEngine::isPotentialHeatEmitter))continue;
+            int y0=(chunk.getMinSection()+sectionIndex)*16;
+            for(int y=0;y<16;y++)for(int z=0;z<16;z++)for(int x=0;x<16;x++)
                 if(ThermalEngine.isPotentialHeatEmitter(section.getBlockState(x,y,z)))
-                    w.sources.add(BlockPos.asLong(chunk.getPos().getMinBlockX()+x,baseY+y,chunk.getPos().getMinBlockZ()+z));
+                    sourceTiles.add(tileKey(new BlockPos(chunk.getPos().getMinBlockX()+x,y0+y,chunk.getPos().getMinBlockZ()+z)));
+        }
+        for(long tile:sourceTiles){request(level,w,tile,false);halo(level,w,BlockPos.of(tile));}
+    }
+    private static void selectDetail(ServerLevel level,Workspace w) {
+        w.wanted.clear();
+        for(var player:level.players()) {
+            if(player.isSpectator())continue;BlockPos origin=BlockPos.of(tileKey(player.blockPosition()));
+            for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++)for(int x=-1;x<=1;x++) {
+                BlockPos p=origin.offset(x*8,y*8,z*8);if(!ready(level,p))continue;
+                long key=p.asLong();w.wanted.add(key);request(level,w,key,true);halo(level,w,p);
+            }
+        }
+        for(var entry:w.regions.long2ObjectEntrySet()) {
+            var region=entry.getValue();boolean wanted=w.wanted.contains(entry.getLongKey());
+            if(wanted)region.detailedUntil=level.getGameTime()+DETAIL_HOLD_TICKS;
+            if((wanted&&!region.field.detailed)||(!wanted&&region.field.detailed&&level.getGameTime()>=region.detailedUntil))
+                w.dirty.add(entry.getLongKey());
+        }
+    }
+    private static void initializeQueued(ServerLevel level,Workspace w,CellThermalSavedData data) {
+        for(int i=0;i<64&&!w.urgent.isEmpty();i++) {
+            long key=w.urgent.removeFirstLong();w.background.remove(key);
+            if(!w.regions.containsKey(key))initialize(level,w,data,key,w.wanted.contains(key));
+        }
+        for(int i=0;i<16&&!w.background.isEmpty();i++) {
+            long key=w.background.removeFirstLong();
+            if(!w.regions.containsKey(key))initialize(level,w,data,key,w.wanted.contains(key));
+        }
+        // Exact block edits are processed before the next simulation step, never against stale materials.
+        for(long key:w.dirty.toLongArray()) {
+            Region region=w.regions.get(key);if(region==null)continue;
+            boolean detail=w.wanted.contains(key)||(region.field.detailed&&level.getGameTime()<region.detailedUntil);
+            initialize(level,w,data,key,detail);
+        }
+        w.dirty.clear();
+    }
+    private static void grow(ServerLevel level,Workspace w) {
+        if(w.regions.isEmpty())return;
+        // Sparse coarse extension, not hundreds of new individual voxels per half-second.
+        var keys=w.regions.keySet().toLongArray();int added=0;
+        for(int visit=0;visit<Math.min(32,keys.length)&&added<4;visit++) {
+            long key=keys[(int)(w.expansionCursor++%keys.length)];Region r=w.regions.get(key);
+            BlockPos p=BlockPos.of(key);double t=r.field.mean();
+            double outside=ThermalEngine.computeBaseAmbientC(level,p.offset(4,4,4)),inward=t;
+            for(Direction d:DIRECTIONS){Region q=w.regions.get(p.relative(d,8).asLong());if(q!=null)inward=t>outside?Math.max(inward,q.field.mean()):Math.min(inward,q.field.mean());}
+            if(!ThermalFrontier.shouldExpand(t,outside,inward,r.powered))continue;
+            for(Direction d:DIRECTIONS) {
+                if(added>=4)break;long q=p.relative(d,8).asLong();
+                if(!w.regions.containsKey(q)&&!w.background.contains(q)&&!w.urgent.contains(q)&&ready(level,BlockPos.of(q))){request(level,w,q,false);added++;}
+            }
         }
     }
     public static void tick(ServerLevel level) {
-        if(level.getGameTime()%10!=0 || !EternalSnowState.isOverworldLike(level)) return;
-        ServerSnowSettings settings=EternalSnowState.getServerSettings();
-        if(!settings.enabled) return;
-        long startNanos=System.nanoTime();
-        Workspace w=ws(level); var data=CellThermalSavedData.get(level);w.addedLast=0;
-        int pending=Math.min(128,w.pending.size());
-        for(int checked=0;checked<pending;checked++) {
-            Long key=w.pendingOrder.poll();if(key==null)break;
-            if(!w.pending.contains(key))continue;
-            LevelChunk chunk=level.getChunkSource().getChunkNow(ChunkPos.getX(key),ChunkPos.getZ(key));
-            if(chunk!=null) {w.pending.remove(key);admit(level,w,chunk.getPos().getWorldPosition());}
-            else w.pendingOrder.add(key); // round robin: an unfinished chunk cannot starve the rest
+        if(level.getGameTime()%10!=0||!EternalSnowState.isOverworldLike(level))return;
+        var settings=EternalSnowState.getServerSettings();if(!settings.enabled)return;
+        long start=System.nanoTime();Workspace w=ws(level);w.initializedLast=0;
+        var data=CellThermalSavedData.get(level);
+        var checkedChunks=new LongOpenHashSet();var missingChunks=new LongOpenHashSet();
+        for(long key:w.regions.keySet()) {
+            long ck=chunkKey(BlockPos.of(key));
+            if(checkedChunks.add(ck)&&level.getChunkSource().getChunkNow(ChunkPos.getX(ck),ChunkPos.getZ(ck))==null)missingChunks.add(ck);
         }
-        scanSources(level,w);
-        // Player volumes start a local field even in houses without burning sources.
-        if(level.getGameTime()%40==0)
-            for(var player:level.players()) seed(level,w,data,player.blockPosition(),4);
-        var src=w.sources.iterator();
-        while(src.hasNext()) {
-            BlockPos pos=BlockPos.of(src.nextLong());
-            if(!ready(level,pos)) { src.remove();w.seeded.remove(pos.asLong());continue; }
-            BlockState state=level.getBlockState(pos);
-            if(!ThermalEngine.isPotentialHeatEmitter(state)) { src.remove();w.seeded.remove(pos.asLong());continue; }
-            if(ThermalEngine.getHeatSourcePowerC(level,pos,state,settings)>0 && !w.seeded.contains(pos.asLong())) {
-                seed(level,w,data,pos,2);
-                // Only remember a complete halo: retry if neighbouring chunks were absent.
-                boolean complete=true;
-                for(int x=-2;x<=2;x+=4)for(int z=-2;z<=2;z+=4)
-                    if(!ready(level,pos.offset(x,0,z)))complete=false;
-                if(complete)w.seeded.add(pos.asLong());
-            }
+        for(long ck:missingChunks)unload(level,ck);
+        admitChunks(level,w,data);scanSources(level,w);selectDetail(level,w);
+        int hash=Arrays.hashCode(settings.blockCapacity)*31+Arrays.hashCode(settings.blockConductivity);
+        hash=31*hash+Float.floatToIntBits(settings.globalCapacityMultiplier);hash=31*hash+Float.floatToIntBits(settings.globalConductivityMultiplier);
+        hash=31*hash+(settings.enableConvection?settings.convectionStrengthPercent:-1);
+        if(hash!=w.settingsHash){w.settingsHash=hash;w.materials.clear();w.dirty.addAll(w.regions.keySet());}
+        initializeQueued(level,w,data);grow(level,w);
+        if(w.rebuild) {
+            var fields=new ArrayList<AdaptiveThermalTile>();for(var region:w.regions.values())fields.add(region.field);
+            w.graph=new AdaptiveThermalGraph(fields);w.rebuild=false;w.rebuilds++;
         }
-        // Grow only the frontier that has a real temperature contrast. Retained interior
-        // temperatures are never rebased on weather, even after a source stops burning.
-        int added=0, checks=Math.min(4096,w.frontier.size());
-        for(int visited=0;visited<checks && added<EXPANSION_BUDGET;visited++) {
-            long key=w.frontier.removeFirstLong();int i=w.indices.get(key);
-            if(i<0)continue;
-            BlockPos p=w.positions[i];
-            if(!isFrontier(w,p))continue;
-            w.frontier.add(key);
-            if(!ready(level,p)) continue;
-            double t=data.chunk(chunkKey(p)).get(p.asLong());
-            double outside=ThermalEngine.computeBaseAmbientC(level,p);
-            double inward=t;
-            for(Direction direction:ALL) {
-                int neighbour=w.indices.get(p.relative(direction).asLong());
-                if(neighbour<0||!ready(level,w.positions[neighbour]))continue;
-                double nt=w.solver.temperature(neighbour);
-                inward=t>=outside?Math.max(inward,nt):Math.min(inward,nt);
-            }
-            boolean powered=w.emitters.contains(i) && ThermalEngine.getHeatSourcePowerC(level,p,w.states[i],settings)>0;
-            if(!ThermalFrontier.shouldExpand(t,outside,inward,powered))continue;
-            for(Direction d:ALL) {
-                if(added>=EXPANSION_BUDGET)break;
-                BlockPos q=p.relative(d);
-                if(!ready(level,q)) continue;
-                var map=data.chunk(chunkKey(q));
-                if(!map.containsKey(q.asLong()) && Math.abs(t-ThermalEngine.computeBaseAmbientC(level,q))>.25) {
-                    admit(level,w,q); ensure(level,w,data,q); added++;
+        if(w.graph==null)return;w.graph.clearPower();
+        for(var region:w.regions.values()) {
+            region.powered=false;AdaptiveThermalTile t=region.field;
+            for(int s=0;s<region.sources.size();s++) {
+                int i=region.sources.getInt(s);BlockPos p=at(t,i);if(!ready(level,p))continue;
+                BlockState state=level.getBlockState(p);
+                double power=ThermalEngine.getHeatSourcePowerC(level,p,state,settings)*settings.roomHeatingPowerPercent/100.0;
+                power*=Math.max(0,1-(t.temperatures.get(i)-20)/480.0);
+                if(power<=0)continue;region.powered=true;
+                boolean flame=t.detailed&&(state.getBlock() instanceof CampfireBlock||state.is(Blocks.FIRE)||state.is(Blocks.SOUL_FIRE));
+                int airNeighbours=0;
+                if(flame)for(Direction d:DIRECTIONS) {
+                    BlockPos q=p.relative(d);Region other=w.regions.get(tileKey(q));
+                    if(other!=null&&ready(level,q)&&ThermalEngine.isAirOrOpenPassage(level.getBlockState(q)))airNeighbours++;
+                }
+                double share=AirHeatTransfer.airShare(flame,airNeighbours);w.graph.addPower(t,i,power*(1-share));
+                if(share>0)for(Direction d:DIRECTIONS) {
+                    BlockPos q=p.relative(d);Region other=w.regions.get(tileKey(q));
+                    if(other!=null&&ready(level,q)&&ThermalEngine.isAirOrOpenPassage(level.getBlockState(q)))
+                        w.graph.addPower(other.field,local(q),power*share/airNeighbours);
                 }
             }
         }
-        int hash=Arrays.hashCode(settings.blockCapacity)*31+Arrays.hashCode(settings.blockConductivity);
-        hash=31*hash+Float.floatToIntBits(settings.globalCapacityMultiplier);
-        hash=31*hash+Float.floatToIntBits(settings.globalConductivityMultiplier);
-        hash=31*hash+(settings.enableConvection?1:0);
-        hash=31*hash+settings.convectionStrengthPercent;
-        if(hash!=w.settingsHash) { w.settingsHash=hash; w.materials.clear(); w.dirty=true; }
-        // The mandatory LevelChunk mixin supplies exact changes. Bounded fallback for mods.
-        for(int checked=0;checked<Math.min(4096,w.size);checked++) {
-            int i=(int)(w.stateCursor++%w.size);BlockPos p=w.positions[i];
-            if(!ready(level,p)) {w.dirty=true;continue;}
-            if(level.getBlockState(p)!=w.states[i]) {w.changed.add(p.asLong());w.dirtyColumns.add(columnKey(p));}
-        }
-        if(w.dirty) rebuild(level,w,data,settings);
-        else updateChanged(level,w,data,settings);
-        if(w.solver==null) return;
-        refreshEnvironment(level,w);
-        Arrays.fill(w.powers,0,w.size,0);
-        // Split existing flame power between its support and directly touching air.
-        // A campfire was previously treated entirely as a massive stone voxel.
-        for(int i:w.emitters) {
-            BlockPos p=w.positions[i];
-            if(!ready(level,p))continue;
-            BlockState state=w.states[i];
-            double power=ThermalEngine.getHeatSourcePowerC(level,p,state,settings)
-                    * settings.roomHeatingPowerPercent/100.0;
-            power*=Math.max(0,1-(w.solver.temperature(i)-20)/480.0);
-            if(power<=0)continue;
-            boolean flame=state.getBlock() instanceof net.minecraft.world.level.block.CampfireBlock
-                    || state.is(net.minecraft.world.level.block.Blocks.FIRE)
-                    || state.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE);
-            int neighbours=0;
-            if(flame)for(Direction direction:ALL) {
-                int j=w.indices.get(p.relative(direction).asLong());
-                if(j>=0 && w.air[j] && ready(level,w.positions[j]))neighbours++;
-            }
-            double share=AirHeatTransfer.airShare(flame,neighbours);
-            w.powers[i]+=power*(1-share);
-            if(share>0)for(Direction direction:ALL) {
-                int j=w.indices.get(p.relative(direction).asLong());
-                if(j>=0 && w.air[j] && ready(level,w.positions[j]))w.powers[j]+=power*share/neighbours;
+        long solverStart=System.nanoTime();w.graph.step(.5,EternalSnowState.worldAmbientTempC);
+        w.solverNanos=System.nanoTime()-solverStart;if(!w.regions.isEmpty())data.setDirty();
+        w.lastNanos=System.nanoTime()-start;w.maxNanos=Math.max(w.maxNanos,w.lastNanos);
+        if(settings.meltRoofSnowFromWarmBlocks&&level.getGameTime()%80==0) {
+            int checked=0;
+            for(var region:w.regions.values()) {
+                if(!region.field.detailed||checked++>=32)continue;
+                int i=level.random.nextInt(512);if(region.field.temperatures.get(i)>2)ThermalEngine.processWarmSurface(level,at(region.field,i));
             }
         }
-        for(int i=0;i<w.size;i++) {
-            BlockPos p=w.positions[i]; BlockState state=w.states[i];
-            boolean loaded=w.live[i];
-            w.solver.setLoaded(i,loaded);
-            if(!loaded) continue;
-            w.solver.setPower(i,w.powers[i]);
-            double g=w.outsideG[i];
-            w.solver.setOutside(i,g,g>0?w.ambientSlope[i]*EternalSnowState.worldAmbientTempC+w.ambientOffset[i]:0);
-        }
-
-        long solverStart=System.nanoTime();
-        w.solver.stepConservative(.5); // loaded simulation time only; NEVER gameTime minus last loaded time
-        w.solverNanos=System.nanoTime()-solverStart;
-        for(int i=0;i<w.size;i++) {
-            BlockPos p=w.positions[i];
-            if(w.live[i]) data.chunk(chunkKey(p)).put(p.asLong(),w.solver.temperature(i));
-        }
-        data.setDirty();
-        if(settings.meltRoofSnowFromWarmBlocks && level.getGameTime()%80==0) {
-            // At most 32 checks per pass; no per-frame effects or full second world scan.
-            for(int j=0;j<Math.min(32,w.size);j++) {
-                int i=level.random.nextInt(w.size);
-                if(w.solver.temperature(i)>2 && ready(level,w.positions[i]))
-                    ThermalEngine.processWarmSurface(level,w.positions[i]);
-            }
-        }
-        w.lastNanos=System.nanoTime()-startNanos;w.maxNanos=Math.max(w.maxNanos,w.lastNanos);
     }
-    /** Server-thread, explicit admin query; no periodic logging or world mutation. */
     public static String diagnostics(ServerLevel level) {
-        Workspace w=WORLDS.get(level.dimension());
-        if(w==null||w.solver==null)return "Thermal: no active graph in "+level.dimension().location();
-        return String.format(Locale.ROOT,
-                "Thermal %s: cells=%d edges=%d substeps=%d added=%d total=%.2fms solver=%.2fms max=%.2fms rebuilds=%d updates=%d sources=%d seeded=%d queued=%d frontier=%d",
-                level.dimension().location(),w.size,w.solver.edgeCount(),w.solver.lastSubsteps(),w.addedLast,
-                w.lastNanos/1e6,w.solverNanos/1e6,w.maxNanos/1e6,w.rebuilds,w.updates,w.sources.size(),w.seeded.size(),w.pending.size()+w.scanQueue.size(),w.frontier.size());
-    }
-    private static long columnKey(BlockPos p) {return ChunkPos.asLong(p.getX(),p.getZ());}
-    private static void indexColumn(Workspace w,int i) {
-        long key=columnKey(w.positions[i]);
-        w.columns.computeIfAbsent(key,k->new it.unimi.dsi.fastutil.ints.IntArrayList()).add(i);
-        w.dirtyColumns.add(key);
-    }
-    private static void refreshEnvironment(ServerLevel level,Workspace w) {
-        w.tickChunks.clear();
-        // Query chunk availability once per chunk, not once per voxel/pass.
-        for(long key:w.loaded) {
-            LevelChunk chunk=level.getChunkSource().getChunkNow(ChunkPos.getX(key),ChunkPos.getZ(key));
-            if(chunk!=null)w.tickChunks.put(key,chunk);
-        }
-        for(int i=0;i<w.size;i++)w.live[i]=w.tickChunks.containsKey(chunkKey(w.positions[i]));
-        for(long key:w.dirtyColumns) {
-            var indices=w.columns.get(key);if(indices==null)continue;
-            int x=ChunkPos.getX(key),z=ChunkPos.getZ(key);
-            LevelChunk chunk=w.tickChunks.get(ChunkPos.asLong(x>>4,z>>4));if(chunk==null)continue;
-            int surface=level.getHeight(Heightmap.Types.MOTION_BLOCKING,x,z);
-            for(int entry=0;entry<indices.size();entry++) {
-                int i=indices.getInt(entry);BlockPos pos=w.positions[i];int y=pos.getY();
-                boolean sky=level.canSeeSky(pos);
-                boolean exposed=w.air[i]?sky:y>=surface-1;
-                w.outsideG[i]=exposed?(w.air[i]?1:Math.min(1,w.conductivity[i])):0;
-                double blend=y<52&&!sky?Math.max(0,Math.min(.85,(surface-y-8)/36.0)):0;
-                w.ambientSlope[i]=1-blend;
-                w.ambientOffset[i]=(y>85?-(y-85)*.12:0)*(1-blend)+6*blend;
-            }
-        }
-        w.dirtyColumns.clear();
-    }
-    private record Material(boolean air,double capacity,double conductivity) {}
-    private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
-        return w.materials.computeIfAbsent(state,key->{
-            boolean air=ThermalEngine.isAirOrOpenPassage(key);
-            if(air)return new Material(true,1,1); // no tag classification for air
-            var category=BlockThermalCategory.classify(key);
-            double capacity=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
-            if(key.getBlock() instanceof HeatAccumulatorBlock)capacity*=4;
-            return new Material(false,capacity,Math.max(.001,settings.blockConductivity[category.ordinal()]*settings.globalConductivityMultiplier));
-        });
-    }
-    private static void updateChanged(ServerLevel level,Workspace w,CellThermalSavedData data,ServerSnowSettings settings) {
-        for(long chunk:w.imported) {
-            var cells=data.chunks.get(chunk);
-            if(cells!=null)w.changed.addAll(cells.keySet());
-        }
-        w.imported.clear();
-        if(w.changed.isEmpty())return;
-        long[] changes=w.changed.toLongArray();
-        int oldSize=w.size;
-        List<BlockPos> added=new ArrayList<>();
-        for(long key:changes) {
-            BlockPos pos=BlockPos.of(key);
-            if(!ready(level,pos)||w.indices.containsKey(key))continue;
-            int index=oldSize+added.size();w.indices.put(key,index);added.add(pos);
-        }
-        int size=oldSize+added.size();
-        if(size>w.positions.length) {
-            int capacity=Math.max(size,Math.max(16,w.positions.length+w.positions.length/2));
-            w.positions=Arrays.copyOf(w.positions,capacity);w.states=Arrays.copyOf(w.states,capacity);
-            w.conductivity=Arrays.copyOf(w.conductivity,capacity);w.air=Arrays.copyOf(w.air,capacity);
-            w.powers=Arrays.copyOf(w.powers,capacity);w.live=Arrays.copyOf(w.live,capacity);
-            w.outsideG=Arrays.copyOf(w.outsideG,capacity);w.ambientSlope=Arrays.copyOf(w.ambientSlope,capacity);
-            w.ambientOffset=Arrays.copyOf(w.ambientOffset,capacity);
-        }
-        for(int a=0;a<added.size();a++) {w.positions[oldSize+a]=added.get(a);indexColumn(w,oldSize+a);}
-        w.size=size;w.addedLast+=added.size();w.updates++;
-        // Append in index order before changing connections. Saved temperatures remain authoritative.
-        for(int i=oldSize;i<size;i++) {
-            BlockPos pos=w.positions[i];
-            var mat=material(w,level.getBlockState(pos),settings);
-            w.solver.addCell(data.chunk(chunkKey(pos)).get(pos.asLong()),mat.capacity);
-        }
-        for(long key:changes) {
-            int i=w.indices.get(key);if(i<0)continue;
-            BlockPos pos=w.positions[i];if(!ready(level,pos))continue;
-            BlockState state=level.getBlockState(pos),previous=w.states[i];
-            var map=data.chunk(chunkKey(pos));
-            // Exact block-change hook updates saved local-air T. Fallback catches missed replacements.
-            if(previous!=null && previous.getBlock()!=state.getBlock() && w.lastStates.get(key)!=state)
-                map.put(key,localAir(level,data,pos));
-            var mat=material(w,state,settings);
-            if(i<oldSize && (w.replaced.contains(key)||previous==null||previous.getBlock()!=state.getBlock()))
-                w.solver.replace(i,map.get(key),mat.capacity);
-            else w.solver.setCapacity(i,mat.capacity);
-            w.states[i]=state;w.lastStates.put(key,state);w.dirtyColumns.add(columnKey(pos));
-            w.air[i]=mat.air;w.conductivity[i]=mat.conductivity;
-            boolean emitter=ThermalEngine.isPotentialHeatEmitter(state);
-            if(emitter)w.emitters.add(i);
-            else w.emitters.remove(i);
-        }
-        // Only six contacts per modified cell. Unchanged contacts and arrays survive.
-        for(long key:changes) {
-            int i=w.indices.get(key);if(i<0||!ready(level,w.positions[i]))continue;
-            for(Direction d:ALL) {
-                int j=w.indices.get(w.positions[i].relative(d).asLong());if(j<0)continue;
-                w.solver.setConnection(i,j,AirHeatTransfer.conductance(w.conductivity[i],w.conductivity[j],
-                        w.air[i],w.air[j],settings.enableConvection,settings.convectionStrengthPercent));
-            }
-        }
-        for(long key:changes) {
-            int i=w.indices.get(key);if(i<0)continue;
-            BlockPos pos=w.positions[i];
-            if(isFrontier(w,pos))w.frontier.add(key);else w.frontier.remove(key);
-            for(Direction d:ALL) {
-                BlockPos q=pos.relative(d);if(!w.indices.containsKey(q.asLong()))continue;
-                if(isFrontier(w,q))w.frontier.add(q.asLong());else w.frontier.remove(q.asLong());
-            }
-        }
-        w.changed.clear();w.replaced.clear();
-    }
-    private static boolean isFrontier(Workspace w,BlockPos p) {
-        for(Direction d:ALL)if(!w.indices.containsKey(p.relative(d).asLong()))return true;
-        return false;
-    }
-    private static void rebuild(ServerLevel level,Workspace w,CellThermalSavedData data,ServerSnowSettings settings) {
-        List<BlockPos> cells=new ArrayList<>();
-        for(long chunk:w.loaded.toLongArray()) {
-            if(level.getChunkSource().getChunkNow(ChunkPos.getX(chunk),ChunkPos.getZ(chunk))==null) continue;
-            var map=data.chunks.get(chunk);
-            if(map!=null) for(long key:map.keySet()) cells.add(BlockPos.of(key));
-        }
-        int n=cells.size();w.size=n;w.rebuilds++;
-        w.positions=cells.toArray(BlockPos[]::new); w.states=new BlockState[n]; w.conductivity=new double[n];
-        w.powers=new double[n]; w.air=new boolean[n]; w.emitters.clear();w.columns.clear();w.dirtyColumns.clear();
-        w.live=new boolean[n];w.outsideG=new double[n];w.ambientSlope=new double[n];w.ambientOffset=new double[n];
-        double[] t=new double[n],cap=new double[n];
-        w.indices=new Long2IntOpenHashMap(n);w.indices.defaultReturnValue(-1);
-        for(int i=0;i<n;i++) {
-            BlockPos p=w.positions[i];BlockState state=level.getBlockState(p);w.states[i]=state;indexColumn(w,i);
-            if(ThermalEngine.isPotentialHeatEmitter(state))w.emitters.add(i);
-            var map=data.chunk(chunkKey(p));
-            BlockState previous=w.lastStates.put(p.asLong(),state);
-            if(previous!=null && previous.getBlock()!=state.getBlock()) map.put(p.asLong(),localAir(level,data,p));
-            t[i]=map.get(p.asLong());
-            Material material=material(w,state,settings);
-            w.air[i]=material.air;cap[i]=material.capacity;w.conductivity[i]=material.conductivity;
-            w.indices.put(p.asLong(),i);
-        }
-        w.frontier.clear();
-        for(int i=0;i<n;i++)if(isFrontier(w,w.positions[i]))w.frontier.add(w.positions[i].asLong());
-        List<CellHeatSolver.Edge> edges=new ArrayList<>(n*3);
-        for(int i=0;i<n;i++) for(Direction d:FORWARD) {
-            int j=w.indices.get(w.positions[i].relative(d).asLong());if(j<0) continue;
-            // Two half-cell resistances in series. One unordered edge per shared face.
-            double a=w.conductivity[i],b=w.conductivity[j];
-            edges.add(new CellHeatSolver.Edge(i,j,AirHeatTransfer.conductance(a,b,w.air[i],w.air[j],
-                    settings.enableConvection,settings.convectionStrengthPercent)));
-        }
-        w.solver=new CellHeatSolver(t,cap,edges.toArray(CellHeatSolver.Edge[]::new));w.dirty=false;
-        w.changed.clear();w.replaced.clear();w.imported.clear();
+        Workspace w=WORLDS.get(level.dimension());if(w==null||w.graph==null)return "Thermal: no active graph in "+level.dimension().location();
+        var data=CellThermalSavedData.get(level);long legacy=0;for(var map:data.chunks.values())legacy+=map.size();
+        int sources=0;for(var region:w.regions.values())sources+=region.sources.size();
+        int fine=w.graph.fineCells(),coarse=w.regions.size()-fine/512;
+        return String.format(Locale.ROOT,"Thermal %s: nodes=%d fineCells=%d coarseTiles=%d retained=%d legacy=%d edges=%d substeps=%d initialized=%d total=%.2fms solver=%.2fms max=%.2fms rebuilds=%d sources=%d queued=%d",
+                level.dimension().location(),w.graph.solver.size(),fine,coarse,(long)data.tiles.size()*512+legacy,legacy,w.graph.solver.edgeCount(),w.graph.solver.lastSubsteps(),w.initializedLast,
+                w.lastNanos/1e6,w.solverNanos/1e6,w.maxNanos/1e6,w.rebuilds,sources,w.background.size()+w.urgent.size()+w.pending.size()+w.scans.size());
     }
 }
