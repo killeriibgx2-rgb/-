@@ -30,6 +30,7 @@ public final class WorldCellThermal {
 
     private static final class Workspace {
         final Set<Long> pending = ConcurrentHashMap.newKeySet();
+        final ConcurrentLinkedQueue<Long> pendingOrder = new ConcurrentLinkedQueue<>();
         final LongOpenHashSet loaded = new LongOpenHashSet();
         final LongOpenHashSet sources = new LongOpenHashSet();
         final LongLinkedOpenHashSet scanQueue = new LongLinkedOpenHashSet();
@@ -61,12 +62,15 @@ public final class WorldCellThermal {
     }
     private static Workspace ws(ServerLevel level) { return WORLDS.computeIfAbsent(level.dimension(), k -> new Workspace()); }
     public static void clearAll() { WORLDS.clear(); }
-    public static void load(ServerLevel level,long chunk) { ws(level).pending.add(chunk); }
+    public static void load(ServerLevel level,long chunk) {
+        Workspace w=ws(level);
+        if(w.pending.add(chunk))w.pendingOrder.add(chunk);
+    }
     public static void forgetLevel(ServerLevel level) {WORLDS.remove(level.dimension());}
     public static void unload(ServerLevel level,long chunk) {
         Workspace w=ws(level);
         boolean admitted=w.loaded.remove(chunk);
-        w.pending.removeIf(key -> key.longValue()==chunk);
+        w.pending.remove(chunk);w.pendingOrder.removeIf(key -> key.longValue()==chunk);
         w.imported.remove(chunk);w.scanQueue.remove(chunk);w.tickChunks.remove(chunk);
         // Source halos crossing this boundary must be retried after a future reload.
         w.seeded.removeIf(key -> Math.abs((BlockPos.of(key).getX()>>4)-ChunkPos.getX(chunk))<=1
@@ -126,7 +130,8 @@ public final class WorldCellThermal {
     public static void blockChanged(ServerLevel level, BlockPos pos, BlockState before, BlockState after) {
         if (!EternalSnowState.isOverworldLike(level) || !ready(level,pos)) return;
         Workspace w=ws(level);
-        w.dirtyColumns.add(columnKey(pos));w.seeded.remove(pos.asLong());
+        if(w.columns.containsKey(columnKey(pos)))w.dirtyColumns.add(columnKey(pos));
+        w.seeded.remove(pos.asLong());
         boolean emitter=ThermalEngine.isPotentialHeatEmitter(after);
         // Do not materialise every natural snowfall block. Only existing thermal cells
         // and newly introduced emitters need state; source indexing handles loaded chunks.
@@ -173,11 +178,13 @@ public final class WorldCellThermal {
         if(!settings.enabled) return;
         long startNanos=System.nanoTime();
         Workspace w=ws(level); var data=CellThermalSavedData.get(level);w.addedLast=0;
-        int pending=0;
-        for(Long key:w.pending) {
-            if(++pending>128)break;
+        int pending=Math.min(128,w.pending.size());
+        for(int checked=0;checked<pending;checked++) {
+            Long key=w.pendingOrder.poll();if(key==null)break;
+            if(!w.pending.contains(key))continue;
             LevelChunk chunk=level.getChunkSource().getChunkNow(ChunkPos.getX(key),ChunkPos.getZ(key));
             if(chunk!=null) {w.pending.remove(key);admit(level,w,chunk.getPos().getWorldPosition());}
+            else w.pendingOrder.add(key); // round robin: an unfinished chunk cannot starve the rest
         }
         scanSources(level,w);
         // Player volumes start a local field even in houses without burning sources.
@@ -186,9 +193,9 @@ public final class WorldCellThermal {
         var src=w.sources.iterator();
         while(src.hasNext()) {
             BlockPos pos=BlockPos.of(src.nextLong());
-            if(!ready(level,pos)) { src.remove(); continue; }
+            if(!ready(level,pos)) { src.remove();w.seeded.remove(pos.asLong());continue; }
             BlockState state=level.getBlockState(pos);
-            if(!ThermalEngine.isPotentialHeatEmitter(state)) { src.remove(); continue; }
+            if(!ThermalEngine.isPotentialHeatEmitter(state)) { src.remove();w.seeded.remove(pos.asLong());continue; }
             if(ThermalEngine.getHeatSourcePowerC(level,pos,state,settings)>0 && !w.seeded.contains(pos.asLong())) {
                 seed(level,w,data,pos,2);
                 // Only remember a complete halo: retry if neighbouring chunks were absent.

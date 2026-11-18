@@ -42,10 +42,10 @@ public final class CellHeatSolver {
         this.temperature = temperature.clone();
         this.capacity = capacity.clone();
         edgeA=new int[edges.length];edgeB=new int[edges.length];edgeG=new double[edges.length];
-        activeEdges=new int[edges.length];
+        activeEdges=new int[0];
         int n = temperature.length; cellCount=n; edgeCount=edges.length;
         power = new double[n]; boundaryG = new double[n]; boundaryT = new double[n];
-        rates = new double[n]; deltaEnergy = new double[n]; loaded = new boolean[n];
+        rates = new double[0]; deltaEnergy = new double[0]; loaded = new boolean[n];
         Arrays.fill(loaded, true);
         for (int i = 0; i < n; i++) {
             finite(temperature[i]);
@@ -82,8 +82,10 @@ public final class CellHeatSolver {
             int n=Math.max(16,cellCount+Math.max(1,cellCount/2));
             temperature=Arrays.copyOf(temperature,n);capacity=Arrays.copyOf(capacity,n);
             power=Arrays.copyOf(power,n);boundaryG=Arrays.copyOf(boundaryG,n);
-            boundaryT=Arrays.copyOf(boundaryT,n);rates=Arrays.copyOf(rates,n);
-            deltaEnergy=Arrays.copyOf(deltaEnergy,n);loaded=Arrays.copyOf(loaded,n);
+            boundaryT=Arrays.copyOf(boundaryT,n);
+            if(rates.length>0)rates=Arrays.copyOf(rates,n);
+            if(deltaEnergy.length>0)deltaEnergy=Arrays.copyOf(deltaEnergy,n);
+            loaded=Arrays.copyOf(loaded,n);
         }
         int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;loaded[i]=true;topologyDirty=true;externalDirty.add(i);
         return i;
@@ -109,7 +111,8 @@ public final class CellHeatSolver {
         if(edgeCount==edgeA.length) {
             int n=Math.max(16,edgeCount+Math.max(1,edgeCount/2));
             edgeA=Arrays.copyOf(edgeA,n);edgeB=Arrays.copyOf(edgeB,n);
-            edgeG=Arrays.copyOf(edgeG,n);activeEdges=Arrays.copyOf(activeEdges,n);
+            edgeG=Arrays.copyOf(edgeG,n);
+            if(activeEdges.length>0)activeEdges=Arrays.copyOf(activeEdges,n);
         }
         edgeIndices.put(key,edgeCount);edgeA[edgeCount]=a;edgeB[edgeCount]=b;
         edgeG[edgeCount]=conductance;splitEdgesDirty.add(edgeCount++);topologyDirty=true;
@@ -141,6 +144,8 @@ public final class CellHeatSolver {
     }
     private void refreshTopology() {
         if(!topologyDirty)return;
+        if(rates.length<temperature.length)rates=new double[temperature.length];
+        if(activeEdges.length<edgeCount)activeEdges=new int[edgeA.length];
         Arrays.fill(rates,0,cellCount,0);
         activeCount=0;
         for(int e=0;e<edgeCount;e++) {
@@ -156,6 +161,7 @@ public final class CellHeatSolver {
         nonnegative(seconds);
         if (seconds == 0) return;
         refreshTopology();
+        if(deltaEnergy.length<temperature.length)deltaEnergy=new double[temperature.length];
         double stableStep = seconds;
         for (int i = 0; i < size(); i++) {
             if (!loaded[i]) continue;
