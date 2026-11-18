@@ -105,10 +105,16 @@ public final class WorldCellThermal {
         if(w==null)w=ws(level);
         long key=tileKey(pos);
         if(before.getBlock()!=after.getBlock())replaced(level,pos);
-        if(w.regions.containsKey(key))w.dirty.add(key);
-        // Roof/sky changes affect the entire vertical tile column, including fine cells below.
+        var settings=EternalSnowState.getServerSettings();
+        boolean materialChange=!material(w,before,settings).equals(material(w,after,settings));
+        boolean sourceChange=ThermalEngine.isPotentialHeatEmitter(before)!=emitter;
+        if(w.regions.containsKey(key)&&(materialChange||sourceChange))w.dirty.add(key);
+        // Do not rescan every vertical tile for fuel/lit changes or snow-layer count changes.
         BlockPos origin=BlockPos.of(key);
-        for(int y=level.getMinBuildHeight()&~7;y<level.getMaxBuildHeight();y+=8) {
+        boolean exposureChange=before.isAir()!=after.isAir()
+                || before.getLightBlock(level,pos)!=after.getLightBlock(level,pos)
+                || before.getFluidState().isEmpty()!=after.getFluidState().isEmpty();
+        if(exposureChange)for(int y=level.getMinBuildHeight()&~7;y<level.getMaxBuildHeight();y+=8) {
             long affected=BlockPos.asLong(origin.getX(),y,origin.getZ());
             if(w.regions.containsKey(affected))w.dirty.add(affected);
         }
@@ -116,7 +122,12 @@ public final class WorldCellThermal {
     }
     public static void sourceChanged(ServerLevel level,BlockPos pos) {
         if(!ready(level,pos))return;Workspace w=ws(level);long key=tileKey(pos);
-        request(level,w,key,true);w.dirty.add(key);halo(level,w,BlockPos.of(key));
+        request(level,w,key,true);
+        Region region=w.regions.get(key);
+        // Fuel/active changes are read every step; only membership needs a rescan.
+        if(region!=null && region.sources.contains(local(pos))
+                !=ThermalEngine.isPotentialHeatEmitter(level.getBlockState(pos)))w.dirty.add(key);
+        halo(level,w,BlockPos.of(key));
     }
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
         return w.materials.computeIfAbsent(state,s->{
@@ -164,8 +175,6 @@ public final class WorldCellThermal {
         w.regions.put(key,region);w.rebuild=true;w.initializedLast++;
         return region;
     }
-    // Settings are server-thread owned; no cross-thread reads of Minecraft state.
-    private static ServerSnowSettings settingsFor(Workspace w){return EternalSnowState.getServerSettings();}
     private static void admitChunks(ServerLevel level,Workspace w,CellThermalSavedData data) {
         int attempts=Math.min(64,w.pending.size());
         for(int i=0;i<attempts;i++) {
@@ -245,7 +254,14 @@ public final class WorldCellThermal {
         if(level.getGameTime()%10!=0||!EternalSnowState.isOverworldLike(level))return;
         var settings=EternalSnowState.getServerSettings();if(!settings.enabled)return;
         long start=System.nanoTime();Workspace w=ws(level);w.initializedLast=0;
-        var data=CellThermalSavedData.get(level);admitChunks(level,w,data);scanSources(level,w);selectDetail(level,w);
+        var data=CellThermalSavedData.get(level);
+        var checkedChunks=new LongOpenHashSet();var missingChunks=new LongOpenHashSet();
+        for(long key:w.regions.keySet()) {
+            long ck=chunkKey(BlockPos.of(key));
+            if(checkedChunks.add(ck)&&level.getChunkSource().getChunkNow(ChunkPos.getX(ck),ChunkPos.getZ(ck))==null)missingChunks.add(ck);
+        }
+        for(long ck:missingChunks)unload(level,ck);
+        admitChunks(level,w,data);scanSources(level,w);selectDetail(level,w);
         int hash=Arrays.hashCode(settings.blockCapacity)*31+Arrays.hashCode(settings.blockConductivity);
         hash=31*hash+Float.floatToIntBits(settings.globalCapacityMultiplier);hash=31*hash+Float.floatToIntBits(settings.globalConductivityMultiplier);
         hash=31*hash+(settings.enableConvection?settings.convectionStrengthPercent:-1);

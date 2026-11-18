@@ -119,4 +119,45 @@ public class AdaptiveThermalTest {
         assertEquals(n,g.solver.size());
         for(var t:tiles)for(int i=0;i<512;i++)assertTrue(t.temperatures.get(i)>=-40.000001&&t.temperatures.get(i)<=-19.999999);
     }
+    @Test(timeout=60000) public void largeMixedDomainSurvivesGrowthWeatherAndObserverMoves() {
+        var tiles=new ArrayList<AdaptiveThermalTile>();
+        for(int z=0;z<16;z++)for(int y=0;y<16;y++)for(int x=0;x<16;x++)
+            tiles.add(tile(x*8,y*8,z*8,-20,false));
+        long start=System.nanoTime();
+        for(int cycle=0;cycle<12;cycle++) {
+            // Move a 3-cubed detailed observer region, rebuild after growth and material edits.
+            for(var t:tiles) {
+                boolean detail=t.x/8>=cycle&&t.x/8<cycle+3&&t.y<24&&t.z<24;
+                t.configure(detail,filled(1),filled(cycle%2==0?1:2),filled(.01),filled(1),filled(0));
+            }
+            tiles.add(tile(128,cycle*8,0,-20,false));
+            var g=new AdaptiveThermalGraph(tiles);
+            assertEquals(27*511+tiles.size(),g.solver.size());
+            for(int step=0;step<100;step++) {
+                g.clearPower();for(int source=0;source<1471;source++)g.addPower(tiles.get(source),0,10);
+                g.step(.5,-30+10*Math.sin((cycle*100+step)/100.0));
+            }
+            for(var t:tiles)for(int cell=0;cell<512;cell++) {
+                assertTrue(Double.isFinite(t.temperatures.get(cell)));
+                assertTrue(t.temperatures.get(cell)>=-40.000001);
+            }
+        }
+        System.out.println("Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms="+(System.nanoTime()-start)/1e6);
+    }
+    private double heatedRoom(boolean insulated) {
+        var t=tile(0,0,0,-20,true);
+        double[] c=filled(1),k=filled(1),g=filled(0);
+        for(int y=0;y<8;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++) {
+            int i=AdaptiveThermalTile.index(x,y,z);
+            if(x==0||x==7||y==0||y==7||z==0||z==7){g[i]=1;if(insulated){c[i]=20;k[i]=.05;}}
+        }
+        t.configure(true,c,k,g,filled(1),filled(0));var graph=new AdaptiveThermalGraph(List.of(t));
+        graph.addPower(t,AdaptiveThermalTile.index(3,3,3),68);
+        for(int step=0;step<600;step++)graph.step(.5,-20);
+        return t.temperatures.get(AdaptiveThermalTile.index(4,3,3));
+    }
+    @Test public void detailedInsulatedRoomWarmsMoreThanExposedAir() {
+        double closed=heatedRoom(true),open=heatedRoom(false);
+        assertTrue(closed>open);assertTrue(closed>-20);
+    }
 }

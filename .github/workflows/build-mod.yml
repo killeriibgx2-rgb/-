@@ -72,7 +72,17 @@ jobs:
           ls -lh "$OUT"
           git config user.name "eternalsnow-build-bot"
           git config user.email "eternalsnow-build-bot@users.noreply.github.com"
-          git add "$OUT"
+          python3 - <<'PYREPORT'
+          import glob, xml.etree.ElementTree as ET
+          lines = ["Thermal build regression results (synthetic; not Minecraft TPS)"]
+          for path in sorted(glob.glob("eternal-snow-1.20.1/build/test-results/test/TEST-*.xml")):
+              root = ET.parse(path).getroot()
+              lines.append("{name}: tests={tests}, failures={failures}, errors={errors}, seconds={time}".format(**root.attrib))
+              output = root.findtext("system-out", "").strip()
+              if output: lines.append(output)
+          open("eternal-snow-1.20.1/release/test-results.txt", "w").write("\n".join(lines)+"\n")
+          PYREPORT
+          git add "$OUT" eternal-snow-1.20.1/release/test-results.txt
           if git diff --cached --quiet; then
             echo "Jar unchanged, skipping commit."
             exit 0
