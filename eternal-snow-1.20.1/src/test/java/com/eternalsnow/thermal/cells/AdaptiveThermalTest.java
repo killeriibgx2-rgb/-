@@ -183,4 +183,29 @@ public class AdaptiveThermalTest {
         assertEquals(afterRefresh,g.solver.totalEnergy(),1e-7);
         assertTrue(b.mean()>-20);
     }
+    @Test(timeout=60000) public void inPlaceEditIsCheaperThanFullRebuild() {
+        var tiles=new ArrayList<AdaptiveThermalTile>();
+        for(int z=0;z<16;z++)for(int y=0;y<16;y++)for(int x=0;x<16;x++)
+            tiles.add(tile(x*8,y*8,z*8,-20,x<3&&y<3&&z<3));
+        var graph=new AdaptiveThermalGraph(tiles);
+        long rebuildStart=System.nanoTime();
+        for(int cycle=0;cycle<20;cycle++)new AdaptiveThermalGraph(tiles);
+        long rebuildNanos=System.nanoTime()-rebuildStart;
+        var edited=new ArrayList<AdaptiveThermalTile>();
+        long refreshStart=System.nanoTime();
+        for(int cycle=0;cycle<20;cycle++) {
+            edited.clear();
+            for(var t:tiles) {
+                var copy=tile(t.x,t.y,t.z,-20,t.detailed);
+                copy.configure(t.detailed,filled(1),filled(cycle%2==0?1:2),filled(0),filled(1),filled(0));
+                edited.add(copy);
+            }
+            // One block edit touches one tile; the rest of the graph is untouched.
+            graph.refreshInPlace(edited.get(cycle%edited.size()));
+        }
+        long refreshNanos=System.nanoTime()-refreshStart;
+        System.out.println("Adaptive 4096 tiles: full rebuild x20="+rebuildNanos/1e6
+                +"ms, in-place tile edit x20="+refreshNanos/1e6+"ms");
+        assertTrue("in-place edit should beat a full rebuild",refreshNanos<rebuildNanos);
+    }
 }
