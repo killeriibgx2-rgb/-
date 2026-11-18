@@ -191,18 +191,16 @@ public class AdaptiveThermalTest {
         long rebuildStart=System.nanoTime();
         for(int cycle=0;cycle<20;cycle++)new AdaptiveThermalGraph(tiles);
         long rebuildNanos=System.nanoTime()-rebuildStart;
+        // Prepare edited tiles up front so the loop times only the graph operation.
         var edited=new ArrayList<AdaptiveThermalTile>();
-        long refreshStart=System.nanoTime();
-        for(int cycle=0;cycle<20;cycle++) {
-            edited.clear();
-            for(var t:tiles) {
-                var copy=tile(t.x,t.y,t.z,-20,t.detailed);
-                copy.configure(t.detailed,filled(1),filled(cycle%2==0?1:2),filled(0),filled(1),filled(0));
-                edited.add(copy);
-            }
-            // One block edit touches one tile; the rest of the graph is untouched.
-            graph.refreshInPlace(edited.get(cycle%edited.size()));
+        for(var t:tiles) {
+            var copy=tile(t.x,t.y,t.z,-20,t.detailed);
+            copy.configure(t.detailed,filled(1),filled(2),filled(0),filled(1),filled(0));
+            edited.add(copy);
         }
+        long refreshStart=System.nanoTime();
+        // One block edit touches one tile; the rest of the graph stays untouched.
+        for(int cycle=0;cycle<20;cycle++)graph.refreshInPlace(edited.get(cycle%edited.size()));
         long refreshNanos=System.nanoTime()-refreshStart;
         System.out.println("Adaptive 4096 tiles: full rebuild x20="+rebuildNanos/1e6
                 +"ms, in-place tile edit x20="+refreshNanos/1e6+"ms");
