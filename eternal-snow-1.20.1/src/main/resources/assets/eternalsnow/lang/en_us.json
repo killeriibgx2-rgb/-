@@ -419,5 +419,11 @@
   "block.eternalsnow.insulated_bamboo_trapdoor": "Insulated Bamboo Trapdoor",
   "block.eternalsnow.insulated_crimson_trapdoor": "Insulated Crimson Trapdoor",
   "block.eternalsnow.insulated_warped_trapdoor": "Insulated Warped Trapdoor",
-  "block.eternalsnow.insulated_iron_trapdoor": "Insulated Iron Trapdoor"
+  "block.eternalsnow.insulated_iron_trapdoor": "Insulated Iron Trapdoor",
+  "eternalsnow.preset.title": "Presets overwrite balance; then click Apply",
+  "eternalsnow.tooltip.candy.warmth": "Warmth recovery: 5 seconds (no stacking)",
+  "eternalsnow.preset.easy": "Easy",
+  "eternalsnow.preset.medium": "Medium",
+  "eternalsnow.preset.hard": "Hard",
+  "eternalsnow.preset.hardcore": "Hardcore"
 }

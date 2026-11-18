@@ -313,6 +313,17 @@ public final class EternalSnowConfigScreen extends Screen {
 
     private void buildAdminHub(int leftX, int fullW) {
         int y = 4;
+        addScrolled(new EternalSnowWidgets.SectionHeader(leftX, 0, fullW,
+                Component.translatable("eternalsnow.preset.title")), y);
+        y += 20;
+        for (var preset : com.eternalsnow.config.WinterPreset.values()) {
+            addScrolled(new EternalSnowWidgets.ActionButton(leftX, 0, fullW, 18,
+                    Component.translatable(preset.key()), () -> {
+                        preset.apply(this.workingServer);
+                        this.rebuildWidgets();
+                    }), y);
+            y += 21;
+        }
 
         addScrolled(new EternalSnowWidgets.ToggleSwitch(
                 leftX, 0, fullW, 20,

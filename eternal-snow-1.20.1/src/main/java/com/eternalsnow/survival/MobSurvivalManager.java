@@ -33,6 +33,11 @@ public final class MobSurvivalManager {
     /** Mobs are 5x slower than the player by default; hard cap of the resulting slowdown. */
     private static final float MAX_SLOWDOWN = 0.30F;
 
+    public static boolean coldImmune(LivingEntity entity, float temperature) {
+        return entity instanceof net.minecraft.world.entity.animal.IronGolem
+                || (entity instanceof net.minecraft.world.entity.npc.Villager && temperature >= -50F);
+    }
+
     private MobSurvivalManager() {
     }
 
@@ -92,14 +97,16 @@ public final class MobSurvivalManager {
         if (mob.tickCount % 10 != 0 || mob.isDeadOrDying() || mob.isSpectator()) {
             return;
         }
-        if (level.getGameTime() % 2L != 0L) {
-            return; // spread mobs across ticks (half of them per tick) to keep TPS flat
-        }
 
         float chill = mob.getPersistentData().getFloat(TAG_MOB_CHILL);
         BlockPos sample = mob.blockPosition().above();
         float airC = ThermalEngine.getLocalTemperatureC(level, sample);
 
+        if (coldImmune(mob, airC)) {
+            mob.getPersistentData().putFloat(TAG_MOB_CHILL, 0);
+            mob.setTicksFrozen(0);
+            return;
+        }
         boolean inWater = mob.isInWaterOrBubble();
         boolean snowedOn = isSnowedOn(level, mob);
 

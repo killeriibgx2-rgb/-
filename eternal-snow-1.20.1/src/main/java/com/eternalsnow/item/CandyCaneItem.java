@@ -32,6 +32,8 @@ public final class CandyCaneItem extends Item {
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
         if (!level.isClientSide) {
+            entity.addEffect(new MobEffectInstance(com.eternalsnow.registry.ModRegistry.WARM_RECOVERY.get(),
+                    100, 0, false, true, true));
             if (this.rainbowBoost) {
                 entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 12, 1, false, true, true));
                 entity.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 20 * 5, 0, false, true, true));
@@ -49,6 +51,7 @@ public final class CandyCaneItem extends Item {
         } else {
             tooltip.add(Component.translatable("eternalsnow.tooltip.candy.effect").withStyle(ChatFormatting.YELLOW));
         }
+        tooltip.add(Component.translatable("eternalsnow.tooltip.candy.warmth").withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.translatable(this.craftHintKey).withStyle(ChatFormatting.DARK_GRAY));
     }
 }

@@ -37,9 +37,20 @@ public final class EternalSnowCommands {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        var presets = Commands.literal("preset");
+        for (var preset : com.eternalsnow.config.WinterPreset.values()) {
+            presets.then(Commands.literal(preset.name().toLowerCase(Locale.ROOT)).executes(ctx -> {
+                var copy = EternalSnowState.getServerSettings().copy();
+                preset.apply(copy);
+                ServerboundUpdateSettingsPacket.applySettingsOnServer(ctx.getSource().getServer(), copy);
+                ctx.getSource().sendSuccess(() -> Component.translatable(preset.key()), true);
+                return 1;
+            }));
+        }
         dispatcher.register(Commands.literal("eternalsnow")
                 .requires(source -> source.hasPermission(2))
                 .executes(ctx -> sendStatus(ctx.getSource()))
+                .then(presets)
                 .then(Commands.literal("status").executes(ctx -> sendStatus(ctx.getSource())))
                 .then(Commands.literal("temp").executes(ctx -> sendThermometer(ctx.getSource())))
                 .then(Commands.literal("snow")
