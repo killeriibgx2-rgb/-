@@ -151,8 +151,8 @@ public final class WorldCellThermal {
         double mixing=settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1;
         // MOTION_BLOCKING height is per column; one query per 8-block column, not per block.
         int[] columnHeight=new int[64];
-        for(int c=0;c<64;c++)columnHeight[c]=level.getHeight(Heightmap.Types.MOTION_BLOCKING,
-                origin.getX()+(c&7),origin.getZ()+((c>>3)&7));
+        for(int column=0;column<64;column++)columnHeight[column]=level.getHeight(Heightmap.Types.MOTION_BLOCKING,
+                origin.getX()+(column&7),origin.getZ()+((column>>3)&7));
         for(int i=0;i<512;i++) {
             BlockPos p=origin.offset(i&7,i>>6,(i>>3)&7);BlockState block=chunk.getBlockState(p);
             Material m=material(w,block,settings);c[i]=m.capacity;k[i]=m.conductivity;raw[i]=m.air?1:m.conductivity;air[i]=m.air;
