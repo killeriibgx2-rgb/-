@@ -34,6 +34,7 @@ public final class SeekWarmthGoal extends Goal {
     private boolean allowed() {
         var s=EternalSnowState.getServerSettings();
         return s.enabled && s.enablePlayerTemperature && EternalSnowState.isOverworldLike(mob.level())
+                && mob.getBbWidth()<=8 && mob.getBbHeight()<=16
                 && !mob.isNoAi() && !mob.isPassenger() && !mob.isLeashed()
                 && mob.getTarget()==null && mob.getLastHurtByMob()==null && mob.isAlive();
     }
@@ -74,7 +75,13 @@ public final class SeekWarmthGoal extends Goal {
             if(temp>best && temp<=35){best=temp;target=pos;}
         }
         if(target==null)return false;
-        path=mob.getNavigation().createPath(target,0);
+        // Vanilla builds a navigation region with search range + 8 padding.
+        // Verify every chunk BEFORE construction, not only the destination.
+        BlockPos origin=mob.blockPosition();
+        for(int cx=(origin.getX()-24)>>4;cx<=((origin.getX()+24)>>4);cx++)
+            for(int cz=(origin.getZ()-24)>>4;cz<=((origin.getZ()+24)>>4);cz++)
+                if(!level.hasChunk(cx,cz))return false;
+        path=mob.getNavigation().createPath(target,0,16);
         if(path==null||!path.canReach())return false;
         for(int i=0;i<path.getNodeCount();i++)if(!safe(level,path.getNode(i).asBlockPos()))return false;
         return true;
