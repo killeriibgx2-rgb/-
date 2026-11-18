@@ -36,6 +36,8 @@ public final class WorldCellThermal {
         final Long2ObjectOpenHashMap<BlockState> lastStates = new Long2ObjectOpenHashMap<>();
         CellHeatSolver solver;
         BlockPos[] positions = new BlockPos[0];
+        int size, addedLast;
+        long lastNanos, solverNanos, maxNanos, rebuilds, updates;
         Long2IntOpenHashMap indices = new Long2IntOpenHashMap();
         BlockState[] states = new BlockState[0];
         double[] conductivity = new double[0];
@@ -157,7 +159,8 @@ public final class WorldCellThermal {
         if(level.getGameTime()%10!=0 || !EternalSnowState.isOverworldLike(level)) return;
         ServerSnowSettings settings=EternalSnowState.getServerSettings();
         if(!settings.enabled) return;
-        Workspace w=ws(level); var data=CellThermalSavedData.get(level);
+        long startNanos=System.nanoTime();
+        Workspace w=ws(level); var data=CellThermalSavedData.get(level);w.addedLast=0;
         int pending=w.pending.size();
         for(int i=0;i<pending;i++) {
             Long key=w.pending.poll(); if(key==null) break;
@@ -180,7 +183,7 @@ public final class WorldCellThermal {
         }
         // Grow only the frontier that has a real temperature contrast. Retained interior
         // temperatures are never rebased on weather, even after a source stops burning.
-        int added=0, n=w.positions.length;
+        int added=0, n=w.size;
         for(int visited=0;visited<n && added<EXPANSION_BUDGET;visited++) {
             int i=(int)(w.expansionCursor++ % n); BlockPos p=w.positions[i];
             if(!ready(level,p)) continue;
@@ -201,7 +204,7 @@ public final class WorldCellThermal {
         hash=31*hash+settings.convectionStrengthPercent;
         if(hash!=w.settingsHash) { w.settingsHash=hash; w.materials.clear(); w.dirty=true; }
         // Catch piston/explosion/state changes, not only player place/break events.
-        for(int i=0;i<w.positions.length;i++) {
+        for(int i=0;i<w.size;i++) {
             BlockPos p=w.positions[i];
             if(!ready(level,p)) { w.dirty=true; continue; }
             if(level.getBlockState(p)!=w.states[i]) w.changed.add(p.asLong());
@@ -209,7 +212,7 @@ public final class WorldCellThermal {
         if(w.dirty) rebuild(level,w,data,settings);
         else updateChanged(level,w,data,settings);
         if(w.solver==null) return;
-        Arrays.fill(w.powers,0);
+        Arrays.fill(w.powers,0,w.size,0);
         // Split existing flame power between its support and directly touching air.
         // A campfire was previously treated entirely as a massive stone voxel.
         for(int i:w.emitters) {
@@ -235,33 +238,45 @@ public final class WorldCellThermal {
                 if(j>=0 && w.air[j] && ready(level,w.positions[j]))w.powers[j]+=power*share/neighbours;
             }
         }
-        for(int i=0;i<w.positions.length;i++) {
+        for(int i=0;i<w.size;i++) {
             BlockPos p=w.positions[i]; BlockState state=w.states[i];
             boolean loaded=ready(level,p);
             w.solver.setLoaded(i,loaded);
             if(!loaded) continue;
             w.solver.setPower(i,w.powers[i]);
-            boolean air=ThermalEngine.isAirOrOpenPassage(state);
+            boolean air=w.air[i];
             // Outdoor air sees the weather. Solid top surfaces exchange through their material;
             // interior air/walls receive NO ambient relaxation term.
             boolean exposed=air?level.canSeeSky(p):p.getY()>=level.getHeight(Heightmap.Types.MOTION_BLOCKING,p.getX(),p.getZ())-1;
             double g=exposed?(air?1.0:Math.min(1.0,w.conductivity[i])):0;
-            w.solver.setOutside(i,g,ThermalEngine.computeBaseAmbientC(level,p));
+            w.solver.setOutside(i,g,g>0?ThermalEngine.computeBaseAmbientC(level,p):0);
         }
+        long solverStart=System.nanoTime();
         w.solver.step(.5); // loaded simulation time only; NEVER gameTime minus last loaded time
-        for(int i=0;i<w.positions.length;i++) {
+        w.solverNanos=System.nanoTime()-solverStart;
+        for(int i=0;i<w.size;i++) {
             BlockPos p=w.positions[i];
             if(ready(level,p)) data.chunk(chunkKey(p)).put(p.asLong(),w.solver.temperature(i));
         }
         data.setDirty();
         if(settings.meltRoofSnowFromWarmBlocks && level.getGameTime()%80==0) {
             // At most 32 checks per pass; no per-frame effects or full second world scan.
-            for(int j=0;j<Math.min(32,w.positions.length);j++) {
-                int i=level.random.nextInt(w.positions.length);
+            for(int j=0;j<Math.min(32,w.size);j++) {
+                int i=level.random.nextInt(w.size);
                 if(w.solver.temperature(i)>2 && ready(level,w.positions[i]))
                     ThermalEngine.processWarmSurface(level,w.positions[i]);
             }
         }
+        w.lastNanos=System.nanoTime()-startNanos;w.maxNanos=Math.max(w.maxNanos,w.lastNanos);
+    }
+    /** Server-thread, explicit admin query; no periodic logging or world mutation. */
+    public static String diagnostics(ServerLevel level) {
+        Workspace w=WORLDS.get(level.dimension());
+        if(w==null||w.solver==null)return "Thermal: no active graph in "+level.dimension().location();
+        return String.format(Locale.ROOT,
+                "Thermal %s: cells=%d edges=%d substeps=%d added=%d total=%.2fms solver=%.2fms max=%.2fms rebuilds=%d updates=%d",
+                level.dimension().location(),w.size,w.solver.edgeCount(),w.solver.lastSubsteps(),w.addedLast,
+                w.lastNanos/1e6,w.solverNanos/1e6,w.maxNanos/1e6,w.rebuilds,w.updates);
     }
     private record Material(boolean air,double capacity,double conductivity) {}
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
@@ -282,7 +297,7 @@ public final class WorldCellThermal {
         w.imported.clear();
         if(w.changed.isEmpty())return;
         long[] changes=w.changed.toLongArray();
-        int oldSize=w.positions.length;
+        int oldSize=w.size;
         List<BlockPos> added=new ArrayList<>();
         for(long key:changes) {
             BlockPos pos=BlockPos.of(key);
@@ -290,12 +305,14 @@ public final class WorldCellThermal {
             int index=oldSize+added.size();w.indices.put(key,index);added.add(pos);
         }
         int size=oldSize+added.size();
-        if(size!=oldSize) {
-            w.positions=Arrays.copyOf(w.positions,size);w.states=Arrays.copyOf(w.states,size);
-            w.conductivity=Arrays.copyOf(w.conductivity,size);w.air=Arrays.copyOf(w.air,size);
-            w.powers=Arrays.copyOf(w.powers,size);
-            for(int a=0;a<added.size();a++)w.positions[oldSize+a]=added.get(a);
+        if(size>w.positions.length) {
+            int capacity=Math.max(size,Math.max(16,w.positions.length+w.positions.length/2));
+            w.positions=Arrays.copyOf(w.positions,capacity);w.states=Arrays.copyOf(w.states,capacity);
+            w.conductivity=Arrays.copyOf(w.conductivity,capacity);w.air=Arrays.copyOf(w.air,capacity);
+            w.powers=Arrays.copyOf(w.powers,capacity);
         }
+        for(int a=0;a<added.size();a++)w.positions[oldSize+a]=added.get(a);
+        w.size=size;w.addedLast+=added.size();w.updates++;
         // Append in index order before changing connections. Saved temperatures remain authoritative.
         for(int i=oldSize;i<size;i++) {
             BlockPos pos=w.positions[i];
@@ -338,7 +355,7 @@ public final class WorldCellThermal {
             var map=data.chunks.get(chunk);
             if(map!=null) for(long key:map.keySet()) cells.add(BlockPos.of(key));
         }
-        int n=cells.size();
+        int n=cells.size();w.size=n;w.rebuilds++;
         w.positions=cells.toArray(BlockPos[]::new); w.states=new BlockState[n]; w.conductivity=new double[n];
         w.powers=new double[n]; w.air=new boolean[n]; w.emitters.clear();
         double[] t=new double[n],cap=new double[n];

@@ -109,3 +109,8 @@ tasks.withType(JavaExec).configureEach {
 dependencies {
     testImplementation 'junit:junit:4.13.2'
 }
+
+// Keep synthetic thermal benchmark results visible in CI (not a Minecraft TPS claim).
+tasks.withType(Test).configureEach {
+    testLogging.showStandardStreams = true
+}

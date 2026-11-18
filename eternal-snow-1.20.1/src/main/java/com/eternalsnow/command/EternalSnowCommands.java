@@ -51,6 +51,12 @@ public final class EternalSnowCommands {
                 .requires(source -> source.hasPermission(2))
                 .executes(ctx -> sendStatus(ctx.getSource()))
                 .then(presets)
+                .then(Commands.literal("thermalstats").executes(ctx -> {
+                    for(var level:ctx.getSource().getServer().getAllLevels())
+                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                com.eternalsnow.thermal.cells.WorldCellThermal.diagnostics(level)),false);
+                    return 1;
+                }))
                 .then(Commands.literal("status").executes(ctx -> sendStatus(ctx.getSource())))
                 .then(Commands.literal("temp").executes(ctx -> sendThermometer(ctx.getSource())))
                 .then(Commands.literal("snow")
