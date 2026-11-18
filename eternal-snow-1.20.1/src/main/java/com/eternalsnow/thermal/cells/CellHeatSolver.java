@@ -27,6 +27,11 @@ public final class CellHeatSolver {
     private double[] edgeG;
     private int activeCount, lastSubsteps;
     private boolean topologyDirty=true;
+    private double[] pairTransfer=new double[0], externalScale=new double[0];
+    private double splitHalf=Double.NaN;
+    private boolean splitDirty=true;
+    private final it.unimi.dsi.fastutil.ints.IntOpenHashSet splitEdgesDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
+    private final it.unimi.dsi.fastutil.ints.IntOpenHashSet externalDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
     public int edgeCount() { return edgeCount; }
     public int lastSubsteps() { return lastSubsteps; }
     private int cellCount, edgeCount;
@@ -80,10 +85,12 @@ public final class CellHeatSolver {
             boundaryT=Arrays.copyOf(boundaryT,n);rates=Arrays.copyOf(rates,n);
             deltaEnergy=Arrays.copyOf(deltaEnergy,n);loaded=Arrays.copyOf(loaded,n);
         }
-        int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;loaded[i]=true;topologyDirty=true;
+        int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;loaded[i]=true;topologyDirty=true;externalDirty.add(i);
         return i;
     }
-    public void setCapacity(int cell,double value) { positive(value);capacity[cell]=value; }
+    public void setCapacity(int cell,double value) {
+        positive(value);if(capacity[cell]!=value){capacity[cell]=value;splitDirty=true;}
+    }
     private static long pair(int a,int b) {return ((long)Math.min(a,b)<<32)|Math.max(a,b);}
     /** Existing edge is updated, new edge is added once; primitive mixed hashing avoids Long.hashCode. */
     public void setConnection(int a,int b,double conductance) {
@@ -96,7 +103,7 @@ public final class CellHeatSolver {
         }
         long key=pair(a,b);int index=edgeIndices.get(key);
         if(index>=0) {
-            if(edgeG[index]!=conductance){edgeG[index]=conductance;topologyDirty=true;}
+            if(edgeG[index]!=conductance){edgeG[index]=conductance;topologyDirty=true;splitEdgesDirty.add(index);}
             return;
         }
         if(edgeCount==edgeA.length) {
@@ -105,16 +112,16 @@ public final class CellHeatSolver {
             edgeG=Arrays.copyOf(edgeG,n);activeEdges=Arrays.copyOf(activeEdges,n);
         }
         edgeIndices.put(key,edgeCount);edgeA[edgeCount]=a;edgeB[edgeCount]=b;
-        edgeG[edgeCount++]=conductance;topologyDirty=true;
+        edgeG[edgeCount]=conductance;splitEdgesDirty.add(edgeCount++);topologyDirty=true;
     }
 
     /** Replacing a block uses LOCAL AIR temperature supplied by the world adapter. */
     public void replace(int cell, double localAirTemperature, double newCapacity) {
         finite(localAirTemperature); positive(newCapacity);
         temperature[cell] = localAirTemperature;
-        capacity[cell] = newCapacity;
+        setCapacity(cell,newCapacity);
         power[cell] = 0;
-        boundaryG[cell] = 0;
+        boundaryG[cell] = 0;externalDirty.add(cell);
     }
 
     /** Source on/off changes power only; it never resets stored heat. */
@@ -123,6 +130,7 @@ public final class CellHeatSolver {
     /** Only externally exposed cells receive a weather boundary; interiors use G=0. */
     public void setOutside(int cell, double conductance, double outsideTemperature) {
         nonnegative(conductance); finite(outsideTemperature);
+        if(boundaryG[cell]!=conductance)externalDirty.add(cell);
         boundaryG[cell] = conductance;
         boundaryT[cell] = outsideTemperature;
     }
@@ -173,6 +181,58 @@ public final class CellHeatSolver {
                 if (loaded[i]) temperature[i] += deltaEnergy[i] / capacity[i];
             }
         }
+    }
+
+    /**
+     * Symmetric exact-pair splitting. Each pair transfer is analytic and conservative,
+     * and each weather/source operator is solved analytically too. Two 0.25s slices
+     * replace the global explicit CFL loop for a 0.5s world step. This is a different,
+     * second-order integrator, not a cap on unstable Euler substeps.
+     */
+    public void stepConservative(double seconds) {
+        nonnegative(seconds);if(seconds==0)return;
+        double slices=Math.ceil(seconds/.25);
+        if(slices>MAX_SUBSTEPS)throw new IllegalArgumentException("Thermal step too large");
+        int count=Math.max(1,(int)slices);double half=seconds/count/2;
+        prepareSplit(half);lastSubsteps=count;
+        for(int sub=0;sub<count;sub++) {
+            externalHalf();
+            for(int e=0;e<edgeCount;e++)exchange(e);
+            for(int e=edgeCount-1;e>=0;e--)exchange(e);
+            externalHalf();
+        }
+    }
+    private void prepareSplit(double half) {
+        boolean all=splitDirty || splitHalf!=half;
+        splitHalf=half;
+        if(pairTransfer.length<edgeA.length)pairTransfer=Arrays.copyOf(pairTransfer,edgeA.length);
+        if(externalScale.length<temperature.length)externalScale=Arrays.copyOf(externalScale,temperature.length);
+        if(all) {
+            for(int e=0;e<edgeCount;e++)preparePair(e);
+            for(int i=0;i<cellCount;i++)prepareExternal(i);
+        } else {
+            for(int e:splitEdgesDirty)preparePair(e);
+            for(int i:externalDirty)prepareExternal(i);
+        }
+        splitEdgesDirty.clear();externalDirty.clear();splitDirty=false;
+    }
+    private void preparePair(int e) {
+        double inverse=1/capacity[edgeA[e]]+1/capacity[edgeB[e]];
+        pairTransfer[e]=-Math.expm1(-edgeG[e]*inverse*splitHalf)/inverse;
+    }
+    private void prepareExternal(int i) {
+        externalScale[i]=boundaryG[i]==0?splitHalf/capacity[i]
+                :-Math.expm1(-boundaryG[i]*splitHalf/capacity[i])/boundaryG[i];
+    }
+    private void exchange(int e) {
+        int a=edgeA[e],b=edgeB[e];if(!loaded[a]||!loaded[b])return;
+        double difference=temperature[b]-temperature[a];if(difference==0)return;
+        double q=pairTransfer[e]*difference;
+        temperature[a]+=q/capacity[a];temperature[b]-=q/capacity[b];
+    }
+    private void externalHalf() {
+        for(int i=0;i<cellCount;i++)if(loaded[i])
+            temperature[i]+=externalScale[i]*(power[i]+boundaryG[i]*(boundaryT[i]-temperature[i]));
     }
 
     public double totalEnergy() {

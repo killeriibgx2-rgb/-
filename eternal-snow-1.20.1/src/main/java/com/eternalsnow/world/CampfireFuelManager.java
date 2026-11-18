@@ -216,6 +216,8 @@ public final class CampfireFuelManager {
         if (!emberMap.isEmpty()) {
             LongArrayList expiredEmbers = new LongArrayList();
             for (Long2IntMap.Entry e : emberMap.long2IntEntrySet()) {
+                BlockPos emberPos=BlockPos.of(e.getLongKey());
+                if(level.getChunkSource().getChunkNow(emberPos.getX()>>4,emberPos.getZ()>>4)==null)continue;
                 int rem = e.getIntValue() - 10;
                 if (rem <= 0) {
                     expiredEmbers.add(e.getLongKey());

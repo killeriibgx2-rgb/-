@@ -23,7 +23,8 @@ public class AirHeatTransferTest {
     }
     private static int index(int x,int y,int z){return x+11*(y+7*z);}
     private static boolean air(int x,int y,int z){return x>0&&x<10&&y>0&&y<6&&z>0&&z<6 && !(x==3&&y==1&&z==3);}
-    private static CellHeatSolver room(boolean improved) {
+    private static CellHeatSolver room(boolean improved) { return room(improved,false); }
+    private static CellHeatSolver room(boolean improved,boolean conservative) {
         int n=11*7*7;double[] t=new double[n],c=new double[n],k=new double[n];boolean[] a=new boolean[n];
         Arrays.fill(t,-20);
         for(int z=0;z<7;z++)for(int y=0;y<7;y++)for(int x=0;x<11;x++) {
@@ -45,8 +46,17 @@ public class AirHeatTransferTest {
         double share=AirHeatTransfer.airShare(improved,recipients.length);
         solver.setPower(fire,68*(1-share));
         for(int i:recipients)solver.setPower(i,68*share/recipients.length);
-        for(int step=0;step<1200;step++)solver.step(.5);
+        for(int step=0;step<1200;step++){if(conservative)solver.stepConservative(.5);else solver.step(.5);}
         return solver;
+    }
+    @Test(timeout=10000) public void conservativeRoomRetainsWarmingAndAccuracy() {
+        var previous=room(true);var current=room(true,true);
+        for(int distance=1;distance<=4;distance++) {
+            int i=index(3+distance,1,3);
+            assertTrue(current.temperature(i)>-19);
+            assertEquals(previous.temperature(i),current.temperature(i),1.0);
+        }
+        assertEquals(previous.temperature(index(3,5,3)),current.temperature(index(3,5,3)),1.0);
     }
     @Test(timeout=10000) public void enclosedRoomWarmsBeyondOneBlockWithoutIncreasingPower() {
         var old=room(false);var fixed=room(true);

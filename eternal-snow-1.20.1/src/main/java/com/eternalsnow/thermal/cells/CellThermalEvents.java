@@ -8,6 +8,9 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = "eternalsnow")
 public final class CellThermalEvents {
     private CellThermalEvents() {}
+    @SubscribeEvent public static void unloaded(net.minecraftforge.event.level.LevelEvent.Unload event) {
+        if(event.getLevel() instanceof ServerLevel level)WorldCellThermal.forgetLevel(level);
+    }
     @SubscribeEvent public static void loaded(ChunkEvent.Load event) {
         if (event.getLevel() instanceof ServerLevel level) {
             long chunk = event.getChunk().getPos().toLong();
