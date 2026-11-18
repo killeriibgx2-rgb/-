@@ -39,6 +39,8 @@ public final class WorldCellThermal {
         Long2IntOpenHashMap indices = new Long2IntOpenHashMap();
         BlockState[] states = new BlockState[0];
         double[] conductivity = new double[0];
+        double[] powers = new double[0];
+        boolean[] air = new boolean[0];
         boolean dirty = true;
         long expansionCursor;
         int settingsHash;
@@ -185,6 +187,8 @@ public final class WorldCellThermal {
         int hash=Arrays.hashCode(settings.blockCapacity)*31+Arrays.hashCode(settings.blockConductivity);
         hash=31*hash+Float.floatToIntBits(settings.globalCapacityMultiplier);
         hash=31*hash+Float.floatToIntBits(settings.globalConductivityMultiplier);
+        hash=31*hash+(settings.enableConvection?1:0);
+        hash=31*hash+settings.convectionStrengthPercent;
         if(hash!=w.settingsHash) { w.settingsHash=hash; w.dirty=true; }
         // Catch piston/explosion/state changes, not only player place/break events.
         for(int i=0;i<w.positions.length;i++) {
@@ -194,16 +198,38 @@ public final class WorldCellThermal {
         }
         if(w.dirty) rebuild(level,w,data,settings);
         if(w.solver==null) return;
+        Arrays.fill(w.powers,0);
+        // Split existing flame power between its support and directly touching air.
+        // A campfire was previously treated entirely as a massive stone voxel.
+        for(int i=0;i<w.positions.length;i++) {
+            BlockPos p=w.positions[i];
+            if(!ready(level,p))continue;
+            BlockState state=w.states[i];
+            double power=ThermalEngine.getHeatSourcePowerC(level,p,state,settings)
+                    * settings.roomHeatingPowerPercent/100.0;
+            power*=Math.max(0,1-(w.solver.temperature(i)-20)/480.0);
+            if(power<=0)continue;
+            boolean flame=state.getBlock() instanceof net.minecraft.world.level.block.CampfireBlock
+                    || state.is(net.minecraft.world.level.block.Blocks.FIRE)
+                    || state.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE);
+            int neighbours=0;
+            if(flame)for(Direction direction:ALL) {
+                int j=w.indices.get(p.relative(direction).asLong());
+                if(j>=0 && w.air[j] && ready(level,w.positions[j]))neighbours++;
+            }
+            double share=AirHeatTransfer.airShare(flame,neighbours);
+            w.powers[i]+=power*(1-share);
+            if(share>0)for(Direction direction:ALL) {
+                int j=w.indices.get(p.relative(direction).asLong());
+                if(j>=0 && w.air[j] && ready(level,w.positions[j]))w.powers[j]+=power*share/neighbours;
+            }
+        }
         for(int i=0;i<w.positions.length;i++) {
             BlockPos p=w.positions[i]; BlockState state=w.states[i];
             boolean loaded=ready(level,p);
             w.solver.setLoaded(i,loaded);
             if(!loaded) continue;
-            double power=ThermalEngine.getHeatSourcePowerC(level,p,state,settings)
-                    * settings.roomHeatingPowerPercent/100.0;
-            // Finite source temperature limits injected power, not the temperature of neighbours.
-            power*=Math.max(0,1-(w.solver.temperature(i)-20)/480.0);
-            w.solver.setPower(i,power);
+            w.solver.setPower(i,w.powers[i]);
             boolean air=ThermalEngine.isAirOrOpenPassage(state);
             // Outdoor air sees the weather. Solid top surfaces exchange through their material;
             // interior air/walls receive NO ambient relaxation term.
@@ -235,6 +261,7 @@ public final class WorldCellThermal {
         }
         int n=cells.size();
         w.positions=cells.toArray(BlockPos[]::new); w.states=new BlockState[n]; w.conductivity=new double[n];
+        w.powers=new double[n]; w.air=new boolean[n];
         double[] t=new double[n],cap=new double[n];
         w.indices=new Long2IntOpenHashMap(n);w.indices.defaultReturnValue(-1);
         for(int i=0;i<n;i++) {
@@ -245,6 +272,7 @@ public final class WorldCellThermal {
             t[i]=map.get(p.asLong());
             boolean air=ThermalEngine.isAirOrOpenPassage(state);
             var category=BlockThermalCategory.classify(state);
+            w.air[i]=air;
             cap[i]=air?1:Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
             if(state.getBlock() instanceof HeatAccumulatorBlock) cap[i]*=4;
             w.conductivity[i]=air?1:Math.max(.001,settings.blockConductivity[category.ordinal()]*settings.globalConductivityMultiplier);
@@ -255,7 +283,8 @@ public final class WorldCellThermal {
             int j=w.indices.get(w.positions[i].relative(d).asLong());if(j<0) continue;
             // Two half-cell resistances in series. One unordered edge per shared face.
             double a=w.conductivity[i],b=w.conductivity[j];
-            edges.add(new CellHeatSolver.Edge(i,j,2*a*b/(a+b)));
+            edges.add(new CellHeatSolver.Edge(i,j,AirHeatTransfer.conductance(a,b,w.air[i],w.air[j],
+                    settings.enableConvection,settings.convectionStrengthPercent)));
         }
         w.solver=new CellHeatSolver(t,cap,edges.toArray(CellHeatSolver.Edge[]::new));w.dirty=false;
     }
