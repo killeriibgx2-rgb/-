@@ -42,6 +42,9 @@ public final class WorldCellThermal {
         double[] powers = new double[0];
         boolean[] air = new boolean[0];
         final it.unimi.dsi.fastutil.ints.IntArrayList emitters = new it.unimi.dsi.fastutil.ints.IntArrayList();
+        final LongOpenHashSet changed = new LongOpenHashSet();
+        final LongOpenHashSet imported = new LongOpenHashSet();
+        final IdentityHashMap<BlockState,Material> materials = new IdentityHashMap<>();
         boolean dirty = true;
         long expansionCursor;
         int settingsHash;
@@ -61,7 +64,7 @@ public final class WorldCellThermal {
     }
     private static void admit(ServerLevel level,Workspace w,BlockPos pos) {
         long key=chunkKey(pos);
-        if (w.loaded.add(key)) { w.scanQueue.enqueue(key); w.dirty=true; }
+        if (w.loaded.add(key)) { w.scanQueue.enqueue(key); w.imported.add(key); }
     }
     public static double temperature(ServerLevel level,BlockPos pos) {
         if (!ready(level,pos)) {
@@ -78,7 +81,7 @@ public final class WorldCellThermal {
             t=ThermalEngine.computeBaseAmbientC(level,pos);
             if (level.getBlockEntity(pos) instanceof HeatAccumulatorBlockEntity accumulator)
                 t+=Math.max(0,accumulator.getHeatC()); // one-time migration; existing cell wins thereafter
-            cells.put(pos.asLong(),t); data.setDirty(); w.dirty=true;
+            cells.put(pos.asLong(),t); data.setDirty(); w.changed.add(pos.asLong());
         }
         return t;
     }
@@ -98,7 +101,7 @@ public final class WorldCellThermal {
         Workspace w=ws(level); admit(level,w,pos);
         var data=CellThermalSavedData.get(level);
         data.chunk(chunkKey(pos)).put(pos.asLong(),localAir(level,data,pos));
-        data.setDirty(); w.dirty=true; w.lastStates.remove(pos.asLong());
+        data.setDirty(); w.changed.add(pos.asLong()); w.lastStates.remove(pos.asLong());
         w.sources.add(pos.asLong()); // validate after the placement/break event completes
     }
     public static void blockChanged(ServerLevel level, BlockPos pos, BlockState before, BlockState after) {
@@ -110,7 +113,7 @@ public final class WorldCellThermal {
         var map=CellThermalSavedData.get(level).chunks.get(chunkKey(pos));
         if (!emitter && (map==null || !map.containsKey(pos.asLong()))) return;
         if (before.getBlock()!=after.getBlock()) replaced(level,pos);
-        else w.dirty=true;
+        else w.changed.add(pos.asLong());
         // This mutation has already been handled, don't reset it a second time on rebuild.
         w.lastStates.put(pos.asLong(),after);
         if(emitter) w.sources.add(pos.asLong());
@@ -190,14 +193,15 @@ public final class WorldCellThermal {
         hash=31*hash+Float.floatToIntBits(settings.globalConductivityMultiplier);
         hash=31*hash+(settings.enableConvection?1:0);
         hash=31*hash+settings.convectionStrengthPercent;
-        if(hash!=w.settingsHash) { w.settingsHash=hash; w.dirty=true; }
+        if(hash!=w.settingsHash) { w.settingsHash=hash; w.materials.clear(); w.dirty=true; }
         // Catch piston/explosion/state changes, not only player place/break events.
         for(int i=0;i<w.positions.length;i++) {
             BlockPos p=w.positions[i];
             if(!ready(level,p)) { w.dirty=true; continue; }
-            if(level.getBlockState(p)!=w.states[i]) { w.dirty=true; break; }
+            if(level.getBlockState(p)!=w.states[i]) w.changed.add(p.asLong());
         }
         if(w.dirty) rebuild(level,w,data,settings);
+        else updateChanged(level,w,data,settings);
         if(w.solver==null) return;
         Arrays.fill(w.powers,0);
         // Split existing flame power between its support and directly touching air.
@@ -254,6 +258,74 @@ public final class WorldCellThermal {
             }
         }
     }
+    private record Material(boolean air,double capacity,double conductivity) {}
+    private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
+        return w.materials.computeIfAbsent(state,key->{
+            boolean air=ThermalEngine.isAirOrOpenPassage(key);
+            if(air)return new Material(true,1,1); // no tag classification for air
+            var category=BlockThermalCategory.classify(key);
+            double capacity=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
+            if(key.getBlock() instanceof HeatAccumulatorBlock)capacity*=4;
+            return new Material(false,capacity,Math.max(.001,settings.blockConductivity[category.ordinal()]*settings.globalConductivityMultiplier));
+        });
+    }
+    private static void updateChanged(ServerLevel level,Workspace w,CellThermalSavedData data,ServerSnowSettings settings) {
+        for(long chunk:w.imported) {
+            var cells=data.chunks.get(chunk);
+            if(cells!=null)w.changed.addAll(cells.keySet());
+        }
+        w.imported.clear();
+        if(w.changed.isEmpty())return;
+        long[] changes=w.changed.toLongArray();
+        int oldSize=w.positions.length;
+        List<BlockPos> added=new ArrayList<>();
+        for(long key:changes) {
+            BlockPos pos=BlockPos.of(key);
+            if(!ready(level,pos)||w.indices.containsKey(key))continue;
+            int index=oldSize+added.size();w.indices.put(key,index);added.add(pos);
+        }
+        int size=oldSize+added.size();
+        if(size!=oldSize) {
+            w.positions=Arrays.copyOf(w.positions,size);w.states=Arrays.copyOf(w.states,size);
+            w.conductivity=Arrays.copyOf(w.conductivity,size);w.air=Arrays.copyOf(w.air,size);
+            w.powers=Arrays.copyOf(w.powers,size);
+            for(int a=0;a<added.size();a++)w.positions[oldSize+a]=added.get(a);
+        }
+        // Append in index order before changing connections. Saved temperatures remain authoritative.
+        for(int i=oldSize;i<size;i++) {
+            BlockPos pos=w.positions[i];
+            var mat=material(w,level.getBlockState(pos),settings);
+            w.solver.addCell(data.chunk(chunkKey(pos)).get(pos.asLong()),mat.capacity);
+        }
+        for(long key:changes) {
+            int i=w.indices.get(key);if(i<0)continue;
+            BlockPos pos=w.positions[i];if(!ready(level,pos))continue;
+            BlockState state=level.getBlockState(pos),previous=w.states[i];
+            var map=data.chunk(chunkKey(pos));
+            // Exact block-change hook updates saved local-air T. Fallback catches missed replacements.
+            if(previous!=null && previous.getBlock()!=state.getBlock() && w.lastStates.get(key)!=state)
+                map.put(key,localAir(level,data,pos));
+            var mat=material(w,state,settings);
+            if(i<oldSize && (previous==null||previous.getBlock()!=state.getBlock()))
+                w.solver.replace(i,map.get(key),mat.capacity);
+            else w.solver.setCapacity(i,mat.capacity);
+            w.states[i]=state;w.lastStates.put(key,state);
+            w.air[i]=mat.air;w.conductivity[i]=mat.conductivity;
+            boolean emitter=ThermalEngine.isPotentialHeatEmitter(state);
+            if(emitter && !w.emitters.contains(i))w.emitters.add(i);
+            else if(!emitter)w.emitters.rem(i);
+        }
+        // Only six contacts per modified cell. Unchanged contacts and arrays survive.
+        for(long key:changes) {
+            int i=w.indices.get(key);if(i<0||!ready(level,w.positions[i]))continue;
+            for(Direction d:ALL) {
+                int j=w.indices.get(w.positions[i].relative(d).asLong());if(j<0)continue;
+                w.solver.setConnection(i,j,AirHeatTransfer.conductance(w.conductivity[i],w.conductivity[j],
+                        w.air[i],w.air[j],settings.enableConvection,settings.convectionStrengthPercent));
+            }
+        }
+        w.changed.clear();
+    }
     private static void rebuild(ServerLevel level,Workspace w,CellThermalSavedData data,ServerSnowSettings settings) {
         List<BlockPos> cells=new ArrayList<>();
         for(long chunk:w.loaded.toLongArray()) {
@@ -273,12 +345,8 @@ public final class WorldCellThermal {
             BlockState previous=w.lastStates.put(p.asLong(),state);
             if(previous!=null && previous.getBlock()!=state.getBlock()) map.put(p.asLong(),localAir(level,data,p));
             t[i]=map.get(p.asLong());
-            boolean air=ThermalEngine.isAirOrOpenPassage(state);
-            var category=BlockThermalCategory.classify(state);
-            w.air[i]=air;
-            cap[i]=air?1:Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
-            if(state.getBlock() instanceof HeatAccumulatorBlock) cap[i]*=4;
-            w.conductivity[i]=air?1:Math.max(.001,settings.blockConductivity[category.ordinal()]*settings.globalConductivityMultiplier);
+            Material material=material(w,state,settings);
+            w.air[i]=material.air;cap[i]=material.capacity;w.conductivity[i]=material.conductivity;
             w.indices.put(p.asLong(),i);
         }
         List<CellHeatSolver.Edge> edges=new ArrayList<>(n*3);
@@ -290,5 +358,6 @@ public final class WorldCellThermal {
                     settings.enableConvection,settings.convectionStrengthPercent)));
         }
         w.solver=new CellHeatSolver(t,cap,edges.toArray(CellHeatSolver.Edge[]::new));w.dirty=false;
+        w.changed.clear();w.imported.clear();
     }
 }

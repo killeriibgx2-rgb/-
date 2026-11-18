@@ -21,16 +21,18 @@ public final class CellHeatSolver {
     public record Edge(int a, int b, double conductance) {}
 
     private static final int MAX_SUBSTEPS = 10000;
-    private final double[] temperature, capacity, power, boundaryG, boundaryT, rates, deltaEnergy;
-    private final boolean[] loaded;
-    private final Edge[] edges;
+    private double[] temperature, capacity, power, boundaryG, boundaryT, rates, deltaEnergy;
+    private boolean[] loaded;
+    private Edge[] edges;
+    private int cellCount, edgeCount;
+    private it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap edgeIndices;
 
     public CellHeatSolver(double[] temperature, double[] capacity, Edge[] edges) {
         if (temperature.length != capacity.length) throw new IllegalArgumentException("Cell count mismatch");
         this.temperature = temperature.clone();
         this.capacity = capacity.clone();
         this.edges = edges.clone();
-        int n = temperature.length;
+        int n = temperature.length; cellCount=n; edgeCount=edges.length;
         power = new double[n]; boundaryG = new double[n]; boundaryT = new double[n];
         rates = new double[n]; deltaEnergy = new double[n]; loaded = new boolean[n];
         Arrays.fill(loaded, true);
@@ -57,9 +59,39 @@ public final class CellHeatSolver {
         }
     }
 
-    public int size() { return temperature.length; }
+    public int size() { return cellCount; }
     public double temperature(int cell) { return temperature[cell]; }
-    public double[] temperatures() { return temperature.clone(); }
+    public double[] temperatures() { return Arrays.copyOf(temperature,cellCount); }
+
+    /** Append without rebuilding old cell state or topology. Amortized array growth. */
+    public int addCell(double initialTemperature,double heatCapacity) {
+        finite(initialTemperature);positive(heatCapacity);
+        if(cellCount==temperature.length) {
+            int n=Math.max(16,cellCount+Math.max(1,cellCount/2));
+            temperature=Arrays.copyOf(temperature,n);capacity=Arrays.copyOf(capacity,n);
+            power=Arrays.copyOf(power,n);boundaryG=Arrays.copyOf(boundaryG,n);
+            boundaryT=Arrays.copyOf(boundaryT,n);rates=Arrays.copyOf(rates,n);
+            deltaEnergy=Arrays.copyOf(deltaEnergy,n);loaded=Arrays.copyOf(loaded,n);
+        }
+        int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;loaded[i]=true;
+        return i;
+    }
+    public void setCapacity(int cell,double value) { positive(value);capacity[cell]=value; }
+    private static long pair(int a,int b) {return ((long)Math.min(a,b)<<32)|Math.max(a,b);}
+    /** Existing edge is updated, new edge is added once; primitive mixed hashing avoids Long.hashCode. */
+    public void setConnection(int a,int b,double conductance) {
+        if(a<0||b<0||a>=cellCount||b>=cellCount||a==b)throw new IllegalArgumentException("Invalid thermal edge");
+        nonnegative(conductance);
+        if(edgeIndices==null) {
+            edgeIndices=new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap(edgeCount);
+            edgeIndices.defaultReturnValue(-1);
+            for(int e=0;e<edgeCount;e++)edgeIndices.put(pair(edges[e].a,edges[e].b),e);
+        }
+        long key=pair(a,b);int index=edgeIndices.get(key);
+        if(index>=0) {edges[index]=new Edge(a,b,conductance);return;}
+        if(edgeCount==edges.length)edges=Arrays.copyOf(edges,Math.max(16,edgeCount+Math.max(1,edgeCount/2)));
+        edgeIndices.put(key,edgeCount);edges[edgeCount++]=new Edge(a,b,conductance);
+    }
 
     /** Replacing a block uses LOCAL AIR temperature supplied by the world adapter. */
     public void replace(int cell, double localAirTemperature, double newCapacity) {
@@ -87,7 +119,8 @@ public final class CellHeatSolver {
         nonnegative(seconds);
         if (seconds == 0) return;
         Arrays.fill(rates, 0);
-        for (Edge edge : edges) {
+        for (int edgeIndex=0;edgeIndex<edgeCount;edgeIndex++) {
+            Edge edge=edges[edgeIndex];
             if (loaded[edge.a] && loaded[edge.b]) {
                 rates[edge.a] += edge.conductance;
                 rates[edge.b] += edge.conductance;
@@ -106,7 +139,8 @@ public final class CellHeatSolver {
         double dt = seconds / count;
         for (int sub = 0; sub < count; sub++) {
             Arrays.fill(deltaEnergy, 0);
-            for (Edge edge : edges) {
+            for (int edgeIndex=0;edgeIndex<edgeCount;edgeIndex++) {
+            Edge edge=edges[edgeIndex];
                 if (!loaded[edge.a] || !loaded[edge.b]) continue;
                 double q = edge.conductance * (temperature[edge.b] - temperature[edge.a]) * dt;
                 deltaEnergy[edge.a] += q;
