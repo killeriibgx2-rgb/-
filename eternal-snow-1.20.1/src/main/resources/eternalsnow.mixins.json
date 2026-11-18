@@ -12,7 +12,9 @@
     "SnowLayerBlockMixin",
     "AbstractFurnaceBlockEntityMixin",
     "FurnaceCookTimeInvoker",
-    "CraftingMenuMixin"
+    "CraftingMenuMixin",
+    "ConfectionerVillageMixin",
+    "ConfectionerPriceMixin"
   ],
   "client": [
     "FoodItemDecorationMixin",

@@ -56,7 +56,8 @@ public enum BlockThermalCategory {
         if (state.getBlock() instanceof DoorBlock || state.getBlock() instanceof TrapDoorBlock) {
             return state.is(Blocks.IRON_DOOR) || state.is(Blocks.IRON_TRAPDOOR) ? METAL : PLANKS;
         }
-        if (state.is(BlockTags.PLANKS)
+        if (state.getBlock() instanceof com.eternalsnow.block.ConfectionerTableBlock
+                || state.is(BlockTags.PLANKS)
                 || state.is(BlockTags.WOODEN_SLABS)
                 || state.is(BlockTags.WOODEN_STAIRS)
                 || state.is(BlockTags.WOODEN_FENCES)
