@@ -41,7 +41,9 @@ public enum BlockThermalCategory {
 
     public static BlockThermalCategory classify(BlockState state) {
         // v2.6.0: shutter = wool-class insulator (low U), water tank = massive metal (high C).
-        if (state.getBlock() instanceof ThermalShutterBlock) {
+        if (state.getBlock() instanceof ThermalShutterBlock
+                || state.getBlock() instanceof com.eternalsnow.block.InsulatedDoorBlock
+                || state.getBlock() instanceof com.eternalsnow.block.InsulatedTrapDoorBlock) {
             return WOOL;
         }
         if (state.getBlock() instanceof HeatAccumulatorBlock) {

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "WWW",
+    "WDW",
+    "WWW"
+  ],
+  "key": {
+    "W": {
+      "tag": "minecraft:wool"
+    },
+    "D": {
+      "item": "minecraft:warped_trapdoor"
+    }
+  },
+  "result": {
+    "item": "eternalsnow:insulated_warped_trapdoor",
+    "count": 1
+  }
+}

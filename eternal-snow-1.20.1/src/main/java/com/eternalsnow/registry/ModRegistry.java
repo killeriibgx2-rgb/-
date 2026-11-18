@@ -407,6 +407,7 @@ public final class ModRegistry {
                     .icon(() -> new ItemStack(FIREPLACE_ITEM.get()))
                     .displayItems((params, output) -> {
                         output.accept(FIREPLACE_ITEM.get());
+                        InsulatedRegistry.ITEMS.forEach(item -> output.accept(item.get()));
                         output.accept(com.eternalsnow.village.ConfectionerRegistry.TABLE_ITEM.get());
                         output.accept(CHIMNEY_ITEM.get());
                         output.accept(WOODEN_FIRESTARTER.get());
@@ -455,6 +456,7 @@ public final class ModRegistry {
     }
 
     public static void register(IEventBus modBus) {
+        InsulatedRegistry.init();
         com.eternalsnow.village.ConfectionerRegistry.register(modBus);
         BLOCKS.register(modBus);
         BLOCK_ENTITIES.register(modBus);

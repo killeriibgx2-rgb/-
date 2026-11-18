@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_base": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:jungle_trapdoor"
+            ]
+          }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "eternalsnow:insulated_jungle_trapdoor"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_base",
+      "has_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "eternalsnow:insulated_jungle_trapdoor"
+    ]
+  }
+}
