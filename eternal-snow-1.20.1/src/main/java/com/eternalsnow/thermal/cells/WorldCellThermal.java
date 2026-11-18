@@ -41,8 +41,9 @@ public final class WorldCellThermal {
         double[] conductivity = new double[0];
         double[] powers = new double[0];
         boolean[] air = new boolean[0];
-        final it.unimi.dsi.fastutil.ints.IntArrayList emitters = new it.unimi.dsi.fastutil.ints.IntArrayList();
+        final it.unimi.dsi.fastutil.ints.IntOpenHashSet emitters = new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
         final LongOpenHashSet changed = new LongOpenHashSet();
+        final LongOpenHashSet replaced = new LongOpenHashSet();
         final LongOpenHashSet imported = new LongOpenHashSet();
         final IdentityHashMap<BlockState,Material> materials = new IdentityHashMap<>();
         boolean dirty = true;
@@ -54,7 +55,12 @@ public final class WorldCellThermal {
     public static void load(ServerLevel level,long chunk) { ws(level).pending.add(chunk); }
     public static void unload(ServerLevel level,long chunk) {
         Workspace w=ws(level);
-        w.loaded.remove(chunk); w.pending.removeIf(key -> key.longValue()==chunk); w.dirty=true;
+        boolean admitted=w.loaded.remove(chunk);
+        w.pending.removeIf(key -> key.longValue()==chunk);
+        w.imported.remove(chunk);
+        var stored=CellThermalSavedData.get(level).chunks.get(chunk);
+        // Empty terrain chunks have no graph topology to compact.
+        if(admitted && stored!=null && !stored.isEmpty())w.dirty=true;
         w.sources.removeIf(key -> chunkKey(BlockPos.of(key))==chunk);
         w.lastStates.keySet().removeIf(key -> chunkKey(BlockPos.of(key))==chunk);
     }
@@ -101,7 +107,7 @@ public final class WorldCellThermal {
         Workspace w=ws(level); admit(level,w,pos);
         var data=CellThermalSavedData.get(level);
         data.chunk(chunkKey(pos)).put(pos.asLong(),localAir(level,data,pos));
-        data.setDirty(); w.changed.add(pos.asLong()); w.lastStates.remove(pos.asLong());
+        data.setDirty(); w.changed.add(pos.asLong()); w.replaced.add(pos.asLong()); w.lastStates.remove(pos.asLong());
         w.sources.add(pos.asLong()); // validate after the placement/break event completes
     }
     public static void blockChanged(ServerLevel level, BlockPos pos, BlockState before, BlockState after) {
@@ -206,8 +212,7 @@ public final class WorldCellThermal {
         Arrays.fill(w.powers,0);
         // Split existing flame power between its support and directly touching air.
         // A campfire was previously treated entirely as a massive stone voxel.
-        for(int e=0;e<w.emitters.size();e++) {
-            int i=w.emitters.getInt(e);
+        for(int i:w.emitters) {
             BlockPos p=w.positions[i];
             if(!ready(level,p))continue;
             BlockState state=w.states[i];
@@ -306,14 +311,14 @@ public final class WorldCellThermal {
             if(previous!=null && previous.getBlock()!=state.getBlock() && w.lastStates.get(key)!=state)
                 map.put(key,localAir(level,data,pos));
             var mat=material(w,state,settings);
-            if(i<oldSize && (previous==null||previous.getBlock()!=state.getBlock()))
+            if(i<oldSize && (w.replaced.contains(key)||previous==null||previous.getBlock()!=state.getBlock()))
                 w.solver.replace(i,map.get(key),mat.capacity);
             else w.solver.setCapacity(i,mat.capacity);
             w.states[i]=state;w.lastStates.put(key,state);
             w.air[i]=mat.air;w.conductivity[i]=mat.conductivity;
             boolean emitter=ThermalEngine.isPotentialHeatEmitter(state);
-            if(emitter && !w.emitters.contains(i))w.emitters.add(i);
-            else if(!emitter)w.emitters.rem(i);
+            if(emitter)w.emitters.add(i);
+            else w.emitters.remove(i);
         }
         // Only six contacts per modified cell. Unchanged contacts and arrays survive.
         for(long key:changes) {
@@ -324,7 +329,7 @@ public final class WorldCellThermal {
                         w.air[i],w.air[j],settings.enableConvection,settings.convectionStrengthPercent));
             }
         }
-        w.changed.clear();
+        w.changed.clear();w.replaced.clear();
     }
     private static void rebuild(ServerLevel level,Workspace w,CellThermalSavedData data,ServerSnowSettings settings) {
         List<BlockPos> cells=new ArrayList<>();
@@ -358,6 +363,6 @@ public final class WorldCellThermal {
                     settings.enableConvection,settings.convectionStrengthPercent)));
         }
         w.solver=new CellHeatSolver(t,cap,edges.toArray(CellHeatSolver.Edge[]::new));w.dirty=false;
-        w.changed.clear();w.imported.clear();
+        w.changed.clear();w.replaced.clear();w.imported.clear();
     }
 }
