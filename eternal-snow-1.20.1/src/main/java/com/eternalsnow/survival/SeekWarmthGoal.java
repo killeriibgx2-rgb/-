@@ -83,5 +83,13 @@ public final class SeekWarmthGoal extends Goal {
     @Override public boolean canContinueToUse(){return allowed() && mob.level().getGameTime()<deadline
             && !mob.getNavigation().isDone() && target!=null && mob.level() instanceof ServerLevel level
             && safe(level,target);}
+    @Override public void tick() {
+        // Revalidate the next step: a player may light a fire after path creation.
+        if (mob.level() instanceof ServerLevel level) {
+            Path active=mob.getNavigation().getPath();
+            if(active!=null && !active.isDone() && !safe(level,active.getNextNodePos()))
+                mob.getNavigation().stop();
+        }
+    }
     @Override public void stop(){mob.getNavigation().stop();path=null;target=null;}
 }
