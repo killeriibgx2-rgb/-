@@ -1,0 +1,61 @@
+64:    java.lang.AssertionError at AdaptiveThermalTest.java:209
+> Task :compileTestJava
+> Task :processTestResources NO-SOURCE
+> Task :testClasses
+
+> Task :test
+
+FoodSettingsTest > networkRoundTrip STANDARD_OUT
+    2026-11-18 16:02:56,903 Test worker WARN Advanced terminal features are not available in this environment
+
+AdaptiveThermalTest > largeMixedDomainSurvivesGrowthWeatherAndObserverMoves STANDARD_OUT
+    Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=1773.439536
+
+AdaptiveThermalTest > twoMillionRetainedTemperaturesDoNotBecomeTwoMillionNodes STANDARD_OUT
+    Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=343.213773
+
+AdaptiveThermalTest > inPlaceEditIsCheaperThanFullRebuild STANDARD_OUT
+    Adaptive 4096 tiles: full rebuild x20=66.482753ms, in-place tile edit x20=801.583859ms
+
+AdaptiveThermalTest > inPlaceEditIsCheaperThanFullRebuild FAILED
+    java.lang.AssertionError at AdaptiveThermalTest.java:209
+
+AirHeatTransferTest > enclosedRoomWarmsBeyondOneBlockWithoutIncreasingPower STANDARD_OUT
+    Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
+    Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
+    Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
+    Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
+
+CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
+    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 88 ms (CI, not Minecraft TPS)
+
+ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
+    Conservative million-cell test 10 steps ms=169.899268
+
+ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
+    Conservative 64^3 G=3 20 steps ms=196.70945
+
+PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=235.560722ms packed=156.451001ms; synthetic, not server TPS
+
+80 tests completed, 1 failed
+
+> Task :test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///home/runner/work/-/-/eternal-snow-1.20.1/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1m 20s
+13 actionable tasks: 13 executed

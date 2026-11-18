@@ -149,12 +149,18 @@ public final class WorldCellThermal {
         var sources=new IntArrayList();var settings=EternalSnowState.getServerSettings();
         double[] raw=new double[512];boolean[] air=new boolean[512];
         double mixing=settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1;
+        // MOTION_BLOCKING height is per column; one query per 8-block column, not per block.
+        int[] columnHeight=new int[64];
+        for(int column=0;column<64;column++)columnHeight[column]=level.getHeight(Heightmap.Types.MOTION_BLOCKING,
+                origin.getX()+(column&7),origin.getZ()+((column>>3)&7));
         for(int i=0;i<512;i++) {
             BlockPos p=origin.offset(i&7,i>>6,(i>>3)&7);BlockState block=chunk.getBlockState(p);
             Material m=material(w,block,settings);c[i]=m.capacity;k[i]=m.conductivity;raw[i]=m.air?1:m.conductivity;air[i]=m.air;
-            boolean sky=level.canSeeSky(p);int surface=level.getHeight(Heightmap.Types.MOTION_BLOCKING,p.getX(),p.getZ());
-            g[i]=(m.air?sky:p.getY()>=surface-1)?(m.air?1:Math.min(1,m.conductivity)):0;
-            double blend=p.getY()<52&&!sky?Math.max(0,Math.min(.85,(surface-p.getY()-8)/36.0)):0;
+            // Skylight, not MOTION_BLOCKING: glass roofs must still see the sky.
+            boolean sky=level.canSeeSky(p);
+            int surfaceY=columnHeight[(i&7)|(((i>>3)&7)<<3)];
+            g[i]=(m.air?sky:p.getY()>=surfaceY-1)?(m.air?1:Math.min(1,m.conductivity)):0;
+            double blend=p.getY()<52&&!sky?Math.max(0,Math.min(.85,(surfaceY-p.getY()-8)/36.0)):0;
             slope[i]=1-blend;offset[i]=(p.getY()>85?-(p.getY()-85)*.12:0)*(1-blend)+6*blend;
             if(fresh) {
                 double retained=old==null?Double.NaN:old.get(p.asLong());
@@ -172,7 +178,10 @@ public final class WorldCellThermal {
         region.field.configure(detail,c,k,g,slope,offset);region.field.fineMaterials(raw,air,mixing);region.sources.addAll(sources);
         region.detailedUntil=previous==null?0:previous.detailedUntil;
         if(detail&&w.wanted.contains(key))region.detailedUntil=level.getGameTime()+DETAIL_HOLD_TICKS;
-        w.regions.put(key,region);w.rebuild=true;w.initializedLast++;
+        w.regions.put(key,region);w.initializedLast++;
+        // Material/contact edits update the live solver; only new tiles or detail changes rebuild it.
+        if(w.graph!=null&&w.graph.canRefreshInPlace(region.field))w.graph.refreshInPlace(region.field);
+        else w.rebuild=true;
         return region;
     }
     private static void admitChunks(ServerLevel level,Workspace w,CellThermalSavedData data) {

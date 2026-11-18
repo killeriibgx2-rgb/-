@@ -160,4 +160,50 @@ public class AdaptiveThermalTest {
         double closed=heatedRoom(true),open=heatedRoom(false);
         assertTrue(closed>open);assertTrue(closed>-20);
     }
+    @Test public void inPlaceMaterialEditKeepsTemperaturesAndEnergy() {
+        var a=tile(0,0,0,20,true);var b=tile(8,0,0,-20,false);
+        var g=new AdaptiveThermalGraph(List.of(a,b));
+        g.addPower(a,0,68);
+        for(int i=0;i<20;i++)g.step(.5,-30);
+        double aTemperature=g.solver.temperature(a.node+5),bMean=b.mean();
+        assertTrue(g.canRefreshInPlace(tile(0,0,0,0,true)));
+        assertFalse(g.canRefreshInPlace(tile(0,0,0,0,false)));
+        // A single edited block replaces this tile's materials; nothing else may move.
+        var edited=tile(0,0,0,20,true);
+        double[] capacities=filled(1);capacities[5]=9;
+        edited.configure(true,capacities,filled(2),filled(0),filled(1),filled(0));
+        g.refreshInPlace(edited);
+        // Editing capacity legitimately changes stored E=C*T; temperatures must not reset.
+        assertEquals(aTemperature,g.solver.temperature(a.node+5),0);
+        assertEquals(bMean,b.mean(),0);
+        assertEquals(513,g.solver.size());
+        double afterRefresh=g.solver.totalEnergy();
+        g.clearPower();
+        for(int i=0;i<50;i++)g.step(.5,-30);
+        assertEquals(afterRefresh,g.solver.totalEnergy(),1e-7);
+        assertTrue(b.mean()>-20);
+    }
+    @Test(timeout=60000) public void inPlaceEditIsCheaperThanFullRebuild() {
+        var tiles=new ArrayList<AdaptiveThermalTile>();
+        for(int z=0;z<16;z++)for(int y=0;y<16;y++)for(int x=0;x<16;x++)
+            tiles.add(tile(x*8,y*8,z*8,-20,x<3&&y<3&&z<3));
+        var graph=new AdaptiveThermalGraph(tiles);
+        long rebuildStart=System.nanoTime();
+        for(int cycle=0;cycle<20;cycle++)new AdaptiveThermalGraph(tiles);
+        long rebuildNanos=System.nanoTime()-rebuildStart;
+        // Prepare edited tiles up front so the loop times only the graph operation.
+        var edited=new ArrayList<AdaptiveThermalTile>();
+        for(var t:tiles) {
+            var copy=tile(t.x,t.y,t.z,-20,t.detailed);
+            copy.configure(t.detailed,filled(1),filled(2),filled(0),filled(1),filled(0));
+            edited.add(copy);
+        }
+        long refreshStart=System.nanoTime();
+        // One block edit touches one tile; the rest of the graph stays untouched.
+        for(int cycle=0;cycle<20;cycle++)graph.refreshInPlace(edited.get(cycle%edited.size()));
+        long refreshNanos=System.nanoTime()-refreshStart;
+        System.out.println("Adaptive 4096 tiles: full rebuild x20="+rebuildNanos/1e6
+                +"ms, in-place tile edit x20="+refreshNanos/1e6+"ms");
+        assertTrue("in-place edit should beat a full rebuild",refreshNanos<rebuildNanos);
+    }
 }
