@@ -177,4 +177,19 @@ public final class ThermalEngine {
             level.setBlock(pos, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, 7), Block.UPDATE_ALL);
         }
     }
+    /** Keep roof melt and eave icicles on the new temperature path. Never load neighbours. */
+    public static void processWarmSurface(ServerLevel level, BlockPos pos) {
+        meltOneSnowLayerAt(level, pos);
+        if (level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4) != null)
+            meltOneSnowLayerAt(level, pos.above());
+        if (computeBaseAmbientC(level, pos) >= -2 || level.random.nextInt(32) != 0
+                || !com.eternalsnow.registry.ModRegistry.ICICLE.isPresent()) return;
+        Direction[] sides = {Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
+        BlockPos edge = pos.relative(sides[level.random.nextInt(4)]);
+        if (level.getChunkSource().getChunkNow(edge.getX() >> 4, edge.getZ() >> 4) == null) return;
+        BlockPos under = edge.below();
+        if (!level.getBlockState(under).isAir() || !level.canSeeSky(edge.above())) return;
+        BlockState icicle = com.eternalsnow.registry.ModRegistry.ICICLE.get().defaultBlockState();
+        if (icicle.canSurvive(level, under)) level.setBlock(under, icicle, Block.UPDATE_CLIENTS);
+    }
 }

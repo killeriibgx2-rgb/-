@@ -7,7 +7,7 @@ import net.minecraft.nbt.Tag;
  * Versioned per-chunk temperature payload, not a global world file. Only absolute
  * temperatures and block positions persist. Materials/topology must be reconstructed
  * from the current chunk on load; no timestamp means no offline catch-up.
- * The world adapter must attach this payload to chunk persistence before activation.
+ * CellThermalSavedData stores these chunk payloads in dimension-local world data.
  */
 public final class CellTemperatureSnapshot {
     public static final int VERSION = 1;

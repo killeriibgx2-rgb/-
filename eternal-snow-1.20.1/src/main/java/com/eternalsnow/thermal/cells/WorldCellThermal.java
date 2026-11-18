@@ -222,7 +222,7 @@ public final class WorldCellThermal {
             for(int j=0;j<Math.min(32,w.positions.length);j++) {
                 int i=level.random.nextInt(w.positions.length);
                 if(w.solver.temperature(i)>2 && ready(level,w.positions[i]))
-                    ThermalEngine.meltOneSnowLayerAt(level,w.positions[i].above());
+                    ThermalEngine.processWarmSurface(level,w.positions[i]);
             }
         }
     }
