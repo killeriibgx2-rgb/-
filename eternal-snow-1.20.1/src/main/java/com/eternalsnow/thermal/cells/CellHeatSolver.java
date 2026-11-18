@@ -1,8 +1,6 @@
 package com.eternalsnow.thermal.cells;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Server-side numerical core, independent of Minecraft and room detection.
@@ -40,13 +38,22 @@ public final class CellHeatSolver {
             finite(temperature[i]);
             positive(capacity[i]);
         }
-        Set<Long> pairs = new HashSet<>();
-        for (Edge edge : this.edges) {
+        // Long.hashCode((a << 32) | b) == a ^ b. Grid neighbours therefore
+        // collapse into a handful of HashSet bins (all even a -> a+1 hash to 1).
+        // The old boxed set spent seconds resizing/treeifying those bins on every
+        // world rebuild. Sort primitive keys instead: bounded O(E log E), 8E bytes,
+        // no hash collisions, boxed Longs or tree nodes; retain duplicate validation.
+        long[] pairs = new long[this.edges.length];
+        for (int i = 0; i < this.edges.length; i++) {
+            Edge edge = this.edges[i];
             if (edge == null || edge.a < 0 || edge.b < 0 || edge.a >= n || edge.b >= n || edge.a == edge.b)
                 throw new IllegalArgumentException("Invalid thermal edge");
             nonnegative(edge.conductance);
-            long pair = ((long) Math.min(edge.a, edge.b) << 32) | Math.max(edge.a, edge.b);
-            if (!pairs.add(pair)) throw new IllegalArgumentException("Duplicate thermal edge");
+            pairs[i] = ((long) Math.min(edge.a, edge.b) << 32) | Math.max(edge.a, edge.b);
+        }
+        Arrays.sort(pairs);
+        for (int i = 1; i < pairs.length; i++) {
+            if (pairs[i] == pairs[i - 1]) throw new IllegalArgumentException("Duplicate thermal edge");
         }
     }
 
