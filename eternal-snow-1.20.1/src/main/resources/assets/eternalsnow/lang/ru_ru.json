@@ -393,5 +393,7 @@
   "itemGroup.eternalsnow": "Eternal Snow — Вечная зима",
   "eternalsnow.gui.surv.foodSpoilageSpeedPercent": "Скорость порчи еды",
   "eternalsnow.gui.surv.foodFreezingSpeedPercent": "Скорость охлаждения предметов",
-  "eternalsnow.gui.surv.foodThawingSpeedPercent": "Скорость оттаивания предметов"
+  "eternalsnow.gui.surv.foodThawingSpeedPercent": "Скорость оттаивания предметов",
+  "block.eternalsnow.confectioner_table": "Стол кондитера",
+  "entity.minecraft.villager.eternalsnow.confectioner": "Кондитер"
 }

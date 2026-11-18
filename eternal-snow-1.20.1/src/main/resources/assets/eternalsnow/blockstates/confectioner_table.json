@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "eternalsnow:block/confectioner_table",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "eternalsnow:block/confectioner_table",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "eternalsnow:block/confectioner_table",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "eternalsnow:block/confectioner_table",
+      "y": 270
+    }
+  }
+}

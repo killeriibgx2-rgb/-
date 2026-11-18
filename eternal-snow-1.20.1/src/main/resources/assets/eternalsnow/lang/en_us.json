@@ -393,5 +393,7 @@
   "itemGroup.eternalsnow": "Eternal Snow",
   "eternalsnow.gui.surv.foodSpoilageSpeedPercent": "Food spoilage speed",
   "eternalsnow.gui.surv.foodFreezingSpeedPercent": "Item cooling speed",
-  "eternalsnow.gui.surv.foodThawingSpeedPercent": "Item thawing speed"
+  "eternalsnow.gui.surv.foodThawingSpeedPercent": "Item thawing speed",
+  "block.eternalsnow.confectioner_table": "Confectioner’s Table",
+  "entity.minecraft.villager.eternalsnow.confectioner": "Confectioner"
 }
