@@ -216,6 +216,13 @@ public class EternalSnowMod {
         if (entity.level().isClientSide || !(entity.level() instanceof ServerLevel serverLevel)) {
             return;
         }
+        if (event.getSource().is(DamageTypes.FREEZE)
+                && MobSurvivalManager.coldImmune(entity,
+                    com.eternalsnow.thermal.ThermalEngine.getLocalTemperatureC(serverLevel, entity.blockPosition()))) {
+            event.setCanceled(true);
+            entity.setTicksFrozen(0);
+            return;
+        }
         if (!MobSurvivalManager.shouldExtinguishFire(serverLevel, entity)) {
             return;
         }

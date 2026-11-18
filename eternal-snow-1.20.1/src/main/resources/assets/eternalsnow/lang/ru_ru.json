@@ -419,5 +419,11 @@
   "block.eternalsnow.insulated_bamboo_trapdoor": "Утеплённый люк — бамбуковая",
   "block.eternalsnow.insulated_crimson_trapdoor": "Утеплённый люк — багровая",
   "block.eternalsnow.insulated_warped_trapdoor": "Утеплённый люк — искажённая",
-  "block.eternalsnow.insulated_iron_trapdoor": "Утеплённый люк — железная"
+  "block.eternalsnow.insulated_iron_trapdoor": "Утеплённый люк — железная",
+  "eternalsnow.preset.title": "Пресеты: заменяют баланс; затем нажмите «Применить»",
+  "eternalsnow.tooltip.candy.warmth": "Согревание: 5 секунд (без усиления)",
+  "eternalsnow.preset.easy": "Лёгкий",
+  "eternalsnow.preset.medium": "Средний",
+  "eternalsnow.preset.hard": "Сложный",
+  "eternalsnow.preset.hardcore": "Хардкор"
 }

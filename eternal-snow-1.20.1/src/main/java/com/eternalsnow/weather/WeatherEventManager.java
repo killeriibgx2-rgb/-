@@ -176,10 +176,7 @@ public final class WeatherEventManager {
             applyWindPushToExposedPlayers(overworld, currentEvent);
         }
 
-        // 6. Д-4: During Blizzard, outdoor animals & villagers seek nearby warmth or roof shelter!
-        if (currentEvent == WeatherEventType.BLIZZARD && gameTime % 80L == 0L) {
-            nudgeOutdoorMobsTowardShelter(overworld);
-        }
+
     }
 
     /**
@@ -231,47 +228,6 @@ public final class WeatherEventManager {
                     smoothAmbientC,
                     EternalSnowState.eventTicksRemaining
             ));
-        }
-    }
-
-    private static void nudgeOutdoorMobsTowardShelter(ServerLevel overworld) {
-        for (ServerPlayer player : overworld.players()) {
-            if (player.isSpectator()) continue;
-            AABB box = player.getBoundingBox().inflate(24.0D, 8.0D, 24.0D);
-            List<PathfinderMob> mobs = overworld.getEntitiesOfClass(
-                    PathfinderMob.class,
-                    box,
-                    m -> (m instanceof Villager || m instanceof Animal) && m.getNavigation().isDone() && !m.isPassenger()
-            );
-            int nudged = 0;
-            for (PathfinderMob mob : mobs) {
-                if (nudged >= 5) break;
-                BlockPos mp = mob.blockPosition();
-                if (!overworld.canSeeSky(mp.above()) || ThermalEngine.getDeltaHeatAt(overworld, mp.above()) >= 5.0F) {
-                    continue; // Already sheltered or warm!
-                }
-                BlockPos bestPos = null;
-                float bestScore = -1.0F;
-                for (int attempt = 0; attempt < 10; attempt++) {
-                    BlockPos cand = mp.offset(
-                            overworld.random.nextInt(17) - 8,
-                            overworld.random.nextInt(5) - 2,
-                            overworld.random.nextInt(17) - 8
-                    );
-                    if (!overworld.getBlockState(cand).isAir() || overworld.getBlockState(cand.below()).isAir()) {
-                        continue;
-                    }
-                    float score = ThermalEngine.getDeltaHeatAt(overworld, cand) + (!overworld.canSeeSky(cand.above()) ? 12.0F : 0.0F);
-                    if (score > bestScore && score >= 6.0F) {
-                        bestScore = score;
-                        bestPos = cand;
-                    }
-                }
-                if (bestPos != null) {
-                    mob.getNavigation().moveTo(bestPos.getX() + 0.5D, bestPos.getY(), bestPos.getZ() + 0.5D, 1.05D);
-                    nudged++;
-                }
-            }
         }
     }
 

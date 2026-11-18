@@ -67,7 +67,7 @@ public final class ServerSnowSettings {
     // player recover a broken world instead of staring at a mixin crash screen.
     public boolean enableCookingTweaks = true;
 
-    public float heatTorch = 14.0F;
+    public float heatTorch = 7.0F;
     public float heatLantern = 20.0F;
     public float heatFurnace = 48.0F;
     public float heatBlastSmoker = 62.0F;

@@ -313,6 +313,17 @@ public final class EternalSnowConfigScreen extends Screen {
 
     private void buildAdminHub(int leftX, int fullW) {
         int y = 4;
+        addScrolled(new EternalSnowWidgets.SectionHeader(leftX, 0, fullW,
+                Component.translatable("eternalsnow.preset.title")), y);
+        y += 20;
+        for (var preset : com.eternalsnow.config.WinterPreset.values()) {
+            addScrolled(new EternalSnowWidgets.ActionButton(leftX, 0, fullW, 18,
+                    Component.translatable(preset.key()), () -> {
+                        preset.apply(this.workingServer);
+                        this.rebuildWidgets();
+                    }), y);
+            y += 21;
+        }
 
         addScrolled(new EternalSnowWidgets.ToggleSwitch(
                 leftX, 0, fullW, 20,
@@ -594,7 +605,7 @@ public final class EternalSnowConfigScreen extends Screen {
         int y = addAdminBackHeader(leftX, fullW, ADMIN_HUB, "eternalsnow.gui.tab.admin_main", "eternalsnow.gui.cat.thermal");
 
         addScrolled(makeDoubleSlider(
-                leftX, fullW, "eternalsnow.gui.therm.global_bonus", "°C",
+                leftX, fullW, "eternalsnow.gui.therm.global_bonus", "",
                 -40.0D, 100.0D, this.workingServer.globalHeatBonusC, 1.0D, 0,
                 v -> this.workingServer.globalHeatBonusC = v.floatValue()
         ), y);
@@ -672,31 +683,31 @@ public final class EternalSnowConfigScreen extends Screen {
     private void buildAdminThermalSources(int leftX, int fullW) {
         int y = addAdminBackHeader(leftX, fullW, ADMIN_THERMAL, "eternalsnow.gui.cat.thermal", "eternalsnow.gui.folder.therm_sources");
 
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.torch", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.torch", "",
                 0, 80, this.workingServer.heatTorch, 1, 0, v -> this.workingServer.heatTorch = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.lantern", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.lantern", "",
                 0, 80, this.workingServer.heatLantern, 1, 0, v -> this.workingServer.heatLantern = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.furnace", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.furnace", "",
                 0, 140, this.workingServer.heatFurnace, 2, 0, v -> this.workingServer.heatFurnace = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.blast", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.blast", "",
                 0, 160, this.workingServer.heatBlastSmoker, 2, 0, v -> this.workingServer.heatBlastSmoker = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.campfire", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.campfire", "",
                 0, 160, this.workingServer.heatCampfire, 2, 0, v -> this.workingServer.heatCampfire = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.soul_campfire", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.soul_campfire", "",
                 0, 160, this.workingServer.heatSoulCampfire, 2, 0, v -> this.workingServer.heatSoulCampfire = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.fireplace", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.fireplace", "",
                 0, 180, this.workingServer.heatFireplace, 2, 0, v -> this.workingServer.heatFireplace = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.magma", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.magma", "",
                 0, 180, this.workingServer.heatMagma, 2, 0, v -> this.workingServer.heatMagma = v.floatValue()), y);
         y += 23;
-        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.lava", "°C",
+        addScrolled(makeDoubleSlider(leftX, fullW, "eternalsnow.gui.therm.lava", "",
                 0, 220, this.workingServer.heatLava, 5, 0, v -> this.workingServer.heatLava = v.floatValue()), y);
     }
 
