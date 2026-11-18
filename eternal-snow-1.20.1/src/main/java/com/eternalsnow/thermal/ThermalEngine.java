@@ -1004,6 +1004,30 @@ public final class ThermalEngine {
             if (old != null && !Float.isNaN(old.baselineC)) {
                 fresh.baselineC = old.baselineC;
             }
+            // Opening an internal partition may join two cached rooms. They must not
+            // both integrate power or overwrite the same air cells with different temperatures.
+            double energy = Float.isNaN(fresh.baselineC) ? 0 : fresh.baselineC * Math.max(1, old.capacitySum);
+            double mass = Float.isNaN(fresh.baselineC) ? 0 : Math.max(1, old.capacitySum);
+            var others = ws.roomCache.long2ObjectEntrySet().iterator();
+            while (others.hasNext()) {
+                var entry = others.next();
+                RoomData other = entry.getValue();
+                if (entry.getLongKey() == keys[i] || !fresh.valid || !other.valid) continue;
+                boolean overlaps = false;
+                LongIterator cells = other.air.iterator();
+                while (cells.hasNext()) {
+                    if (fresh.air.contains(cells.nextLong())) { overlaps = true; break; }
+                }
+                if (overlaps) {
+                    if (!Float.isNaN(other.baselineC)) {
+                        double c = Math.max(1, other.capacitySum);
+                        energy += other.baselineC * c;
+                        mass += c;
+                    }
+                    others.remove();
+                }
+            }
+            if (mass > 0) fresh.baselineC = (float) (energy / mass);
             ws.roomCache.put(keys[i], fresh);
         }
     }
@@ -1224,7 +1248,16 @@ public final class ThermalEngine {
                 heatMap.remove(key);
             }
             LongIterator walls = room.envelope.iterator();
-            while (walls.hasNext()) heatMap.remove(walls.nextLong());
+            while (walls.hasNext()) {
+                long key = walls.nextLong();
+                heatMap.remove(key);
+                // Owned walls bypass the voxel solver, but must still melt roof snow.
+                if (settings.meltRoofSnowFromWarmBlocks && room.baselineC > 2.0F
+                        && level.random.nextInt(4) == 0) {
+                    tmp.set(BlockPos.getX(key), BlockPos.getY(key), BlockPos.getZ(key));
+                    meltOneSnowLayerAt(level, tmp.above());
+                }
+            }
         }
     }
 
