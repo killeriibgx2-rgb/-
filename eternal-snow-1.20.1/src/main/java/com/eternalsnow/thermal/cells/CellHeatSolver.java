@@ -23,7 +23,12 @@ public final class CellHeatSolver {
     private static final int MAX_SUBSTEPS = 10000;
     private double[] temperature, capacity, power, boundaryG, boundaryT, rates, deltaEnergy;
     private boolean[] loaded;
-    private Edge[] edges;
+    private int[] edgeA, edgeB, activeEdges;
+    private double[] edgeG;
+    private int activeCount, lastSubsteps;
+    private boolean topologyDirty=true;
+    public int edgeCount() { return edgeCount; }
+    public int lastSubsteps() { return lastSubsteps; }
     private int cellCount, edgeCount;
     private it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap edgeIndices;
 
@@ -31,7 +36,8 @@ public final class CellHeatSolver {
         if (temperature.length != capacity.length) throw new IllegalArgumentException("Cell count mismatch");
         this.temperature = temperature.clone();
         this.capacity = capacity.clone();
-        this.edges = edges.clone();
+        edgeA=new int[edges.length];edgeB=new int[edges.length];edgeG=new double[edges.length];
+        activeEdges=new int[edges.length];
         int n = temperature.length; cellCount=n; edgeCount=edges.length;
         power = new double[n]; boundaryG = new double[n]; boundaryT = new double[n];
         rates = new double[n]; deltaEnergy = new double[n]; loaded = new boolean[n];
@@ -45,12 +51,13 @@ public final class CellHeatSolver {
         // The old boxed set spent seconds resizing/treeifying those bins on every
         // world rebuild. Sort primitive keys instead: bounded O(E log E), 8E bytes,
         // no hash collisions, boxed Longs or tree nodes; retain duplicate validation.
-        long[] pairs = new long[this.edges.length];
-        for (int i = 0; i < this.edges.length; i++) {
-            Edge edge = this.edges[i];
+        long[] pairs = new long[edges.length];
+        for (int i = 0; i < edges.length; i++) {
+            Edge edge = edges[i];
             if (edge == null || edge.a < 0 || edge.b < 0 || edge.a >= n || edge.b >= n || edge.a == edge.b)
                 throw new IllegalArgumentException("Invalid thermal edge");
             nonnegative(edge.conductance);
+            edgeA[i]=edge.a;edgeB[i]=edge.b;edgeG[i]=edge.conductance;
             pairs[i] = ((long) Math.min(edge.a, edge.b) << 32) | Math.max(edge.a, edge.b);
         }
         Arrays.sort(pairs);
@@ -73,7 +80,7 @@ public final class CellHeatSolver {
             boundaryT=Arrays.copyOf(boundaryT,n);rates=Arrays.copyOf(rates,n);
             deltaEnergy=Arrays.copyOf(deltaEnergy,n);loaded=Arrays.copyOf(loaded,n);
         }
-        int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;loaded[i]=true;
+        int i=cellCount++;temperature[i]=initialTemperature;capacity[i]=heatCapacity;loaded[i]=true;topologyDirty=true;
         return i;
     }
     public void setCapacity(int cell,double value) { positive(value);capacity[cell]=value; }
@@ -85,12 +92,20 @@ public final class CellHeatSolver {
         if(edgeIndices==null) {
             edgeIndices=new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap(edgeCount);
             edgeIndices.defaultReturnValue(-1);
-            for(int e=0;e<edgeCount;e++)edgeIndices.put(pair(edges[e].a,edges[e].b),e);
+            for(int e=0;e<edgeCount;e++)edgeIndices.put(pair(edgeA[e],edgeB[e]),e);
         }
         long key=pair(a,b);int index=edgeIndices.get(key);
-        if(index>=0) {edges[index]=new Edge(a,b,conductance);return;}
-        if(edgeCount==edges.length)edges=Arrays.copyOf(edges,Math.max(16,edgeCount+Math.max(1,edgeCount/2)));
-        edgeIndices.put(key,edgeCount);edges[edgeCount++]=new Edge(a,b,conductance);
+        if(index>=0) {
+            if(edgeG[index]!=conductance){edgeG[index]=conductance;topologyDirty=true;}
+            return;
+        }
+        if(edgeCount==edgeA.length) {
+            int n=Math.max(16,edgeCount+Math.max(1,edgeCount/2));
+            edgeA=Arrays.copyOf(edgeA,n);edgeB=Arrays.copyOf(edgeB,n);
+            edgeG=Arrays.copyOf(edgeG,n);activeEdges=Arrays.copyOf(activeEdges,n);
+        }
+        edgeIndices.put(key,edgeCount);edgeA[edgeCount]=a;edgeB[edgeCount]=b;
+        edgeG[edgeCount++]=conductance;topologyDirty=true;
     }
 
     /** Replacing a block uses LOCAL AIR temperature supplied by the world adapter. */
@@ -113,41 +128,46 @@ public final class CellHeatSolver {
     }
 
     /** An unloaded cell exchanges NO energy, consumes NO power, and performs NO catch-up. */
-    public void setLoaded(int cell, boolean value) { loaded[cell] = value; }
+    public void setLoaded(int cell, boolean value) {
+        if(loaded[cell]!=value){loaded[cell]=value;topologyDirty=true;}
+    }
+    private void refreshTopology() {
+        if(!topologyDirty)return;
+        Arrays.fill(rates,0,cellCount,0);
+        activeCount=0;
+        for(int e=0;e<edgeCount;e++) {
+            int a=edgeA[e],b=edgeB[e];
+            if(loaded[a] && loaded[b]) {
+                activeEdges[activeCount++]=e;rates[a]+=edgeG[e];rates[b]+=edgeG[e];
+            }
+        }
+        topologyDirty=false;
+    }
 
     public void step(double seconds) {
         nonnegative(seconds);
         if (seconds == 0) return;
-        Arrays.fill(rates, 0);
-        for (int edgeIndex=0;edgeIndex<edgeCount;edgeIndex++) {
-            Edge edge=edges[edgeIndex];
-            if (loaded[edge.a] && loaded[edge.b]) {
-                rates[edge.a] += edge.conductance;
-                rates[edge.b] += edge.conductance;
-            }
-        }
+        refreshTopology();
         double stableStep = seconds;
         for (int i = 0; i < size(); i++) {
             if (!loaded[i]) continue;
-            rates[i] += boundaryG[i];
-            if (rates[i] > 0) stableStep = Math.min(stableStep, 0.9 * capacity[i] / rates[i]);
+            double rate=rates[i]+boundaryG[i];
+            if (rate > 0) stableStep = Math.min(stableStep, 0.9 * capacity[i] / rate);
         }
         double required = Math.ceil(seconds / stableStep);
         if (!Double.isFinite(required) || required > MAX_SUBSTEPS)
             throw new IllegalArgumentException("Thermal step too large; schedule smaller steps, not elapsed unload time");
         int count = Math.max(1, (int) required);
+        lastSubsteps=count;
         double dt = seconds / count;
         for (int sub = 0; sub < count; sub++) {
-            Arrays.fill(deltaEnergy, 0);
-            for (int edgeIndex=0;edgeIndex<edgeCount;edgeIndex++) {
-            Edge edge=edges[edgeIndex];
-                if (!loaded[edge.a] || !loaded[edge.b]) continue;
-                double q = edge.conductance * (temperature[edge.b] - temperature[edge.a]) * dt;
-                deltaEnergy[edge.a] += q;
-                deltaEnergy[edge.b] -= q;
-            }
-            for (int i = 0; i < size(); i++) {
-                if (loaded[i]) deltaEnergy[i] += dt * (power[i] + boundaryG[i] * (boundaryT[i] - temperature[i]));
+            // Initialise from external power directly: no zero-fill + later extra pass.
+            for(int i=0;i<cellCount;i++)
+                deltaEnergy[i]=loaded[i]?dt*(power[i]+boundaryG[i]*(boundaryT[i]-temperature[i])):0;
+            for(int active=0;active<activeCount;active++) {
+                int e=activeEdges[active],a=edgeA[e],b=edgeB[e];
+                double q=edgeG[e]*(temperature[b]-temperature[a])*dt;
+                deltaEnergy[a]+=q;deltaEnergy[b]-=q;
             }
             for (int i = 0; i < size(); i++) {
                 if (loaded[i]) temperature[i] += deltaEnergy[i] / capacity[i];
