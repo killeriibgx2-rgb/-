@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Covers pistons, fluids, explosions and automated placements, not only player events. */
 @Mixin(LevelChunk.class)
 public abstract class CellThermalBlockChangeMixin {
-    @Inject(method = "setBlockState", at = @At("RETURN"))
+    @Inject(method = "setBlockState(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Z)Lnet/minecraft/world/level/block/state/BlockState;", at = @At("RETURN"))
     private void eternalsnow$thermalChange(BlockPos pos, BlockState state, boolean moving,
                                            CallbackInfoReturnable<BlockState> cir) {
         if (cir.getReturnValue() == null) return;
