@@ -34,24 +34,15 @@ public final class HeatAccumulatorBlockEntity extends BlockEntity {
         if (level.isClientSide || (level.getGameTime() + pos.asLong()) % 10L != 0L) {
             return;
         }
-        BlockState below = level.getBlockState(pos.below());
-        boolean heating = (below.getBlock() instanceof CampfireBlock
-                    && below.hasProperty(CampfireBlock.LIT) && below.getValue(CampfireBlock.LIT))
-                || below.is(Blocks.FIRE) || below.is(Blocks.SOUL_FIRE)
-                || below.is(Blocks.LAVA) || below.is(Blocks.MAGMA_BLOCK)
-                || (below.getBlock() instanceof com.eternalsnow.block.FireplaceBlock
-                    && below.hasProperty(com.eternalsnow.block.FireplaceBlock.LIT)
-                    && below.getValue(com.eternalsnow.block.FireplaceBlock.LIT));
-
-        float next = heating
-                ? Math.min(MAX_HEAT, be.heatC + CHARGE_PER_TICK)
-                : be.heatC * DISCHARGE;
-        if (next < 0.05F) {
-            next = 0.0F;
-        }
-        if (Math.abs(next - be.heatC) > 0.005F) {
-            be.heatC = next;
-            be.setChanged();
+        // Compatibility telemetry only. Stored energy belongs exclusively to the cell grid;
+        // the old independent charge/discharge emitter would otherwise create heat twice.
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            float actual = com.eternalsnow.thermal.ThermalEngine.getLocalTemperatureC(server, pos);
+            float next = Math.max(0, actual - com.eternalsnow.thermal.ThermalEngine.computeBaseAmbientC(server, pos));
+            if (Math.abs(next - be.heatC) > .01F) {
+                be.heatC = next;
+                be.setChanged();
+            }
         }
     }
 

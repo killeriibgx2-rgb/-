@@ -17,7 +17,7 @@ import java.util.Set;
  * No per-step allocations. A pair is evaluated once from the same substep snapshot,
  * with exactly opposite energy transfers. Stable explicit substeps make passive updates
  * convex combinations, so even tiny air capacities cannot overshoot their neighbours.
- * Not yet connected to ThermalEngine: activation requires the world adapter.
+ * Used by WorldCellThermal; the old room solver is no longer ticked.
  */
 public final class CellHeatSolver {
     public record Edge(int a, int b, double conductance) {}

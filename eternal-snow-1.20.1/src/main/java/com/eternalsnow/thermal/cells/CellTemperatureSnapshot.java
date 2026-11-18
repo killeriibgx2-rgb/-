@@ -11,7 +11,7 @@ import net.minecraft.nbt.Tag;
  */
 public final class CellTemperatureSnapshot {
     public static final int VERSION = 1;
-    private static final int MAX_CELLS = 65536;
+    private static final int MAX_CELLS = 1048576;
     private final long[] positions;
     private final double[] temperatures;
 
