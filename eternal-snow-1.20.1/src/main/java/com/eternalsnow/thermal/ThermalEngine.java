@@ -8,6 +8,7 @@ import com.eternalsnow.block.HeatAccumulatorBlockEntity;
 import com.eternalsnow.config.ServerSnowSettings;
 import com.eternalsnow.state.EternalSnowState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
