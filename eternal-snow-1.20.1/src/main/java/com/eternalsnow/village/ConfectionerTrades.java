@@ -27,20 +27,20 @@ public final class ConfectionerTrades {
     @SubscribeEvent public static void trades(VillagerTradesEvent event) {
         if(event.getType()!=ConfectionerRegistry.PROFESSION.get())return;
         var trades=event.getTrades();
-        trades.get(1).add(buy(Items.SUGAR,12,2));
+        trades.get(1).add(buy(Items.SUGAR,ConfectionerPolicy.SUGAR_BUY,2));
         trades.get(1).add(sell(Items.COOKIE,5,3,1));
-        trades.get(2).add(buy(Items.COCOA_BEANS,8,10));
+        trades.get(2).add(buy(Items.COCOA_BEANS,ConfectionerPolicy.BEANS_BUY,10));
         trades.get(2).add(sell(ModRegistry.COCOA_CUP.get(),1,2,5));
-        trades.get(3).add(buy(ModRegistry.CARAMEL.get(),4,20));
+        trades.get(3).add(buy(ModRegistry.CARAMEL.get(),ConfectionerPolicy.CARAMEL_BUY,20));
         trades.get(3).add((entity,random)->{
             Item[] candies={ModRegistry.CANDY_RED.get(),ModRegistry.CANDY_YELLOW.get(),ModRegistry.CANDY_GREEN.get(),ModRegistry.CANDY_BLUE.get(),ModRegistry.CANDY_PURPLE.get()};
-            return sell(candies[random.nextInt(candies.length)],3,2,10).getOffer(entity,random);
+            return sell(candies[random.nextInt(candies.length)],ConfectionerPolicy.CANDY_SELL_COUNT,ConfectionerPolicy.CANDY_SELL_PRICE,10).getOffer(entity,random);
         });
-        trades.get(4).add(buy(ModRegistry.CANDY_RED.get(),3,30));
-        trades.get(4).add(buy(ModRegistry.CANDY_YELLOW.get(),3,30));
+        trades.get(4).add(buy(ModRegistry.CANDY_RED.get(),ConfectionerPolicy.CANDY_BUY,30));
+        trades.get(4).add(buy(ModRegistry.CANDY_YELLOW.get(),ConfectionerPolicy.CANDY_BUY,30));
         // Vanilla selects two of the three master's colours; no custom trading screen.
-        trades.get(5).add(buy(ModRegistry.CANDY_GREEN.get(),3,30));
-        trades.get(5).add(buy(ModRegistry.CANDY_BLUE.get(),3,30));
-        trades.get(5).add(buy(ModRegistry.CANDY_PURPLE.get(),3,30));
+        trades.get(5).add(buy(ModRegistry.CANDY_GREEN.get(),ConfectionerPolicy.CANDY_BUY,30));
+        trades.get(5).add(buy(ModRegistry.CANDY_BLUE.get(),ConfectionerPolicy.CANDY_BUY,30));
+        trades.get(5).add(buy(ModRegistry.CANDY_PURPLE.get(),ConfectionerPolicy.CANDY_BUY,30));
     }
 }

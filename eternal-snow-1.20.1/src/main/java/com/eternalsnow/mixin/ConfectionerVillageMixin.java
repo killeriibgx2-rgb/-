@@ -21,8 +21,7 @@ public abstract class ConfectionerVillageMixin {
     @Inject(method="getSettings",at=@At("RETURN"))
     private void eternalsnow$decorateNewHouse(Rotation rotation,BoundingBox bounds,boolean keepJigsaws,CallbackInfoReturnable<StructurePlaceSettings> cir) {
         template.left().ifPresent(id->{
-            if(id.getNamespace().equals("minecraft") && id.getPath().startsWith("village/")
-                    && id.getPath().contains("/houses/") && !id.getPath().contains("zombie"))
+            if(com.eternalsnow.village.ConfectionerPolicy.eligibleTemplate(id.getNamespace(),id.getPath()))
                 cir.getReturnValue().addProcessor(ConfectionerHouseProcessor.INSTANCE);
         });
     }
