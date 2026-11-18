@@ -18,7 +18,7 @@ public final class CellTemperatureSnapshot {
     public CellTemperatureSnapshot(long[] positions, double[] temperatures) {
         if (positions.length != temperatures.length || positions.length > MAX_CELLS)
             throw new IllegalArgumentException("Invalid snapshot size");
-        java.util.Set<Long> unique = new java.util.HashSet<>();
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet unique = new it.unimi.dsi.fastutil.longs.LongOpenHashSet(positions.length);
         for (int i = 0; i < positions.length; i++) {
             if (!unique.add(positions[i]) || !Double.isFinite(temperatures[i]))
                 throw new IllegalArgumentException("Duplicate cell or invalid temperature");
