@@ -161,6 +161,7 @@ public final class ThermalEngine {
         float leakPerCell = ROOM_LEAK_FALLBACK;
         float inertia = 1.0F;
         float power = 0.0F;         // transient: summed source power for THIS tick only
+        boolean dirty = false;
         boolean valid = false;
         int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
@@ -216,9 +217,7 @@ public final class ThermalEngine {
         }
 
         void invalidateGeometry() {
-            roomCache.clear();
-            leakCache.clear();
-            baselineMap.clear();
+            for (RoomData room : roomCache.values()) room.dirty = true;
             failedSeeds.clear();
         }
     }
@@ -244,35 +243,12 @@ public final class ThermalEngine {
         if (ws.roomCache.isEmpty()) {
             return;
         }
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
-        long[] doomed = new long[Math.min(ws.roomCache.size(), 64)];
-        int n = 0;
-        for (var entry : ws.roomCache.long2ObjectEntrySet()) {
-            RoomData room = entry.getValue();
-            if (room.valid && room.touches(x, y, z)) {
-                doomed[n++] = entry.getLongKey();
-            }
+        for (RoomData room : ws.roomCache.values()) {
+            if (room.touches(pos.getX(), pos.getY(), pos.getZ())) room.dirty = true;
         }
-        for (int i = 0; i < n; i++) {
-            RoomData room = ws.roomCache.remove(doomed[i]);
-            if (room != null) {
-                LongIterator airIt = room.air.iterator();
-                while (airIt.hasNext()) {
-                    long cell = airIt.nextLong();
-                    ws.leakCache.remove(cell);
-                    ws.baselineMap.remove(cell);
-                }
-                LongIterator wallIt = room.envelope.iterator();
-                while (wallIt.hasNext()) {
-                    ws.baselineMap.remove(wallIt.nextLong());
-                }
-            }
-        }
-        if (n > 0) {
-            ws.failedSeeds.clear(); // a failed cave seed may now be a valid room
-        }
+        // Geometry and stored energy have separate lifetimes. Keep the temperature map
+        // until the replacement geometry is ready, including the ticks between updates.
+        ws.failedSeeds.clear();
     }
 
     public static boolean isPotentialHeatEmitter(BlockState state) {
@@ -384,7 +360,11 @@ public final class ThermalEngine {
     }
 
     public static float getLocalTemperatureC(ServerLevel level, BlockPos pos) {
-        return computeBaseAmbientC(level, pos) + getDeltaHeatAt(level, pos);
+        LevelThermalWorkspace ws = getWorkspace(level);
+        float roomTemperature = ws.baselineMap.get(pos.asLong());
+        return Float.isNaN(roomTemperature)
+                ? computeBaseAmbientC(level, pos) + ws.activeMap.get(pos.asLong())
+                : roomTemperature;
     }
 
     /**
@@ -395,12 +375,9 @@ public final class ThermalEngine {
     public static float getDeltaHeatAt(ServerLevel level, BlockPos pos) {
         LevelThermalWorkspace ws = getWorkspace(level);
         long key = pos.asLong();
-        float delta = ws.activeMap.get(key);
         float baselineC = ws.baselineMap.get(key);
-        if (Float.isNaN(baselineC)) {
-            return delta;
-        }
-        return delta + baselineC - EternalSnowState.worldAmbientTempC;
+        return Float.isNaN(baselineC) ? ws.activeMap.get(key)
+                : baselineC - computeBaseAmbientC(level, pos);
     }
 
     public static float computeBaseAmbientC(ServerLevel level, BlockPos pos) {
@@ -580,9 +557,10 @@ public final class ThermalEngine {
         // physical sanity rail far above any fire you can build indoors (+120 °C air).
         float roomCapDelta = Math.max(6.0F, PHYSICAL_AIR_RAIL_C - EternalSnowState.worldAmbientTempC);
         if (ws.tickCounter % ROOM_REFRESH_TICKS == 0) {
-            refreshRooms(level, ws, settings, scanPos, rayPos);
+            for (RoomData room : ws.roomCache.values()) room.dirty = true;
             ws.failedSeeds.clear();
         }
+        refreshRooms(level, ws, settings, scanPos, rayPos);
         discoverRooms(level, ws, settings, scanPos, rayPos);
         applyEnclosedRoomHeating(level, ws, heatMap, settings, roomCapDelta, scanPos, rayPos);
 
@@ -626,6 +604,7 @@ public final class ThermalEngine {
                 long key = it.nextLong();
                 float cellBaselineC = ws.baselineMap.get(key);
                 boolean roomCell = !Float.isNaN(cellBaselineC);
+                if (roomCell) continue; // one owner: no extra radiation or diffusion loss indoors
                 float cellBaseC = roomCell ? cellBaselineC : EternalSnowState.worldAmbientTempC;
                 float capHere = roomCell
                         ? Math.max(0.0F, PHYSICAL_AIR_RAIL_C - cellBaselineC)
@@ -1008,10 +987,20 @@ public final class ThermalEngine {
         while (keyIt.hasNext()) {
             keys[n++] = keyIt.nextLong();
         }
-        ws.leakCache.clear();
         for (int i = 0; i < n; i++) {
             RoomData old = ws.roomCache.get(keys[i]);
-            RoomData fresh = scanRoom(level, ws, keys[i], settings, tmp, tmp2);
+            if (old == null || !old.dirty) continue;
+            long seed = keys[i];
+            tmp.set(BlockPos.getX(seed), BlockPos.getY(seed), BlockPos.getZ(seed));
+            if (!isAirOrOpenPassage(level.getBlockState(tmp))) {
+                LongIterator candidates = old.air.iterator();
+                while (candidates.hasNext()) {
+                    long candidate = candidates.nextLong();
+                    tmp.set(BlockPos.getX(candidate), BlockPos.getY(candidate), BlockPos.getZ(candidate));
+                    if (isAirOrOpenPassage(level.getBlockState(tmp))) { seed = candidate; break; }
+                }
+            }
+            RoomData fresh = scanRoom(level, ws, seed, settings, tmp, tmp2);
             if (old != null && !Float.isNaN(old.baselineC)) {
                 fresh.baselineC = old.baselineC;
             }
@@ -1194,7 +1183,15 @@ public final class ThermalEngine {
             if (Float.isNaN(r.baselineC)) {
                 r.baselineC = EternalSnowState.thermalMassTempC;
             }
-            r.baselineC += (ambientC - r.baselineC) * Math.min(1.0F, dtThermal / r.tauTicks);
+            // Use the SAME inertia for heating, cooling and changing weather. Power
+            // determines equilibrium; capacity determines how quickly we approach it.
+            float rise = r.power * ROOM_POWER_GAIN * (settings.roomHeatingPowerPercent / 100.0F)
+                    / (2.0F * ROOM_LEAK_SCALE * Math.max(0.05F, r.conductance));
+            long airKey = r.air.iterator().nextLong();
+            tmp.set(BlockPos.getX(airKey), BlockPos.getY(airKey), BlockPos.getZ(airKey));
+            float outside = computeBaseAmbientC(level, tmp);
+            r.baselineC = (float) Math.min(PHYSICAL_AIR_RAIL_C,
+                    RoomThermalBalance.advance(r.baselineC, outside, rise, dtThermal, r.tauTicks));
         }
 
         // Rebuild cell -> ABSOLUTE baseline once per thermal tick (reused map, no GC). Because the
@@ -1214,35 +1211,20 @@ public final class ThermalEngine {
             }
         }
 
-        // Lumped-capacitance update in BASELINE-RELATIVE deltas: room air and room walls now share
-        // one reference, so the fine-grained solver no longer sees a fake temperature difference.
-        // δT_eq = gain / (2 * leakPerCell); capacity still changes warm-up, not equilibrium.
-        float powerScale = ROOM_POWER_GAIN * (settings.roomHeatingPowerPercent / 100.0F);
+        // Retain the zero-mean vertical gradient, but store it as absolute room
+        // temperature. Transient emitter/radiation deltas must never heat the room twice.
         for (RoomData room : ws.roomCache.values()) {
-            if (!room.valid || room.air.isEmpty()) {
-                continue;
+            if (!room.valid || room.air.isEmpty()) continue;
+            float rise = Math.max(0.0F, room.baselineC - ambientC);
+            writeStratifiedRoomAir(room, heatMap, rise, Float.MAX_VALUE, settings);
+            LongIterator air = room.air.iterator();
+            while (air.hasNext()) {
+                long key = air.nextLong();
+                ws.baselineMap.put(key, room.baselineC + heatMap.get(key) - rise);
+                heatMap.remove(key);
             }
-            float offsetC = room.baselineC - ambientC;
-            float capForRoom = Math.max(0.0F, roomCapDelta - offsetC);
-
-            float sum = 0.0F;
-            LongIterator airIt = room.air.iterator();
-            while (airIt.hasNext()) {
-                sum += heatMap.get(airIt.nextLong());
-            }
-            float avg = sum / room.volume;
-            float gain = room.power * powerScale * room.inertia / room.volume;
-            float keep = Math.max(0.0F, 1.0F - 2.0F * room.leakPerCell);
-            float val = Mth.clamp((avg + gain) * keep, 0.0F, capForRoom);
-
-            airIt = room.air.iterator();
-            if (val < 0.18F) {
-                while (airIt.hasNext()) {
-                    heatMap.remove(airIt.nextLong());
-                }
-            } else {
-                writeStratifiedRoomAir(room, heatMap, val, capForRoom, settings);
-            }
+            LongIterator walls = room.envelope.iterator();
+            while (walls.hasNext()) heatMap.remove(walls.nextLong());
         }
     }
 
@@ -1295,9 +1277,7 @@ public final class ThermalEngine {
             if (cellVal > capForRoom) {
                 cellVal = capForRoom;
             }
-            if (cellVal < 0.10F) {
-                cellVal = 0.10F;
-            }
+
             heatMap.put(key, cellVal);
         }
     }
