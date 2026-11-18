@@ -3,23 +3,13 @@ package com.eternalsnow.thermal;
 import com.eternalsnow.block.FireplaceBlock;
 import com.eternalsnow.block.FireplaceBlockEntity;
 import com.eternalsnow.block.FireplaceFuelHelper;
-import com.eternalsnow.block.FireplacePartBlock;
 import com.eternalsnow.block.HeatAccumulatorBlock;
 import com.eternalsnow.block.HeatAccumulatorBlockEntity;
 import com.eternalsnow.config.ServerSnowSettings;
-import com.eternalsnow.registry.ModRegistry;
 import com.eternalsnow.state.EternalSnowState;
-import it.unimi.dsi.fastutil.longs.Long2FloatMap;
-import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -36,12 +26,8 @@ import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.Heightmap;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /** Public compatibility facade. All temperatures now come from the persisted cell grid. */
 public final class ThermalEngine {

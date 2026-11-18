@@ -11,9 +11,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class HeatAccumulatorBlockEntity extends BlockEntity {
     public static final float MAX_HEAT = 90.0F;
-    private static final float CHARGE_PER_TICK = 1.8F;
-    /** 0.9983 per 10 server ticks -> ~5 minute discharge tail. */
-    private static final float DISCHARGE = 0.9983F;
 
     private float heatC = 0.0F;
 
@@ -25,9 +22,9 @@ public final class HeatAccumulatorBlockEntity extends BlockEntity {
         return this.heatC;
     }
 
-    /** Emitted as ordinary heat-source power by ThermalEngine.getHeatSourcePowerC(). */
+    /** Compatibility API: stored energy now leaves via neighbour conduction, not a second source. */
     public float getEmitPowerC() {
-        return this.heatC * 0.62F;
+        return 0.0F;
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, HeatAccumulatorBlockEntity be) {

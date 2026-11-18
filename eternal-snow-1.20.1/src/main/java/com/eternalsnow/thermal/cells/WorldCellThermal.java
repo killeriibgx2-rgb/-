@@ -48,7 +48,7 @@ public final class WorldCellThermal {
     public static void load(ServerLevel level,long chunk) { ws(level).pending.add(chunk); }
     public static void unload(ServerLevel level,long chunk) {
         Workspace w=ws(level);
-        w.loaded.remove(chunk); w.dirty=true;
+        w.loaded.remove(chunk); w.pending.removeIf(key -> key.longValue()==chunk); w.dirty=true;
         w.sources.removeIf(key -> chunkKey(BlockPos.of(key))==chunk);
         w.lastStates.keySet().removeIf(key -> chunkKey(BlockPos.of(key))==chunk);
     }
@@ -61,7 +61,11 @@ public final class WorldCellThermal {
         if (w.loaded.add(key)) { w.scanQueue.enqueue(key); w.dirty=true; }
     }
     public static double temperature(ServerLevel level,BlockPos pos) {
-        if (!ready(level,pos)) return ThermalEngine.computeBaseAmbientC(level,pos);
+        if (!ready(level,pos)) {
+            var stored=CellThermalSavedData.get(level).chunks.get(chunkKey(pos));
+            double t=stored==null?Double.NaN:stored.get(pos.asLong());
+            return Double.isNaN(t)?EternalSnowState.worldAmbientTempC:t;
+        }
         Workspace w=ws(level); admit(level,w,pos);
         return ensure(level,w,CellThermalSavedData.get(level),pos);
     }
@@ -93,6 +97,21 @@ public final class WorldCellThermal {
         data.chunk(chunkKey(pos)).put(pos.asLong(),localAir(level,data,pos));
         data.setDirty(); w.dirty=true; w.lastStates.remove(pos.asLong());
         w.sources.add(pos.asLong()); // validate after the placement/break event completes
+    }
+    public static void blockChanged(ServerLevel level, BlockPos pos, BlockState before, BlockState after) {
+        if (!EternalSnowState.isOverworldLike(level) || !ready(level,pos)) return;
+        Workspace w=ws(level);
+        boolean emitter=ThermalEngine.isPotentialHeatEmitter(after);
+        // Do not materialise every natural snowfall block. Only existing thermal cells
+        // and newly introduced emitters need state; source indexing handles loaded chunks.
+        var map=CellThermalSavedData.get(level).chunks.get(chunkKey(pos));
+        if (!emitter && (map==null || !map.containsKey(pos.asLong()))) return;
+        if (before.getBlock()!=after.getBlock()) replaced(level,pos);
+        else w.dirty=true;
+        // This mutation has already been handled, don't reset it a second time on rebuild.
+        w.lastStates.put(pos.asLong(),after);
+        if(emitter) w.sources.add(pos.asLong());
+        else w.sources.remove(pos.asLong());
     }
     public static void sourceChanged(ServerLevel level,BlockPos pos) {
         if (!ready(level,pos)) return;
@@ -132,6 +151,7 @@ public final class WorldCellThermal {
             Long key=w.pending.poll(); if(key==null) break;
             LevelChunk chunk=level.getChunkSource().getChunkNow(ChunkPos.getX(key),ChunkPos.getZ(key));
             if(chunk!=null) admit(level,w,chunk.getPos().getWorldPosition());
+            else w.pending.add(key);
         }
         scanSources(level,w);
         // Player volumes start a local field even in houses without burning sources.
