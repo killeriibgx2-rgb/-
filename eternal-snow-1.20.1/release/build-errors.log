@@ -39,7 +39,7 @@ RoomTuneProbe > probe STANDARD_OUT
     leak x0.033 | mix 20 | 1x1x1   | -18.67 | -16.54 | -12s
     leak x0.033 | mix 20 | 2x1x2   | -19.51 | -18.73 | -17s
 
-85 tests completed, 2 failed
+86 tests completed, 2 failed
 
 > Task :test FAILED
 
@@ -66,6 +66,18 @@ AUDIT total capacity of the detailed tile=29816.0
 AUDIT t=30s dE=+8335 mean=-18.98 fireCell=55.18
 AUDIT t=150s dE=+40572 mean=-17.85 fireCell=55.29
 AUDIT t=900s dE=+228066 mean=-11.60 fireCell=55.68
+=== AIR CAPACITY 1.0 ===
+  watts=    68 1min=-19.70 5min=-19.42 15min=-19.28
+  watts=   340 1min=-18.52 5min=-17.11 15min=-16.39
+  watts=  1360 1min=-14.06 5min= -8.45 15min= -5.55
+=== AIR CAPACITY 0.1 ===
+  watts=    68 1min=-19.55 5min=-19.22 15min=-19.07
+  watts=   340 1min=-17.74 5min=-16.12 15min=-15.37
+  watts=  1360 1min=-10.97 5min= -4.47 15min= -1.48
+=== AIR CAPACITY 0.02 ===
+  watts=    68 1min=-18.97 5min=-18.61 15min=-18.45
+  watts=   340 1min=-14.87 5min=-13.06 15min=-12.25
+  watts=  1360 1min=  0.53 5min=  7.78 15min= 10.99
 === CONVERGE: 8x8x8 brick, outside -20C, campfire ===
 leakDiv power cap | 1min   5min   15min
      30    68   60 | -19.73 -19.25 -18.17
