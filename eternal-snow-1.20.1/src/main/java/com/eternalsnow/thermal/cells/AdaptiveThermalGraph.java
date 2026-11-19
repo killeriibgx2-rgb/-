@@ -94,14 +94,25 @@ public final class AdaptiveThermalGraph {
     private void connect(AdaptiveThermalTile a,int i,AdaptiveThermalTile b,int j,double da,double db) {
         solver.setConnection(a.nodeAt(i),b.nodeAt(j),conductance(a,i,b,j,da,db));
     }
+    /**
+     * Conductance between two adjacent cells.
+     *
+     * <p>For two different materials in series: G = 1 / (dA/kA + dB/kB).
+     * For the SAME material the resistance is dA/kA + dB/kB = (dA+dB)/k, so G = k/(dA+dB) —
+     * not 2kA*kB/(kA+kB). Applying the mixed formula to identical cells silently halves air-air
+     * transfer and seals pockets of air off from each other, which is one reason a room full of
+     * air behaved like an insulator.
+     */
     private static double conductance(AdaptiveThermalTile a,int i,AdaptiveThermalTile b,int j,double da,double db) {
-        double ka=a.detailed?a.conductivities[i]:a.conductivity,kb=b.detailed?b.conductivities[j]:b.conductivity;
-        double value=AdaptiveThermalTile.contact(ka,kb,da,db,1);
+        double ka=a.detailed?a.conductivities[i]:a.conductivity;
+        double kb=b.detailed?b.conductivities[j]:b.conductivity;
         if(a.detailed&&b.detailed) {
-            value=AdaptiveThermalTile.contact(a.rawConductivities[i],b.rawConductivities[j],.5,.5,1);
+            ka=a.rawConductivities[i];kb=b.rawConductivities[j];
+            double value=ka==kb?ka/(da+db):AdaptiveThermalTile.contact(ka,kb,da,db,1);
             if(a.air!=null&&b.air!=null&&a.air[i]&&b.air[j])value*=Math.min(a.mixing,b.mixing);
+            return value;
         }
-        return value;
+        return ka==kb?ka/(da+db):AdaptiveThermalTile.contact(ka,kb,da,db,1);
     }
     /**
      * Room-scale mixing: long links between air cells of one tile that are not face neighbours.

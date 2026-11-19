@@ -44,7 +44,7 @@ public class AdaptiveThermalTest {
         for(int cycle=0;cycle<100;cycle++) {
             a.configure(cycle%2==0,capacities,filled(1),filled(0),filled(1),filled(0));
             var g=new AdaptiveThermalGraph(List.of(a));assertEquals(expected,g.solver.totalEnergy(),1e-6);
-            g.clearPower();g.addPower(a,0,68);g.step(.5,-30);expected+=34;
+            g.clearPower();g.addPower(a,0,68);g.setRoomAirMixing(1);g.step(.5,-30);expected+=34;
             double actual=0;for(int i=0;i<512;i++)actual+=capacities[i]*a.temperatures.get(i);
             assertEquals(expected,actual,1e-6);
         }
@@ -101,6 +101,7 @@ public class AdaptiveThermalTest {
         var graph=new AdaptiveThermalGraph(tiles);
         assertEquals(4096,graph.solver.size());assertEquals(11520,graph.solver.edgeCount());
         double initial=graph.solver.totalEnergy();graph.clearPower();graph.addPower(tiles.get(0),0,68);
+        graph.setRoomAirMixing(1);
         long start=System.nanoTime();
         for(int step=0;step<1200;step++)graph.step(.5,-20+10*Math.sin(step/100.0));
         assertEquals(initial+68*600,graph.solver.totalEnergy(),1e-4);
