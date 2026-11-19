@@ -1,15 +1,15 @@
-58:    java.lang.AssertionError at AdaptiveThermalTest.java:107
-61:    java.lang.AssertionError at AdaptiveThermalTest.java:49
-88:    java.lang.AssertionError at RoomWarmingTest.java:68
-91:    java.lang.AssertionError at RoomWarmingTest.java:74
-AdaptiveThermalTest > twoMillionRetainedTemperaturesDoNotBecomeTwoMillionNodes FAILED
-    java.lang.AssertionError at AdaptiveThermalTest.java:107
+85:    java.lang.AssertionError at RoomWarmingTest.java:68
+FoodSettingsTest > networkRoundTrip STANDARD_OUT
+    2026-11-19 12:53:23,089 Test worker WARN Advanced terminal features are not available in this environment
 
-AdaptiveThermalTest > refineCoarsenRetainsWeightedEnergyAndSourcePower FAILED
-    java.lang.AssertionError at AdaptiveThermalTest.java:49
+AdaptiveThermalTest > largeMixedDomainSurvivesGrowthWeatherAndObserverMoves STANDARD_OUT
+    Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=1702.773015
+
+AdaptiveThermalTest > twoMillionRetainedTemperaturesDoNotBecomeTwoMillionNodes STANDARD_OUT
+    Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=432.834793
 
 AdaptiveThermalTest > inPlaceEditIsCheaperThanFullRebuild STANDARD_OUT
-    Adaptive 4096 tiles: full rebuild x20=96.650548ms, in-place tile edit x20=7.819756ms
+    Adaptive 4096 tiles: full rebuild x20=100.327687ms, in-place tile edit x20=4.461974ms
 
 AirHeatTransferTest > enclosedRoomWarmsBeyondOneBlockWithoutIncreasingPower STANDARD_OUT
     Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
@@ -18,30 +18,27 @@ AirHeatTransferTest > enclosedRoomWarmsBeyondOneBlockWithoutIncreasingPower STAN
     Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
 
 CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
-    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 100 ms (CI, not Minecraft TPS)
+    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 105 ms (CI, not Minecraft TPS)
 
 ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
-    Conservative million-cell test 10 steps ms=183.477751
+    Conservative million-cell test 10 steps ms=157.321262
 
 ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
-    Conservative 64^3 G=3 20 steps ms=254.591345
+    Conservative 64^3 G=3 20 steps ms=193.983522
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=313.245805ms packed=212.362508ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=266.43517ms packed=176.561365ms; synthetic, not server TPS
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
-    8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=-19.94 C peak=-18.01 C
+    8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=-6.44 C peak=413.67 C
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable FAILED
     java.lang.AssertionError at RoomWarmingTest.java:68
 
-RoomWarmingTest > roomKeepsWarmingAndIsNotStuckAtTheColdEnd FAILED
-    java.lang.AssertionError at RoomWarmingTest.java:74
-
 RoomWarmingTest > insulationMattersMoreThanRoomSize STANDARD_OUT
-    brick mean=-19.94 C, wool mean=-19.58 C
+    brick mean=-6.44 C, wool mean=73.24 C
 
-84 tests completed, 4 failed
+84 tests completed, 1 failed
 
 > Task :test FAILED
 
