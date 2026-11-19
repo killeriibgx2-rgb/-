@@ -74,6 +74,9 @@ public final class CellHeatSolver {
 
     public int size() { return cellCount; }
     public double temperature(int cell) { return temperature[cell]; }
+    public double heatCapacity(int cell) { return capacity[cell]; }
+    public double outsideConductance(int cell) { return boundaryG[cell]; }
+    public double outsideTemperature(int cell) { return boundaryT[cell]; }
     public double[] temperatures() { return Arrays.copyOf(temperature,cellCount); }
 
     /** Append without rebuilding old cell state or topology. Amortized array growth. */

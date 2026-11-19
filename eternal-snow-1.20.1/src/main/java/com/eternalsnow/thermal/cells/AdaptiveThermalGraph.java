@@ -9,6 +9,11 @@ public final class AdaptiveThermalGraph {
     final List<AdaptiveThermalTile> tiles;
     public final CellHeatSolver solver;
     private final double[] power;
+    /** Air mixing above plain face contact; a closed room mixes in seconds. 1 = old behaviour. */
+    private double roomAirMixing=1;
+    /** Highest air temperature a source can hold, in C. */
+    private float sourceAirCapC=60;
+    private final it.unimi.dsi.fastutil.ints.IntArrayList sourceNodes=new it.unimi.dsi.fastutil.ints.IntArrayList();
     private final Long2ObjectOpenHashMap<AdaptiveThermalTile> byPosition=new Long2ObjectOpenHashMap<>();
     public AdaptiveThermalGraph(Collection<? extends AdaptiveThermalTile> input) {
         tiles=new ArrayList<>(input);
@@ -98,11 +103,61 @@ public final class AdaptiveThermalGraph {
         }
         return value;
     }
-    public void clearPower(){Arrays.fill(power,0);}
-    public void addPower(AdaptiveThermalTile tile,int local,double value){power[tile.nodeAt(local)]+=value;}
+    /**
+     * Room-scale mixing: long links between air cells of one tile that are not face neighbours.
+     * Without them the only path out of a fire is its six faces, so heat crawls out and a large
+     * room never warms. With them the room's air is close to isothermal, like real air.
+     */
+    public void setRoomAirMixing(double value) {
+        roomAirMixing=Math.max(1,Math.min(200,value));
+        if(roomAirMixing<=1)return;
+        for(var tile:tiles) {
+            if(!tile.detailed)continue;
+            for(int y=0;y<8;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++) {
+                int a=AdaptiveThermalTile.index(x,y,z);
+                if(!isAir(tile,a))continue;
+                if(x<=3){int b=AdaptiveThermalTile.index(x+4,y,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
+                if(y<=3){int b=AdaptiveThermalTile.index(x,y+4,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
+                if(z<=3){int b=AdaptiveThermalTile.index(x,y,z+4);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
+            }
+        }
+    }
+    private static boolean isAir(AdaptiveThermalTile tile,int local) {
+        return tile.air!=null && tile.air[local];
+    }
+    public void setSourceAirCap(float celsius){sourceAirCapC=celsius;}
+    public void clearPower(){
+        Arrays.fill(power,0);sourceNodes.clear();
+    }
+    public void addPower(AdaptiveThermalTile tile,int local,double value){
+        int node=tile.nodeAt(local);
+        power[node]+=value;
+        sourceNodes.add(node);
+    }
+    /**
+     * A fire is a surface at flame temperature, not an unlimited watt tap. Added as a thermal
+     * boundary it limits itself: in a cold room it pours heat in, and as the room nears the
+     * flame temperature the flux falls to zero. Injecting fixed watts instead either overheats
+     * a small room without bound or, once clamped, throttles the fire to a trickle.
+     */
+    private void applySourceBoundary(double ambient) {
+        if(sourceNodes.isEmpty())return;
+        double span=Math.max(1,sourceAirCapC-ambient);
+        for(int i=0;i<sourceNodes.size();i++) {
+            int node=sourceNodes.getInt(i);
+            double flameConductance=power[node]/span;
+            solver.setPower(node,0);
+            if(flameConductance<=0)continue;
+            double existing=solver.outsideConductance(node);
+            double total=existing+flameConductance;
+            double outside=(existing*solver.outsideTemperature(node)+flameConductance*sourceAirCapC)/total;
+            solver.setOutside(node,total,outside);
+        }
+    }
     public void step(double seconds,double ambient) {
         for(int i=0;i<power.length;i++)solver.setPower(i,power[i]);
         for(var t:tiles)t.configureBoundary(solver,ambient);
+        applySourceBoundary(ambient);
         solver.stepConservative(seconds);
         for(var t:tiles)t.capture(solver,seconds);
     }
