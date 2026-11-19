@@ -280,11 +280,13 @@ public final class WorldCellThermal {
         int hash=Arrays.hashCode(settings.blockCapacity)*31+Arrays.hashCode(settings.blockConductivity);
         hash=31*hash+Float.floatToIntBits(settings.globalCapacityMultiplier);hash=31*hash+Float.floatToIntBits(settings.globalConductivityMultiplier);
         hash=31*hash+(settings.enableConvection?settings.convectionStrengthPercent:-1);
+        hash=31*hash+Float.floatToIntBits(settings.roomAirMixing);
         if(hash!=w.settingsHash){w.settingsHash=hash;w.materials.clear();w.dirty.addAll(w.regions.keySet());}
         initializeQueued(level,w,data);grow(level,w);
         if(w.rebuild) {
             var fields=new ArrayList<AdaptiveThermalTile>();for(var region:w.regions.values())fields.add(region.field);
             w.graph=new AdaptiveThermalGraph(fields);w.rebuild=false;w.rebuilds++;
+            w.graph.setRoomAirMixing(settings.roomAirMixing);
         }
         if(w.graph==null)return;w.graph.clearPower();
         for(var region:w.regions.values()) {
@@ -292,7 +294,8 @@ public final class WorldCellThermal {
             for(int s=0;s<region.sources.size();s++) {
                 int i=region.sources.getInt(s);BlockPos p=at(t,i);if(!ready(level,p))continue;
                 BlockState state=level.getBlockState(p);
-                double power=ThermalEngine.getHeatSourcePowerC(level,p,state,settings)*settings.roomHeatingPowerPercent/100.0;
+                double power=ThermalEngine.getHeatSourcePowerC(level,p,state,settings)
+                        *settings.roomHeatingPowerPercent/100.0*settings.roomSourcePower;
                 power*=Math.max(0,1-(t.temperatures.get(i)-20)/480.0);
                 if(power<=0)continue;region.powered=true;
                 boolean flame=t.detailed&&(state.getBlock() instanceof CampfireBlock||state.is(Blocks.FIRE)||state.is(Blocks.SOUL_FIRE));
