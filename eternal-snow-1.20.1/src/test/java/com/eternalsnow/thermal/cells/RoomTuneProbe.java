@@ -127,4 +127,26 @@ public class RoomTuneProbe {
             }
         }
     }
+
+    /** Energy accounting: where does the fire's heat actually go? */
+    @Test public void energyAudit() {
+        var tiles=box(1,1,1,0.42/100,5.0,20);
+        var graph=new AdaptiveThermalGraph(tiles);
+        graph.setRoomAirMixing(20);
+        graph.setSourceAirCap(60);
+        var src=tiles.get(0);int cell=AdaptiveThermalTile.index(4,1,4);
+        say("AUDIT total capacity of the detailed tile="+String.format(Locale.ROOT,"%.1f",src.totalCapacity));
+        double before=graph.solver.totalEnergy();
+        for(int step=1;step<=1800;step++){
+            graph.clearPower();graph.addPower(src,cell,1700);graph.step(.5,-20);
+            if(step==60||step==300||step==1800){
+                double now=graph.solver.totalEnergy();
+                double mean=0;int n=0;
+                for(var t:tiles)for(int i=0;i<512;i++){mean+=t.temperatures.get(i);n++;}
+                say(String.format(Locale.ROOT,
+                    "AUDIT t=%ds dE=%+.0f mean=%.2f fireCell=%.2f",
+                    step/2,now-before,mean/n,graph.solver.temperature(src.node+cell)));
+            }
+        }
+    }
 }
