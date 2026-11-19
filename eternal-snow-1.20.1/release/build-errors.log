@@ -1,45 +1,45 @@
 58:    java.lang.AssertionError at AdaptiveThermalTest.java:106
 61:    java.lang.AssertionError at AdaptiveThermalTest.java:49
-    Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
-    Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
-
-CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
-    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 112 ms (CI, not Minecraft TPS)
-
-ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
-    Conservative million-cell test 10 steps ms=175.494457
-
-ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
-    Conservative 64^3 G=3 20 steps ms=248.584356
-
-PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=303.813762ms packed=212.434219ms; synthetic, not server TPS
+    0.120   1.0    4080 | -19.62 -18.77 -17.90
+    0.120   1.0   13600 | -19.62 -18.77 -17.90
+    0.060   5.0    4080 | -19.82 -19.56 -18.96
+    0.060   5.0   13600 | -19.82 -19.56 -18.96
+    0.060   2.5    4080 | -19.77 -19.27 -18.27
+    0.060   2.5   13600 | -19.77 -19.27 -18.27
+    0.060   1.0    4080 | -19.61 -18.59 -17.01
+    0.060   1.0   13600 | -19.61 -18.59 -17.01
+    0.030   5.0    4080 | -19.82 -19.55 -18.91
+    0.030   5.0   13600 | -19.82 -19.55 -18.91
+    0.030   2.5    4080 | -19.76 -19.25 -18.10
+    0.030   2.5   13600 | -19.76 -19.25 -18.10
+    0.030   1.0    4080 | -19.61 -18.49 -16.32
+    0.030   1.0   13600 | -19.61 -18.49 -16.32
 
 RoomTuneProbe > probe STANDARD_OUT
     === PROBE room tempering (outside -20 C, campfire) ===
     wallK scale | airMix | room   | 1h     | 2h     | reached 0C
-    leak x1.000 | mix  3 | 1x1x1   | -16.92 | -16.92 | never
-    leak x1.000 | mix  3 | 2x1x2   | -18.90 | -18.90 | never
-    leak x1.000 | mix 20 | 1x1x1   | -17.06 | -17.06 | never
-    leak x1.000 | mix 20 | 2x1x2   | -18.90 | -18.90 | never
-    leak x0.200 | mix  3 | 1x1x1   | -11.00 |  -9.54 | never
-    leak x0.200 | mix  3 | 2x1x2   | -16.71 | -16.09 | never
-    leak x0.200 | mix 20 | 1x1x1   | -11.35 |  -9.93 | never
-    leak x0.200 | mix 20 | 2x1x2   | -16.72 | -16.10 | never
-    leak x0.100 | mix  3 | 1x1x1   |  -8.23 |  -4.09 | never
-    leak x0.100 | mix  3 | 2x1x2   | -15.67 | -13.91 | never
-    leak x0.100 | mix 20 | 1x1x1   |  -8.68 |  -4.65 | never
-    leak x0.100 | mix 20 | 2x1x2   | -15.68 | -13.92 | never
-    leak x0.050 | mix  3 | 1x1x1   |  -6.30 |   0.80 | 3337s
-    leak x0.050 | mix  3 | 2x1x2   | -14.95 | -11.92 | never
-    leak x0.050 | mix 20 | 1x1x1   |  -6.81 |   0.09 | 3569s
-    leak x0.050 | mix 20 | 2x1x2   | -14.95 | -11.93 | never
-    leak x0.033 | mix  3 | 1x1x1   |  -5.53 |   3.01 | 2867s
-    leak x0.033 | mix  3 | 2x1x2   | -14.66 | -11.02 | never
-    leak x0.033 | mix 20 | 1x1x1   |  -6.07 |   2.24 | 3030s
-    leak x0.033 | mix 20 | 2x1x2   | -14.67 | -11.03 | never
+    leak x1.000 | mix  3 | 1x1x1   | -18.67 | -17.53 | -17s
+    leak x1.000 | mix  3 | 2x1x2   | -19.53 | -19.13 | -19s
+    leak x1.000 | mix 20 | 1x1x1   | -18.74 | -17.65 | -17s
+    leak x1.000 | mix 20 | 2x1x2   | -19.53 | -19.13 | -19s
+    leak x0.200 | mix  3 | 1x1x1   | -18.62 | -16.65 | -13s
+    leak x0.200 | mix  3 | 2x1x2   | -19.51 | -18.82 | -18s
+    leak x0.200 | mix 20 | 1x1x1   | -18.69 | -16.80 | -14s
+    leak x0.200 | mix 20 | 2x1x2   | -19.51 | -18.82 | -18s
+    leak x0.100 | mix  3 | 1x1x1   | -18.61 | -16.49 | -12s
+    leak x0.100 | mix  3 | 2x1x2   | -19.51 | -18.76 | -17s
+    leak x0.100 | mix 20 | 1x1x1   | -18.68 | -16.65 | -13s
+    leak x0.100 | mix 20 | 2x1x2   | -19.51 | -18.77 | -17s
+    leak x0.050 | mix  3 | 1x1x1   | -18.61 | -16.41 | -12s
+    leak x0.050 | mix  3 | 2x1x2   | -19.51 | -18.74 | -17s
+    leak x0.050 | mix 20 | 1x1x1   | -18.68 | -16.57 | -12s
+    leak x0.050 | mix 20 | 2x1x2   | -19.51 | -18.74 | -17s
+    leak x0.033 | mix  3 | 1x1x1   | -18.61 | -16.38 | -12s
+    leak x0.033 | mix  3 | 2x1x2   | -19.51 | -18.73 | -17s
+    leak x0.033 | mix 20 | 1x1x1   | -18.67 | -16.54 | -12s
+    leak x0.033 | mix 20 | 2x1x2   | -19.51 | -18.73 | -17s
 
-81 tests completed, 2 failed
+82 tests completed, 2 failed
 
 > Task :test FAILED
 
@@ -58,5 +58,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 50s
+BUILD FAILED in 1m 13s
 13 actionable tasks: 13 executed
