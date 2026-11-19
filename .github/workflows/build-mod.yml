@@ -39,7 +39,7 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew build --no-daemon -Dorg.gradle.jvmargs="-Xmx3200m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" 2>&1 | tee build.log
+          ./gradlew build --no-daemon -Deternalsnow.thermaltrace=release/thermal-trace.txt -Dorg.gradle.jvmargs="-Xmx3200m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" 2>&1 | tee build.log
       - name: Publish compile errors into the repo (if any)
         if: failure()
         env:
@@ -50,10 +50,12 @@ jobs:
           mkdir -p eternal-snow-1.20.1/release
           { grep -nE "error:|cannot find symbol|incompatible types|\.java:[0-9]+" eternal-snow-1.20.1/build.log || true; } > "$OUT"
           tail -60 eternal-snow-1.20.1/build.log >> "$OUT" || true
+          [ -f eternal-snow-1.20.1/release/thermal-trace.txt ] && cp eternal-snow-1.20.1/release/thermal-trace.txt eternal-snow-1.20.1/release/thermal-trace.keep
           cat "$OUT"
           git config user.name "eternalsnow-build-bot"
           git config user.email "eternalsnow-build-bot@users.noreply.github.com"
           git add "$OUT"
+          [ -f eternal-snow-1.20.1/release/thermal-trace.keep ] && git add eternal-snow-1.20.1/release/thermal-trace.keep
           if git diff --cached --quiet; then
             echo "No new errors."
             exit 0

@@ -8,6 +8,16 @@ import org.junit.Test;
  * Prints a table; asserts nothing about balance. Removed once values are chosen.
  */
 public class RoomTuneProbe {
+    private static final java.util.List<String> LINES=new java.util.ArrayList<>();
+    private static void say(String line){
+        System.out.println(line);LINES.add(line);
+        String path=System.getProperty("eternalsnow.thermaltrace");
+        if(path!=null){try{
+            var file=java.nio.file.Path.of(path);
+            if(file.getParent()!=null)java.nio.file.Files.createDirectories(file.getParent());
+            java.nio.file.Files.write(file,LINES);
+        }catch(Exception ignored){}}
+    }
     private static double[] filled(double v){double[] a=new double[512];Arrays.fill(a,v);return a;}
 
     private static List<AdaptiveThermalTile> box(int tx,int ty,int tz,double wallK,double wallC,double airMix){
@@ -106,13 +116,13 @@ public class RoomTuneProbe {
     }
 
     @Test public void converge() {
-        System.out.println("=== CONVERGE: 8x8x8 brick, outside -20C, campfire ===");
-        System.out.println("leakDiv power cap | 1min   5min   15min");
+        say("=== CONVERGE: 8x8x8 brick, outside -20C, campfire ===");
+        say("leakDiv power cap | 1min   5min   15min");
         for(double div:new double[]{30,100,300}){
             for(double pmul:new double[]{1,5,25}){
                 for(double cap:new double[]{60,150}){
                     var r=run(1,1,1,0.42/div,5.0,20,68*pmul,cap,-20,true);
-                    System.out.println(String.format(Locale.ROOT,
+                    say(String.format(Locale.ROOT,
                         "%7.0f %5.0f %4.0f | %6.2f %6.2f %6.2f",div,68*pmul,cap,r[0],r[1],r[2]));
                 }
             }
