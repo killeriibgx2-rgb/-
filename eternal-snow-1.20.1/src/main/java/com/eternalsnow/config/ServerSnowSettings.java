@@ -54,11 +54,12 @@ public final class ServerSnowSettings {
     // v2.5.2: enclosed-room lumped heat model (power in / envelope resistance out)
     public int roomHeatingPowerPercent = 100;          // 0..300: how strongly a fire heats the ROOM (not just nearby voxels)
     /**
-     * Multiplier on a source's nominal power. Measured on a closed 8x8x8 brick room at -20 C:
-     * 3 keeps the air next to the fire sane instead of several hundred degrees, which is what
-     * values of 8+ produced. Room temperature still depends on insulation and room size.
+     * Multiplier on a source's nominal power. Power is spread over the air of the fire's own
+     * tile, so a large multiplier warms the room without frying a single cell. Measured on a
+     * closed 8x8x8 brick room at -20 C outside: 30 brings the room to roughly +10 C in 15
+     * minutes; 3 barely moves it.
      */
-    public float roomSourcePower = 3.0F;               // 1..100
+    public float roomSourcePower = 30.0F;              // 1..200
     /** Air mixing above plain face contact, so a fire warms the whole room, not one voxel. */
     public float roomAirMixing = 20.0F;                // 1..100
     public float roomComfortCeilingC = 26.0F;          // LEGACY (2.6.x): kept for old saves, physics ignores it since 2.7
@@ -265,7 +266,7 @@ public final class ServerSnowSettings {
         this.globalHeatBonusC = Mth.clamp(this.globalHeatBonusC, -40.0F, 100.0F);
         this.globalHeatingSpeedMultiplier = Mth.clamp(this.globalHeatingSpeedMultiplier, 0.2F, 4.0F);
         this.roomHeatingPowerPercent = Mth.clamp(this.roomHeatingPowerPercent, 0, 300);
-        this.roomSourcePower = Mth.clamp(this.roomSourcePower, 1.0F, 100.0F);
+        this.roomSourcePower = Mth.clamp(this.roomSourcePower, 1.0F, 200.0F);
         this.roomAirMixing = Mth.clamp(this.roomAirMixing, 1.0F, 100.0F);
         this.roomComfortCeilingC = Mth.clamp(this.roomComfortCeilingC, -5.0F, 60.0F);
         this.globalConductivityMultiplier = Mth.clamp(this.globalConductivityMultiplier, 0.2F, 3.0F);

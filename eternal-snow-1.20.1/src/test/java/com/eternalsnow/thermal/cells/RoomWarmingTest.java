@@ -60,6 +60,13 @@ public class RoomWarmingTest {
         return new double[]{mean/n,peak};
     }
 
+    @Test public void powerScale() {
+        for(double pmul:new double[]{3,10,30,60}){
+            double[] r=warm(1,1,1,0.42,5.0,68*pmul);
+            System.out.println(String.format(Locale.ROOT,"SCALE pmul=%4.0f mean=%7.2f peak=%7.2f",pmul,r[0],r[1]));
+        }
+    }
+
     @Test public void oneCampfireMakesABrickRoomHabitable() {
         double[] r=warm(1,1,1,0.42,5.0,68*3);
         System.out.println(String.format(Locale.ROOT,
