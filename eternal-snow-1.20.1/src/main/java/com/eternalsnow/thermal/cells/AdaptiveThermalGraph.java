@@ -141,7 +141,9 @@ public final class AdaptiveThermalGraph {
      * a small room without bound or, once clamped, throttles the fire to a trickle.
      */
     private void applySourceBoundary(double ambient) {
-        if(sourceNodes.isEmpty())return;
+        // A non-positive or effectively infinite cap means "plain watts", used by tests and by
+        // anyone who turns the flame cap off in the config.
+        if(sourceNodes.isEmpty()||!Float.isFinite(sourceAirCapC)||sourceAirCapC<=0||sourceAirCapC>=10000)return;
         double span=Math.max(1,sourceAirCapC-ambient);
         for(int i=0;i<sourceNodes.size();i++) {
             int node=sourceNodes.getInt(i);

@@ -11,12 +11,11 @@ public class RoomTuneProbe {
     private static final java.util.List<String> LINES=new java.util.ArrayList<>();
     private static void say(String line){
         System.out.println(line);LINES.add(line);
-        String path=System.getProperty("eternalsnow.thermaltrace");
-        if(path!=null){try{
-            var file=java.nio.file.Path.of(path);
-            if(file.getParent()!=null)java.nio.file.Files.createDirectories(file.getParent());
+        try{
+            var file=java.nio.file.Path.of("release","thermal-trace.txt").toAbsolutePath();
+            java.nio.file.Files.createDirectories(file.getParent());
             java.nio.file.Files.write(file,LINES);
-        }catch(Exception ignored){}}
+        }catch(Exception ignored){}
     }
     private static double[] filled(double v){double[] a=new double[512];Arrays.fill(a,v);return a;}
 
