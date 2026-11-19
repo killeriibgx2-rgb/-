@@ -31,10 +31,16 @@ public class RoomTuneProbe {
     /** @return {mean of all cells at hour 1, mean at hour 2, seconds to reach 0 C, mean at end} */
     private static double[] run(int tx,int ty,int tz,double wallK,double wallC,double airMix,
                                 double watts,double flame,double ambient){
+        return run(tx,ty,tz,wallK,wallC,airMix,watts,flame,ambient,true);
+    }
+    /** flameBoundary=false injects watts directly, the way the 2.12 code did. */
+    private static double[] run(int tx,int ty,int tz,double wallK,double wallC,double airMix,
+                                double watts,double flame,double ambient,boolean flameBoundary){
         var tiles=box(tx,ty,tz,wallK,wallC,airMix);
         var graph=new AdaptiveThermalGraph(tiles);
         graph.setRoomAirMixing(airMix);
-        graph.setSourceAirCap((float)flame);
+        if(flameBoundary)graph.setSourceAirCap((float)flame);
+        else graph.setSourceAirCap(1e6f);
         var src=tiles.get(0);int cell=AdaptiveThermalTile.index(4,1,4);
         double at1h=Double.NaN,at2h=Double.NaN,zero=Double.NaN;
         for(int step=1;step<=1800;step++){
@@ -77,6 +83,23 @@ public class RoomTuneProbe {
                     System.out.println(String.format(Locale.ROOT,
                         "%5.3f %5.1f %7.0f | %6.2f %6.2f %6.2f",
                         leak,wallC,watts,r[0],r[1],r[2]));
+                }
+            }
+        }
+    }
+
+    @Test public void directPower() {
+        System.out.println("=== DIRECT WATTS vs FLAME BOUNDARY, 1h warm-up ===");
+        System.out.println("mode    leak  mix  room    watts    1h      final");
+        for(boolean fb:new boolean[]{true,false}){
+            for(double leak:new double[]{0.1,0.03}){
+                for(double mix:new double[]{20,200}){
+                    for(double w:new double[]{68,68*60}){
+                        var r=run(1,1,1,0.42*leak,5.0,mix,w,60,-20,fb);
+                        System.out.println(String.format(Locale.ROOT,
+                            "%-7s %4.2f %4.0f 8x8x8 %8.0f %6.2f %6.2f",
+                            fb?"flame":"watts",leak,mix,w,r[1],r[2]));
+                    }
                 }
             }
         }
