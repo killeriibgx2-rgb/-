@@ -50,8 +50,6 @@ jobs:
           mkdir -p eternal-snow-1.20.1/release
           { grep -nE "error:|cannot find symbol|incompatible types|\.java:[0-9]+" eternal-snow-1.20.1/build.log || true; } > "$OUT"
           tail -60 eternal-snow-1.20.1/build.log >> "$OUT" || true
-          printf '\n===== THERMAL TRACE =====\n' >> "$OUT"
-          cat eternal-snow-1.20.1/release/thermal-trace.txt >> "$OUT" 2>/dev/null || echo "(no trace)" >> "$OUT"
           cat "$OUT"
           git config user.name "eternalsnow-build-bot"
           git config user.email "eternalsnow-build-bot@users.noreply.github.com"
