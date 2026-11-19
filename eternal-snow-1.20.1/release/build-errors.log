@@ -1,55 +1,55 @@
-47:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/RoomTuneProbe.java:36: error: cannot find symbol
-52:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/RoomTuneProbe.java:37: error: cannot find symbol
-> Task :downloadMcpConfig
-> Task :extractSrg
-> Task :createMcpToSrg
+58:    java.lang.AssertionError at AdaptiveThermalTest.java:106
+61:    java.lang.AssertionError at AdaptiveThermalTest.java:49
+    Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
+    Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
 
-> Task :compileJava
-Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
-Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
-Note: Loading searge mappings from /home/runner/work/-/-/eternal-snow-1.20.1/build/createMcpToSrg/output.tsrg
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
-Note: Some input files use or override a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
+CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
+    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 112 ms (CI, not Minecraft TPS)
 
-> Task :addMixinsToJar
-> Task :processResources
-> Task :classes
-> Task :jar
-> Task :configureReobfTaskForReobfJar
-> Task :reobfJar
-> Task :configureReobfTaskForReobfJarJar
-> Task :addMixinsToJarJar
-> Task :jarJar SKIPPED
-> Task :reobfJarJar SKIPPED
-> Task :assemble
+ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
+    Conservative million-cell test 10 steps ms=175.494457
 
-> Task :compileTestJava FAILED
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/RoomTuneProbe.java:36: error: cannot find symbol
-        graph.setRoomAirMixing(airMix);
-             ^
-  symbol:   method setRoomAirMixing(double)
-  location: variable graph of type AdaptiveThermalGraph
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/RoomTuneProbe.java:37: error: cannot find symbol
-        graph.setSourceAirCap((float)flame);
-             ^
-  symbol:   method setSourceAirCap(float)
-  location: variable graph of type AdaptiveThermalGraph
-2 errors
+ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
+    Conservative 64^3 G=3 20 steps ms=248.584356
+
+PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=303.813762ms packed=212.434219ms; synthetic, not server TPS
+
+RoomTuneProbe > probe STANDARD_OUT
+    === PROBE room tempering (outside -20 C, campfire) ===
+    wallK scale | airMix | room   | 1h     | 2h     | reached 0C
+    leak x1.000 | mix  3 | 1x1x1   | -16.92 | -16.92 | never
+    leak x1.000 | mix  3 | 2x1x2   | -18.90 | -18.90 | never
+    leak x1.000 | mix 20 | 1x1x1   | -17.06 | -17.06 | never
+    leak x1.000 | mix 20 | 2x1x2   | -18.90 | -18.90 | never
+    leak x0.200 | mix  3 | 1x1x1   | -11.00 |  -9.54 | never
+    leak x0.200 | mix  3 | 2x1x2   | -16.71 | -16.09 | never
+    leak x0.200 | mix 20 | 1x1x1   | -11.35 |  -9.93 | never
+    leak x0.200 | mix 20 | 2x1x2   | -16.72 | -16.10 | never
+    leak x0.100 | mix  3 | 1x1x1   |  -8.23 |  -4.09 | never
+    leak x0.100 | mix  3 | 2x1x2   | -15.67 | -13.91 | never
+    leak x0.100 | mix 20 | 1x1x1   |  -8.68 |  -4.65 | never
+    leak x0.100 | mix 20 | 2x1x2   | -15.68 | -13.92 | never
+    leak x0.050 | mix  3 | 1x1x1   |  -6.30 |   0.80 | 3337s
+    leak x0.050 | mix  3 | 2x1x2   | -14.95 | -11.92 | never
+    leak x0.050 | mix 20 | 1x1x1   |  -6.81 |   0.09 | 3569s
+    leak x0.050 | mix 20 | 2x1x2   | -14.95 | -11.93 | never
+    leak x0.033 | mix  3 | 1x1x1   |  -5.53 |   3.01 | 2867s
+    leak x0.033 | mix  3 | 2x1x2   | -14.66 | -11.02 | never
+    leak x0.033 | mix 20 | 1x1x1   |  -6.07 |   2.24 | 3030s
+    leak x0.033 | mix 20 | 2x1x2   | -14.67 | -11.03 | never
+
+81 tests completed, 2 failed
+
+> Task :test FAILED
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':compileTestJava'.
-> Compilation failed; see the compiler error output for details.
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///home/runner/work/-/-/eternal-snow-1.20.1/build/reports/tests/test/index.html
 
 * Try:
-> Run with --info option to get more log output.
 > Run with --scan to get full insights.
 
 Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
@@ -58,5 +58,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 26s
-12 actionable tasks: 12 executed
+BUILD FAILED in 50s
+13 actionable tasks: 13 executed
