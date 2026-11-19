@@ -49,7 +49,7 @@ public class RoomTuneProbe {
             for(var t:tiles)for(int i=0;i<512;i++){mean+=t.temperatures.get(i);n++;}
             mean/=n;
             if(Double.isNaN(zero)&&mean>=0)zero=step/2.0;
-            if(step==120)at1h=mean;    // 1 min
+            if(step==120)at1h=mean;
             if(step==600)at2h=mean;    // 5 min
             if(step==1800)zero=mean;   // 15 min reused as "final"
         }
@@ -100,6 +100,20 @@ public class RoomTuneProbe {
                             "%-7s %4.2f %4.0f 8x8x8 %8.0f %6.2f %6.2f",
                             fb?"flame":"watts",leak,mix,w,r[1],r[2]));
                     }
+                }
+            }
+        }
+    }
+
+    @Test public void converge() {
+        System.out.println("=== CONVERGE: 8x8x8 brick, outside -20C, campfire ===");
+        System.out.println("leakDiv power cap | 1min   5min   15min");
+        for(double div:new double[]{30,100,300}){
+            for(double pmul:new double[]{1,5,25}){
+                for(double cap:new double[]{60,150}){
+                    var r=run(1,1,1,0.42/div,5.0,20,68*pmul,cap,-20,true);
+                    System.out.println(String.format(Locale.ROOT,
+                        "%7.0f %5.0f %4.0f | %6.2f %6.2f %6.2f",div,68*pmul,cap,r[0],r[1],r[2]));
                 }
             }
         }
