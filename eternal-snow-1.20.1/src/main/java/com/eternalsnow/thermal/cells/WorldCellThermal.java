@@ -27,6 +27,8 @@ public final class WorldCellThermal {
     private static final Map<ResourceKey<Level>,Workspace> WORLDS=new ConcurrentHashMap<>();
     private static final Direction[] DIRECTIONS=Direction.values();
     private static final int DETAIL_HOLD_TICKS=200;
+    /** Heat capacity of one air cell relative to solid materials; see {@link #material}. */
+    static final double AIR_HEAT_CAPACITY=0.02;
     private static final class Region {
         final AdaptiveThermalTile field;
         final IntArrayList sources=new IntArrayList();
@@ -132,7 +134,11 @@ public final class WorldCellThermal {
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
         return w.materials.computeIfAbsent(state,s->{
             boolean air=ThermalEngine.isAirOrOpenPassage(s);
-            if(air)return new Material(1,settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1,true);
+            // Air holds very little heat. With capacity 1, the air of one 8x8x8 room needed
+            // hundreds of thousands of energy units to warm, so even a huge fire took tens of
+            // minutes to make a room habitable. This keeps the ratio between air and solid
+            // materials close to reality while letting a normal fire warm a room in minutes.
+            if(air)return new Material(AIR_HEAT_CAPACITY,settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1,true);
             var category=BlockThermalCategory.classify(s);
             double c=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
             if(s.getBlock() instanceof HeatAccumulatorBlock)c*=4;

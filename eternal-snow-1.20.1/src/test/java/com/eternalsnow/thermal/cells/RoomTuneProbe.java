@@ -17,6 +17,7 @@ public class RoomTuneProbe {
             java.nio.file.Files.write(file,LINES);
         }catch(Exception ignored){}
     }
+    private static double AIR_CAPACITY=1.0;
     private static double[] filled(double v){double[] a=new double[512];Arrays.fill(a,v);return a;}
 
     private static List<AdaptiveThermalTile> box(int tx,int ty,int tz,double wallK,double wallC,double airMix){
@@ -28,7 +29,7 @@ public class RoomTuneProbe {
                 int gx=c*8+x,gy=a*8+y,gz=b*8+z;
                 boolean shell=gx==0||gy==0||gz==0||gx==sx-1||gy==sy-1||gz==sz-1;
                 int i=AdaptiveThermalTile.index(x,y,z);
-                if(shell){cap[i]=wallC*20;k[i]=wallK;g[i]=Math.min(1,wallK);}else air[i]=true;
+                if(shell){cap[i]=wallC*20;k[i]=wallK;g[i]=Math.min(1,wallK);}else{air[i]=true;cap[i]=AIR_CAPACITY;}
             }
             tile.configure(true,cap,k,g,filled(1),filled(0));
             tile.fineMaterials(filled(1),air,airMix);
@@ -148,5 +149,17 @@ public class RoomTuneProbe {
                     step/2,now-before,mean/n,graph.solver.temperature(src.node+cell)));
             }
         }
+    }
+
+    @Test public void airCapacity() {
+        for(double airCap:new double[]{1.0,0.1,0.02}){
+            AIR_CAPACITY=airCap;
+            say("=== AIR CAPACITY "+airCap+" ===");
+            for(double watts:new double[]{68*1,68*5,68*20}){
+                var r=run(1,1,1,0.42,5.0,20,watts,60,-20,false);
+                say(String.format(Locale.ROOT,"  watts=%6.0f 1min=%6.2f 5min=%6.2f 15min=%6.2f",watts,r[0],r[1],r[2]));
+            }
+        }
+        AIR_CAPACITY=1.0;
     }
 }
