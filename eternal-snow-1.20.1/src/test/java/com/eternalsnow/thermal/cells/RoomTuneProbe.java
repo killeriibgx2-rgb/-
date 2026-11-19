@@ -162,4 +162,17 @@ public class RoomTuneProbe {
         }
         AIR_CAPACITY=1.0;
     }
+
+    @Test public void finalChoice() {
+        AIR_CAPACITY=0.02;
+        say("=== FINAL: air capacity 0.02 ===");
+        for(double pmul:new double[]{20,40}){
+            for(int[] size:new int[][]{{1,1,1},{2,1,2}}){
+                var r=run(size[0],size[1],size[2],0.42,5.0,20,68*pmul,60,-20,false);
+                say(String.format(Locale.ROOT,"pmul=%3.0f room=%dx%dx%d 1min=%6.2f 5min=%6.2f 15min=%6.2f",
+                    pmul,size[0],size[1],size[2],r[0],r[1],r[2]));
+            }
+        }
+        AIR_CAPACITY=1.0;
+    }
 }
