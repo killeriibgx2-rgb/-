@@ -56,10 +56,10 @@ public final class ServerSnowSettings {
     /**
      * Multiplier on a source's nominal power. Power is spread over the air of the fire's own
      * tile, so a large multiplier warms the room without frying a single cell. Measured on a
-     * closed 8x8x8 brick room at -20 C outside: 30 brings the room to roughly +10 C in 15
-     * minutes; 3 barely moves it.
+     * closed 8x8x8 brick room at -20 C outside: 10 lifts the room to about +1 C in 15 minutes
+     * with sane air next to the fire, 3 barely moves it, and 30 cooks the room.
      */
-    public float roomSourcePower = 30.0F;              // 1..200
+    public float roomSourcePower = 10.0F;              // 1..200
     /** Air mixing above plain face contact, so a fire warms the whole room, not one voxel. */
     public float roomAirMixing = 20.0F;                // 1..100
     public float roomComfortCeilingC = 26.0F;          // LEGACY (2.6.x): kept for old saves, physics ignores it since 2.7

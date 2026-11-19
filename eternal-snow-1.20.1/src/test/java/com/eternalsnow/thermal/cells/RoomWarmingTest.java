@@ -60,38 +60,31 @@ public class RoomWarmingTest {
         return new double[]{mean/n,peak};
     }
 
-    @Test public void powerScale() {
-        for(double pmul:new double[]{3,10,30,60}){
-            double[] r=warm(1,1,1,0.42,5.0,68*pmul);
-            System.out.println(String.format(Locale.ROOT,"SCALE pmul=%4.0f mean=%7.2f peak=%7.2f",pmul,r[0],r[1]));
-        }
-    }
-
     @Test public void oneCampfireMakesABrickRoomHabitable() {
-        double[] r=warm(1,1,1,0.42,5.0,68*3);
+        double[] r=warm(1,1,1,0.42,5.0,68*10);
         System.out.println(String.format(Locale.ROOT,
                 "8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=%.2f C peak=%.2f C",
                 r[0],r[1]));
-        assertTrue("the room must gain real heat, not stay at ambient, mean "+r[0],r[0]>-19.5);
-        assertTrue("no cell may be cooked, peak "+r[1],r[1]<250);
+        assertTrue("a campfire must lift the room above freezing, mean "+r[0],r[0]>0);
+        assertTrue("air next to the fire must stay breathable, peak "+r[1],r[1]<120);
     }
 
     @Test public void roomKeepsWarmingAndIsNotStuckAtTheColdEnd() {
-        double quick=warm(1,1,1,0.42,5.0,68*3)[0];
-        double late=warm(1,1,1,0.42,5.0,68*8)[0];
+        double quick=warm(1,1,1,0.42,5.0,68*10)[0];
+        double late=warm(1,1,1,0.42,5.0,68*20)[0];
         assertTrue("more fire must mean a warmer room: "+quick+" !< "+late,late>quick);
     }
 
     @Test public void insulationMattersMoreThanRoomSize() {
-        double brick=warm(1,1,1,0.42,5.0,68*3)[0];
-        double wool=warm(1,1,1,0.05,0.8,68*3)[0];
+        double brick=warm(1,1,1,0.42,5.0,68*10)[0];
+        double wool=warm(1,1,1,0.05,0.8,68*10)[0];
         System.out.println(String.format(Locale.ROOT,"brick mean=%.2f C, wool mean=%.2f C",brick,wool));
         assertTrue("wool must hold heat better than brick: "+wool+" <= "+brick,wool>brick);
     }
 
     @Test public void bigRoomStaysCoolerThanASmallOne() {
-        double small=warm(1,1,1,0.42,5.0,68*3)[0];
-        double big=warm(2,1,2,0.42,5.0,68*3)[0];
+        double small=warm(1,1,1,0.42,5.0,68*10)[0];
+        double big=warm(2,1,2,0.42,5.0,68*10)[0];
         assertTrue("16x8x16 must be cooler than 8x8x8: "+big+" !< "+small,big<small);
     }
 }
