@@ -11,8 +11,12 @@ public final class AdaptiveThermalGraph {
     private final double[] power;
     /** Air mixing above plain face contact; a closed room mixes in seconds. 1 = old behaviour. */
     private double roomAirMixing=1;
-    /** Highest air temperature a source can hold, in C. */
-    private float sourceAirCapC=60;
+    /**
+     * Highest air temperature a source can hold, in C. Disabled by default: with a physical air
+     * heat capacity the room finds its own equilibrium, and a flame cap only got in the way.
+     * Kept as a safety valve a server can enable from the config.
+     */
+    private float sourceAirCapC=0;
     private final it.unimi.dsi.fastutil.ints.IntArrayList sourceNodes=new it.unimi.dsi.fastutil.ints.IntArrayList();
     private final Long2ObjectOpenHashMap<AdaptiveThermalTile> byPosition=new Long2ObjectOpenHashMap<>();
     public AdaptiveThermalGraph(Collection<? extends AdaptiveThermalTile> input) {
