@@ -54,11 +54,11 @@ public final class ServerSnowSettings {
     // v2.5.2: enclosed-room lumped heat model (power in / envelope resistance out)
     public int roomHeatingPowerPercent = 100;          // 0..300: how strongly a fire heats the ROOM (not just nearby voxels)
     /**
-     * How much of a source's nominal power reaches the room. Measured: at 20 a single campfire
-     * holds an 8x8x8 brick room near +11 C after 15 minutes with -20 C outside, and keeps
-     * climbing; below ~5 a normal room never becomes habitable.
+     * Multiplier on a source's nominal power. Measured on a closed 8x8x8 brick room at -20 C:
+     * 3 keeps the air next to the fire sane instead of several hundred degrees, which is what
+     * values of 8+ produced. Room temperature still depends on insulation and room size.
      */
-    public float roomSourcePower = 20.0F;              // 1..100
+    public float roomSourcePower = 3.0F;               // 1..100
     /** Air mixing above plain face contact, so a fire warms the whole room, not one voxel. */
     public float roomAirMixing = 20.0F;                // 1..100
     public float roomComfortCeilingC = 26.0F;          // LEGACY (2.6.x): kept for old saves, physics ignores it since 2.7
