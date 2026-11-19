@@ -9,6 +9,15 @@ public final class AdaptiveThermalGraph {
     final List<AdaptiveThermalTile> tiles;
     public final CellHeatSolver solver;
     private final double[] power;
+    /** Air mixing above plain face contact; a closed room mixes in seconds. 1 = old behaviour. */
+    private double roomAirMixing=1;
+    /**
+     * Highest air temperature a source can hold, in C. Disabled by default: with a physical air
+     * heat capacity the room finds its own equilibrium, and a flame cap only got in the way.
+     * Kept as a safety valve a server can enable from the config.
+     */
+    private float sourceAirCapC=0;
+    private final it.unimi.dsi.fastutil.ints.IntArrayList sourceNodes=new it.unimi.dsi.fastutil.ints.IntArrayList();
     private final Long2ObjectOpenHashMap<AdaptiveThermalTile> byPosition=new Long2ObjectOpenHashMap<>();
     public AdaptiveThermalGraph(Collection<? extends AdaptiveThermalTile> input) {
         tiles=new ArrayList<>(input);
@@ -89,20 +98,99 @@ public final class AdaptiveThermalGraph {
     private void connect(AdaptiveThermalTile a,int i,AdaptiveThermalTile b,int j,double da,double db) {
         solver.setConnection(a.nodeAt(i),b.nodeAt(j),conductance(a,i,b,j,da,db));
     }
+    /**
+     * Conductance between two adjacent cells.
+     *
+     * <p>For two different materials in series: G = 1 / (dA/kA + dB/kB).
+     * For the SAME material the resistance is dA/kA + dB/kB = (dA+dB)/k, so G = k/(dA+dB) —
+     * not 2kA*kB/(kA+kB). Applying the mixed formula to identical cells silently halves air-air
+     * transfer and seals pockets of air off from each other, which is one reason a room full of
+     * air behaved like an insulator.
+     */
     private static double conductance(AdaptiveThermalTile a,int i,AdaptiveThermalTile b,int j,double da,double db) {
-        double ka=a.detailed?a.conductivities[i]:a.conductivity,kb=b.detailed?b.conductivities[j]:b.conductivity;
-        double value=AdaptiveThermalTile.contact(ka,kb,da,db,1);
+        double ka=a.detailed?a.conductivities[i]:a.conductivity;
+        double kb=b.detailed?b.conductivities[j]:b.conductivity;
         if(a.detailed&&b.detailed) {
-            value=AdaptiveThermalTile.contact(a.rawConductivities[i],b.rawConductivities[j],.5,.5,1);
+            ka=a.rawConductivities[i];kb=b.rawConductivities[j];
+            double value=ka==kb?ka/(da+db):AdaptiveThermalTile.contact(ka,kb,da,db,1);
             if(a.air!=null&&b.air!=null&&a.air[i]&&b.air[j])value*=Math.min(a.mixing,b.mixing);
+            return value;
         }
-        return value;
+        return ka==kb?ka/(da+db):AdaptiveThermalTile.contact(ka,kb,da,db,1);
     }
-    public void clearPower(){Arrays.fill(power,0);}
-    public void addPower(AdaptiveThermalTile tile,int local,double value){power[tile.nodeAt(local)]+=value;}
+    /**
+     * Room-scale mixing: long links between air cells of one tile that are not face neighbours.
+     * Without them the only path out of a fire is its six faces, so heat crawls out and a large
+     * room never warms. With them the room's air is close to isothermal, like real air.
+     */
+    public void setRoomAirMixing(double value) {
+        roomAirMixing=Math.max(1,Math.min(200,value));
+        if(roomAirMixing<=1)return;
+        for(var tile:tiles) {
+            if(!tile.detailed)continue;
+            for(int y=0;y<8;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++) {
+                int a=AdaptiveThermalTile.index(x,y,z);
+                if(!isAir(tile,a))continue;
+                if(x<=3){int b=AdaptiveThermalTile.index(x+4,y,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
+                if(y<=3){int b=AdaptiveThermalTile.index(x,y+4,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
+                if(z<=3){int b=AdaptiveThermalTile.index(x,y,z+4);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
+            }
+        }
+    }
+    private static boolean isAir(AdaptiveThermalTile tile,int local) {
+        return tile.air!=null && tile.air[local];
+    }
+    public void setSourceAirCap(float celsius){sourceAirCapC=celsius;}
+    public void clearPower(){
+        Arrays.fill(power,0);sourceNodes.clear();
+    }
+    /**
+     * A fire heats the air around it, not one gram of air. Pouring a room's worth of power into
+     * a single cell made that cell hundreds of degrees while the room stayed cold — physically
+     * meaningless and useless in play. The power is spread evenly over the air cells of the
+     * source's own tile, which is the volume the fire actually sits in.
+     */
+    public void addPower(AdaptiveThermalTile tile,int local,double value){
+        if(tile.detailed&&tile.air!=null) {
+            int air=0;
+            for(int i=0;i<512;i++)if(tile.air[i])air++;
+            if(air>0) {
+                double share=value/air;
+                for(int i=0;i<512;i++)if(tile.air[i])power[tile.node+i]+=share;
+                sourceNodes.add(tile.node+local);
+                return;
+            }
+        }
+        int node=tile.nodeAt(local);
+        power[node]+=value;
+        sourceNodes.add(node);
+    }
+    /**
+     * A fire is a surface at flame temperature, not an unlimited watt tap. Added as a thermal
+     * boundary it limits itself: in a cold room it pours heat in, and as the room nears the
+     * flame temperature the flux falls to zero. Injecting fixed watts instead either overheats
+     * a small room without bound or, once clamped, throttles the fire to a trickle.
+     */
+    private void applySourceBoundary(double ambient) {
+        // A non-positive or effectively infinite cap means "plain watts", used by tests and by
+        // anyone who turns the flame cap off in the config.
+        if(sourceNodes.isEmpty()||!Float.isFinite(sourceAirCapC)||sourceAirCapC<=0||sourceAirCapC>=10000)return;
+        double span=Math.max(1,sourceAirCapC-ambient);
+        for(int i=0;i<sourceNodes.size();i++) {
+            int node=sourceNodes.getInt(i);
+            double flameConductance=power[node]/span;
+            solver.setPower(node,0);
+            if(flameConductance<=0)continue;
+            double existing=solver.outsideConductance(node);
+            double total=existing+flameConductance;
+            double outside=(existing*solver.outsideTemperature(node)+flameConductance*sourceAirCapC)/total;
+            solver.setOutside(node,total,outside);
+        }
+    }
     public void step(double seconds,double ambient) {
         for(int i=0;i<power.length;i++)solver.setPower(i,power[i]);
         for(var t:tiles)t.configureBoundary(solver,ambient);
+        applySourceBoundary(ambient);
         solver.stepConservative(seconds);
         for(var t:tiles)t.capture(solver,seconds);
     }
