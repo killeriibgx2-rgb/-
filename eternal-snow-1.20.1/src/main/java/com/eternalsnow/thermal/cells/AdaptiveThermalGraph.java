@@ -144,7 +144,23 @@ public final class AdaptiveThermalGraph {
     public void clearPower(){
         Arrays.fill(power,0);sourceNodes.clear();
     }
+    /**
+     * A fire heats the air around it, not one gram of air. Pouring a room's worth of power into
+     * a single cell made that cell hundreds of degrees while the room stayed cold — physically
+     * meaningless and useless in play. The power is spread evenly over the air cells of the
+     * source's own tile, which is the volume the fire actually sits in.
+     */
     public void addPower(AdaptiveThermalTile tile,int local,double value){
+        if(tile.detailed&&tile.air!=null) {
+            int air=0;
+            for(int i=0;i<512;i++)if(tile.air[i])air++;
+            if(air>0) {
+                double share=value/air;
+                for(int i=0;i<512;i++)if(tile.air[i])power[tile.node+i]+=share;
+                sourceNodes.add(tile.node+local);
+                return;
+            }
+        }
         int node=tile.nodeAt(local);
         power[node]+=value;
         sourceNodes.add(node);
