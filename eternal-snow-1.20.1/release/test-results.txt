@@ -1,30 +1,34 @@
 Thermal build regression results (synthetic; not Minecraft TPS)
-com.eternalsnow.config.FoodSettingsTest: tests=4, failures=0, errors=0, seconds=0.542
-2026-11-19 12:58:17,078 Test worker WARN Advanced terminal features are not available in this environment
-com.eternalsnow.config.WinterPresetTest: tests=3, failures=0, errors=0, seconds=0.001
-com.eternalsnow.food.FoodCoolingTest: tests=8, failures=0, errors=0, seconds=0.001
-com.eternalsnow.thermal.RoomThermalBalanceTest: tests=5, failures=0, errors=0, seconds=0.001
-com.eternalsnow.thermal.cells.AdaptiveThermalTest: tests=15, failures=0, errors=0, seconds=2.069
-Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=1331.636768
-Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=306.547669
-Adaptive 4096 tiles: full rebuild x20=53.586479ms, in-place tile edit x20=3.153453ms
-com.eternalsnow.thermal.cells.AirHeatTransferTest: tests=4, failures=0, errors=0, seconds=0.178
+com.eternalsnow.config.FoodSettingsTest: tests=4, failures=0, errors=0, seconds=1.029
+2026-11-19 12:59:47,357 Test worker WARN Advanced terminal features are not available in this environment
+com.eternalsnow.config.WinterPresetTest: tests=3, failures=0, errors=0, seconds=0.0
+com.eternalsnow.food.FoodCoolingTest: tests=8, failures=0, errors=0, seconds=0.002
+com.eternalsnow.thermal.RoomThermalBalanceTest: tests=5, failures=0, errors=0, seconds=0.002
+com.eternalsnow.thermal.cells.AdaptiveThermalTest: tests=15, failures=0, errors=0, seconds=3.375
+Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=2173.627577
+Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=534.746026
+Adaptive 4096 tiles: full rebuild x20=116.560243ms, in-place tile edit x20=6.747008ms
+com.eternalsnow.thermal.cells.AirHeatTransferTest: tests=4, failures=0, errors=0, seconds=0.281
 Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
 Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
 Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
 Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
-com.eternalsnow.thermal.cells.CellHeatSolverScaleTest: tests=3, failures=0, errors=0, seconds=0.096
-Thermal regression: 3 x 262144 cells / 774144 edges + steps: 66 ms (CI, not Minecraft TPS)
-com.eternalsnow.thermal.cells.CellHeatSolverTest: tests=12, failures=0, errors=0, seconds=0.002
-com.eternalsnow.thermal.cells.CellTemperatureSnapshotTest: tests=6, failures=0, errors=0, seconds=0.0
+com.eternalsnow.thermal.cells.CellHeatSolverScaleTest: tests=3, failures=0, errors=0, seconds=0.171
+Thermal regression: 3 x 262144 cells / 774144 edges + steps: 120 ms (CI, not Minecraft TPS)
+com.eternalsnow.thermal.cells.CellHeatSolverTest: tests=12, failures=0, errors=0, seconds=0.003
+com.eternalsnow.thermal.cells.CellTemperatureSnapshotTest: tests=6, failures=0, errors=0, seconds=0.001
 com.eternalsnow.thermal.cells.CellThermalSavedDataTest: tests=3, failures=0, errors=0, seconds=0.001
-com.eternalsnow.thermal.cells.ConservativeHeatSolverTest: tests=7, failures=0, errors=0, seconds=0.413
-Conservative million-cell test 10 steps ms=126.179557
-Conservative 64^3 G=3 20 steps ms=155.686357
-com.eternalsnow.thermal.cells.IncrementalHeatGraphTest: tests=4, failures=0, errors=0, seconds=0.027
-com.eternalsnow.thermal.cells.PackedHeatSolverTest: tests=3, failures=0, errors=0, seconds=0.419
-THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=186.06626ms packed=127.104446ms; synthetic, not server TPS
-com.eternalsnow.thermal.cells.RoomWarmingTest: tests=4, failures=0, errors=0, seconds=0.336
+com.eternalsnow.thermal.cells.ConservativeHeatSolverTest: tests=7, failures=0, errors=0, seconds=0.706
+Conservative million-cell test 10 steps ms=192.078507
+Conservative 64^3 G=3 20 steps ms=254.474735
+com.eternalsnow.thermal.cells.IncrementalHeatGraphTest: tests=4, failures=0, errors=0, seconds=0.046
+com.eternalsnow.thermal.cells.PackedHeatSolverTest: tests=3, failures=0, errors=0, seconds=0.696
+THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=306.633443ms packed=207.632029ms; synthetic, not server TPS
+com.eternalsnow.thermal.cells.RoomWarmingTest: tests=5, failures=0, errors=0, seconds=0.722
 8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=-13.63 C peak=2.95 C
+SCALE pmul=   3 mean= -13.63 peak=   2.95
+SCALE pmul=  10 mean=   1.25 peak=  56.49
+SCALE pmul=  30 mean=  43.75 peak= 209.48
+SCALE pmul=  60 mean= 107.49 peak= 438.96
 brick mean=-13.63 C, wool mean=-2.12 C
 com.eternalsnow.village.ConfectionerPolicyTest: tests=3, failures=0, errors=0, seconds=0.001
