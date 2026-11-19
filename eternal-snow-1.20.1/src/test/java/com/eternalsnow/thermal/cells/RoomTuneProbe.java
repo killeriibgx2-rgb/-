@@ -37,14 +37,15 @@ public class RoomTuneProbe {
         graph.setSourceAirCap((float)flame);
         var src=tiles.get(0);int cell=AdaptiveThermalTile.index(4,1,4);
         double at1h=Double.NaN,at2h=Double.NaN,zero=Double.NaN;
-        for(int step=1;step<=7200;step++){
+        for(int step=1;step<=1800;step++){
             graph.clearPower();graph.addPower(src,cell,watts);graph.step(.5,ambient);
             double mean=0;int n=0;
             for(var t:tiles)for(int i=0;i<512;i++){mean+=t.temperatures.get(i);n++;}
             mean/=n;
             if(Double.isNaN(zero)&&mean>=0)zero=step/2.0;
-            if(step==3600)at1h=mean;
-            if(step==7200)at2h=mean;
+            if(step==120)at1h=mean;    // 1 min
+            if(step==600)at2h=mean;    // 5 min
+            if(step==1800)zero=mean;   // 15 min reused as "final"
         }
         return new double[]{at1h,at2h,zero,at2h};
     }
@@ -60,6 +61,22 @@ public class RoomTuneProbe {
                     System.out.println(String.format(Locale.ROOT,
                         "leak x%5.3f | mix%3.0f | %-8s| %6.2f | %6.2f | %s",
                         leak,mix,room,r[0],r[1],Double.isNaN(r[2])?"never":String.format(Locale.ROOT,"%.0fs",r[2])));
+                }
+            }
+        }
+    }
+
+    /** Grid over leak, wall heat capacity and source strength; reports mean at 1/5/15 min. */
+    @Test public void grid() {
+        System.out.println("=== GRID: 3x2x3 tiles = 24x16x24 brick room, outside -20 C ===");
+        System.out.println("leak  wallC  watts   | 1min   5min   15min");
+        for(double leak:new double[]{0.3,0.12,0.06,0.03}){
+            for(double wallC:new double[]{5.0,2.5,1.0}){
+                for(double watts:new double[]{68*60,68*200}){
+                    var r=run(3,2,3,0.42*leak,wallC,20,watts,60,-20);
+                    System.out.println(String.format(Locale.ROOT,
+                        "%5.3f %5.1f %7.0f | %6.2f %6.2f %6.2f",
+                        leak,wallC,watts,r[0],r[1],r[2]));
                 }
             }
         }
