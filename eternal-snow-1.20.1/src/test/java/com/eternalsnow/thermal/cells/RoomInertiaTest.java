@@ -140,7 +140,7 @@ public class RoomInertiaTest {
         assertTrue("ten seconds after the fire dies the room must still be warm, was "+after10s,
                 after10s>warm-3);
         assertTrue("two minutes later it must still hold heat, was "+after2min,
-                after2min>OUTSIDE+3);
+                after2min>OUTSIDE+6);
     }
 
     @Test public void oneHoleInTheCeilingDoesNotFreezeTheRoom(){
