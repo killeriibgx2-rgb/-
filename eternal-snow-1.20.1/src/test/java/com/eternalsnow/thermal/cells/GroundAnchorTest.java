@@ -55,14 +55,16 @@ public class GroundAnchorTest {
     }
 
     /** @return {mean air, peak air, mean rock} after 30 simulated minutes with n torches. */
-    private static double[] run(int torches,boolean oldRules){
+    private static double[] run(int torches,boolean oldRules){return run(torches,oldRules,3600);}
+
+    private static double[] run(int torches,boolean oldRules,int steps){
         var tiles=cellar(oldRules);
         var graph=new AdaptiveThermalGraph(tiles);
         graph.setRoomAirMixing(20);
         graph.setMixingSweeps(12);
         int[][] spots={{2,1,2},{5,1,2},{2,1,5},{5,1,5},{3,1,3},{4,1,4},{2,1,4},{5,1,3},
                 {3,1,5},{4,1,2},{4,1,5}};
-        for(int step=0;step<3600;step++){
+        for(int step=0;step<steps;step++){
             graph.clearPower();
             for(int i=0;i<torches&&i<spots.length;i++)
                 graph.addPower(tiles.get(tileIndex(spots[i][0],spots[i][2])),
@@ -79,14 +81,25 @@ public class GroundAnchorTest {
         return new double[]{airSum/airN,peak,rockN==0?0:rockSum/rockN};
     }
 
-    /** The reported symptom has to be reproducible, otherwise the fix proves nothing. */
-    @Test public void theSealedCellarReproducesTheReport(){
-        double[] old=run(8,true);
+    /**
+     * The reported symptom has to be reproducible, otherwise the fix proves nothing. A sealed
+     * cellar does not merely get hot: it has no sink at all, so it keeps climbing until the
+     * source's own throttle stops it. The +150 C the owner saw is a snapshot on that climb.
+     */
+    @Test public void theSealedCellarRunsAway(){
+        double oldHalf=run(8,true,3600)[0], oldFull=run(8,true,7200)[0];
         System.out.println(String.format(Locale.ROOT,
-            "Old rules, 8 torches: air mean=%.1f C, peak=%.1f C, rock=%.1f C",
-            old[0],old[1],old[2]));
-        assertTrue("sealed ground must run away, that is the bug we are fixing: peak "
-                + old[1], old[1] > 80);
+            "Old rules, 8 torches: 30 min=%.1f C, 60 min=%.1f C (still climbing)",oldHalf,oldFull));
+        assertTrue("sealed ground must keep climbing: "+oldHalf+" -> "+oldFull,
+                oldFull>oldHalf+5);
+    }
+
+    @Test public void theFixedCellarLevelsOff(){
+        double half=run(8,false,3600)[0], full=run(8,false,7200)[0];
+        System.out.println(String.format(Locale.ROOT,
+            "Fixed, 8 torches: 30 min=%.1f C, 60 min=%.1f C (level)",half,full));
+        assertTrue("a fixed cellar must reach a steady state, not climb: "+half+" -> "+full,
+                full<half+2);
     }
 
     @Test public void eightTorchesInACellarStayHabitable(){
