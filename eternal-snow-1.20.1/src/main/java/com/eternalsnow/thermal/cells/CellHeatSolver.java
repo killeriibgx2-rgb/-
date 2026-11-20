@@ -28,11 +28,15 @@ public final class CellHeatSolver {
     private int activeCount, lastSubsteps;
     private boolean topologyDirty=true;
     private double[] pairTransfer=new double[0], externalScale=new double[0], inverseCapacity;
+    /** Conductance each transfer factor was computed from; catches a stale increment. */
+    private double[] preparedG=new double[0];
     private double splitHalf=Double.NaN;
     private boolean splitDirty=true;
     private final it.unimi.dsi.fastutil.ints.IntOpenHashSet splitEdgesDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
     private final it.unimi.dsi.fastutil.ints.IntOpenHashSet externalDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
     public int edgeCount() { return edgeCount; }
+    /** Edge count, used by tests to prove a connection was updated rather than appended. */
+    public int activeEdgeCount() { return edgeCount; }
     public int lastSubsteps() { return lastSubsteps; }
     private int cellCount, edgeCount;
     private it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap edgeIndices;
@@ -76,6 +80,20 @@ public final class CellHeatSolver {
     public double temperature(int cell) { return temperature[cell]; }
     public double heatCapacity(int cell) { return capacity[cell]; }
     public double outsideConductance(int cell) { return boundaryG[cell]; }
+    public int edgeA(int edge) { return edgeA[edge]; }
+    /** The conductance value the integrator actually uses for this pair (diagnostics). */
+    public double liveConductance(int a,int b) {
+        if(edgeIndices==null)return -1;
+        int index=edgeIndices.get(pair(a,b));
+        return index<0?-1:edgeG[index];
+    }
+    /** Conductance of an existing edge, for diagnostics. */
+    public double edgeConductance(int a,int b) {
+        if(edgeIndices==null)return -1;
+        int index=edgeIndices.get(pair(a,b));
+        return index<0?-1:edgeG[index];
+    }
+    public int edgeB(int edge) { return edgeB[edge]; }
     public double outsideTemperature(int cell) { return boundaryT[cell]; }
     public double[] temperatures() { return Arrays.copyOf(temperature,cellCount); }
 
@@ -106,6 +124,12 @@ public final class CellHeatSolver {
         if(edgeIndices==null) {
             edgeIndices=new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap(edgeCount);
             edgeIndices.defaultReturnValue(-1);
+            for(int e=0;e<edgeCount;e++)edgeIndices.put(pair(edgeA[e],edgeB[e]),e);
+        } else if(edgeIndices.size()!=edgeCount) {
+            // The index may be stale: it is created lazily, while earlier pairs may have been
+            // appended without being registered. A stale index makes setConnection append a
+            // duplicate edge instead of updating, so the real conductance never changes.
+            edgeIndices.clear();
             for(int e=0;e<edgeCount;e++)edgeIndices.put(pair(edgeA[e],edgeB[e]),e);
         }
         long key=pair(a,b);int index=edgeIndices.get(key);
@@ -217,6 +241,7 @@ public final class CellHeatSolver {
         boolean all=splitDirty || splitHalf!=half;
         splitHalf=half;
         if(pairTransfer.length<edgeA.length)pairTransfer=Arrays.copyOf(pairTransfer,edgeA.length);
+        if(preparedG.length<edgeA.length)preparedG=Arrays.copyOf(preparedG,edgeA.length);
         if(externalScale.length<temperature.length)externalScale=Arrays.copyOf(externalScale,temperature.length);
         if(all) {
             for(int e=0;e<edgeCount;e++)preparePair(e);
@@ -226,10 +251,13 @@ public final class CellHeatSolver {
             for(int i:externalDirty)prepareExternal(i);
         }
         splitEdgesDirty.clear();externalDirty.clear();splitDirty=false;
+        // Safety net: an incremental update must never leave a stale transfer factor behind.
+        for(int e=0;e<edgeCount;e++)if(preparedG[e]!=edgeG[e])preparePair(e);
     }
     private void preparePair(int e) {
         double inverse=inverseCapacity[edgeA[e]]+inverseCapacity[edgeB[e]];
         pairTransfer[e]=-Math.expm1(-edgeG[e]*inverse*splitHalf)/inverse;
+        preparedG[e]=edgeG[e];
     }
     private void prepareExternal(int i) {
         externalScale[i]=boundaryG[i]==0?splitHalf/capacity[i]
@@ -244,6 +272,27 @@ public final class CellHeatSolver {
     private void externalHalf() {
         for(int i=0;i<cellCount;i++)if(loaded[i])
             temperature[i]+=externalScale[i]*(power[i]+boundaryG[i]*(boundaryT[i]-temperature[i]));
+    }
+
+    /**
+     * One mixing sweep: every air-air pair is set to its capacity-weighted mean.
+     *
+     * <p>Why this instead of a bigger conductance: with a small air capacity the pairwise
+     * transfer factor saturates within one substep, so raising G does nothing. What actually
+     * needs to happen is that information travels across the room, and one pass of pairwise
+     * equalisation only moves it one block. Several sweeps spread it across the whole volume,
+     * so a hall becomes near-isothermal without inventing new nodes. Every sweep is a convex
+     * combination, so energy is conserved exactly and nothing can overshoot.
+     */
+    public void mixingSweep(boolean[] airNode) {
+        for(int e=0;e<edgeCount;e++) {
+            int a=edgeA[e],b=edgeB[e];
+            if(!loaded[a]||!loaded[b]||!airNode[a]||!airNode[b])continue;
+            double ca=capacity[a],cb=capacity[b],sum=ca+cb;
+            if(sum<=0)continue;
+            double mean=(temperature[a]*ca+temperature[b]*cb)/sum;
+            temperature[a]=mean;temperature[b]=mean;
+        }
     }
 
     public double totalEnergy() {

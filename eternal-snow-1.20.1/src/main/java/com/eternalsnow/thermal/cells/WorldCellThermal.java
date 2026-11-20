@@ -281,12 +281,14 @@ public final class WorldCellThermal {
         hash=31*hash+Float.floatToIntBits(settings.globalCapacityMultiplier);hash=31*hash+Float.floatToIntBits(settings.globalConductivityMultiplier);
         hash=31*hash+(settings.enableConvection?settings.convectionStrengthPercent:-1);
         hash=31*hash+Float.floatToIntBits(settings.roomAirMixing);
+hash=31*hash+settings.roomMixingSweeps;
         if(hash!=w.settingsHash){w.settingsHash=hash;w.materials.clear();w.dirty.addAll(w.regions.keySet());}
         initializeQueued(level,w,data);grow(level,w);
         if(w.rebuild) {
             var fields=new ArrayList<AdaptiveThermalTile>();for(var region:w.regions.values())fields.add(region.field);
             w.graph=new AdaptiveThermalGraph(fields);w.rebuild=false;w.rebuilds++;
             w.graph.setRoomAirMixing(settings.roomAirMixing);
+            w.graph.setMixingSweeps(settings.roomMixingSweeps);
         }
         if(w.graph==null)return;w.graph.clearPower();
         for(var region:w.regions.values()) {

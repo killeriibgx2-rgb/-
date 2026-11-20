@@ -11,6 +11,8 @@ public final class AdaptiveThermalGraph {
     private final double[] power;
     /** Air mixing above plain face contact; a closed room mixes in seconds. 1 = old behaviour. */
     private double roomAirMixing=1;
+    /** Equalisation sweeps per step; 0 disables forced mixing. */
+    private int mixingSweeps=0;
     /**
      * Highest air temperature a source can hold, in C. Disabled by default: with a physical air
      * heat capacity the room finds its own equilibrium, and a flame cap only got in the way.
@@ -123,19 +125,35 @@ public final class AdaptiveThermalGraph {
      * Without them the only path out of a fire is its six faces, so heat crawls out and a large
      * room never warms. With them the room's air is close to isothermal, like real air.
      */
+    /**
+     * Uniform air mixing: every air cell next to another air cell gets the same conductance,
+     * whether or not the two cells happen to share a tile. Tiles are our bookkeeping, not
+     * physics — the previous version mixed air strongly inside a tile and barely across tile
+     * borders, which would show up as 8-block temperature steps in a large hall.
+     *
+     * <p>No room detection, no flood fill: an open door simply lets heat flow out through the
+     * same law. Air becomes nearly isothermal, which is what a real closed room does.
+     */
+    /** @param sweeps equalisation passes per step; 0 keeps only the plain conductance. */
+    public void setMixingSweeps(int sweeps) { mixingSweeps=Math.max(0,Math.min(64,sweeps)); }
+
     public void setRoomAirMixing(double value) {
         roomAirMixing=Math.max(1,Math.min(200,value));
         if(roomAirMixing<=1)return;
-        for(var tile:tiles) {
-            if(!tile.detailed)continue;
-            for(int y=0;y<8;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++) {
-                int a=AdaptiveThermalTile.index(x,y,z);
-                if(!isAir(tile,a))continue;
-                if(x<=3){int b=AdaptiveThermalTile.index(x+4,y,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
-                if(y<=3){int b=AdaptiveThermalTile.index(x,y+4,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
-                if(z<=3){int b=AdaptiveThermalTile.index(x,y,z+4);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
-            }
+        boolean[] airNode=airNodeTable();
+        // Every air-air face pair gets exactly the same conductance, including pairs that cross
+        // a tile border. Tiles are our bookkeeping, not physics: adding extra "long" links inside
+        // a tile made border cells poorer than interior ones and produced a 2.5 C step at every
+        // 8-block boundary. Uniform links remove that asymmetry.
+        for(int e=0;e<solver.edgeCount();e++) {
+            int a=solver.edgeA(e),b=solver.edgeB(e);
+            if(airNode[a]&&airNode[b])solver.setConnection(a,b,roomAirMixing);
         }
+    }
+    private boolean[] airNodeTable() {
+        boolean[] airNode=new boolean[solver.size()];
+        for(var t:tiles)for(int i=0;i<t.nodes();i++)airNode[t.node+i]=!t.detailed||isAir(t,i);
+        return airNode;
     }
     private static boolean isAir(AdaptiveThermalTile tile,int local) {
         return tile.air!=null && tile.air[local];
@@ -192,7 +210,17 @@ public final class AdaptiveThermalGraph {
         for(var t:tiles)t.configureBoundary(solver,ambient);
         applySourceBoundary(ambient);
         solver.stepConservative(seconds);
+        mixAir();
         for(var t:tiles)t.capture(solver,seconds);
+    }
+    /**
+     * Spread air temperature across the room. Each sweep equalises every air-air pair, which
+     * moves heat by one block; several sweeps make a whole hall behave as one volume.
+     */
+    private void mixAir() {
+        if(mixingSweeps<=0)return;
+        boolean[] airNode=airNodeTable();
+        for(int sweep=0;sweep<mixingSweeps;sweep++)solver.mixingSweep(airNode);
     }
     public int fineCells(){int n=0;for(var t:tiles)if(t.detailed)n+=512;return n;}
 }
