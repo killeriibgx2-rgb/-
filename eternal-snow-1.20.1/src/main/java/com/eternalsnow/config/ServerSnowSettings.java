@@ -62,6 +62,11 @@ public final class ServerSnowSettings {
     public float roomSourcePower = 10.0F;              // 1..200
     /** Air mixing above plain face contact, so a fire warms the whole room, not one voxel. */
     public float roomAirMixing = 20.0F;                // 1..100
+    /**
+     * Air equalisation sweeps per step. Each sweep spreads heat by one block, so a large hall
+     * needs more sweeps than a small room. 0 disables forced mixing.
+     */
+    public int roomMixingSweeps = 12;                  // 0..64
     public float roomComfortCeilingC = 26.0F;          // LEGACY (2.6.x): kept for old saves, physics ignores it since 2.7
 
     // v2.7: food freezing + spoilage
@@ -197,6 +202,7 @@ public final class ServerSnowSettings {
         this.roomHeatingPowerPercent = src.roomHeatingPowerPercent;
         this.roomSourcePower = src.roomSourcePower;
         this.roomAirMixing = src.roomAirMixing;
+        this.roomMixingSweeps = src.roomMixingSweeps;
         this.roomComfortCeilingC = src.roomComfortCeilingC;
         this.foodSpoilageSpeedPercent = src.foodSpoilageSpeedPercent;
         this.foodFreezingSpeedPercent = src.foodFreezingSpeedPercent;
@@ -268,6 +274,7 @@ public final class ServerSnowSettings {
         this.roomHeatingPowerPercent = Mth.clamp(this.roomHeatingPowerPercent, 0, 300);
         this.roomSourcePower = Mth.clamp(this.roomSourcePower, 1.0F, 200.0F);
         this.roomAirMixing = Mth.clamp(this.roomAirMixing, 1.0F, 100.0F);
+        this.roomMixingSweeps = Mth.clamp(this.roomMixingSweeps, 0, 64);
         this.roomComfortCeilingC = Mth.clamp(this.roomComfortCeilingC, -5.0F, 60.0F);
         this.globalConductivityMultiplier = Mth.clamp(this.globalConductivityMultiplier, 0.2F, 3.0F);
         this.globalCapacityMultiplier = Mth.clamp(this.globalCapacityMultiplier, 0.2F, 3.0F);
@@ -346,6 +353,7 @@ public final class ServerSnowSettings {
         tag.putInt("roomHeatingPowerPercent", this.roomHeatingPowerPercent);
         tag.putFloat("roomSourcePower", this.roomSourcePower);
         tag.putFloat("roomAirMixing", this.roomAirMixing);
+        tag.putInt("roomMixingSweeps", this.roomMixingSweeps);
         tag.putFloat("roomComfortCeilingC", this.roomComfortCeilingC);
         tag.putInt("foodSpoilageSpeedPercent", this.foodSpoilageSpeedPercent);
         tag.putInt("foodFreezingSpeedPercent", this.foodFreezingSpeedPercent);
@@ -447,6 +455,7 @@ public final class ServerSnowSettings {
         if (tag.contains("roomHeatingPowerPercent")) this.roomHeatingPowerPercent = tag.getInt("roomHeatingPowerPercent");
         if (tag.contains("roomSourcePower")) this.roomSourcePower = tag.getFloat("roomSourcePower");
         if (tag.contains("roomAirMixing")) this.roomAirMixing = tag.getFloat("roomAirMixing");
+        if (tag.contains("roomMixingSweeps")) this.roomMixingSweeps = tag.getInt("roomMixingSweeps");
         if (tag.contains("roomComfortCeilingC")) this.roomComfortCeilingC = tag.getFloat("roomComfortCeilingC");
         if (tag.contains("foodSpoilageSpeedPercent")) this.foodSpoilageSpeedPercent = tag.getInt("foodSpoilageSpeedPercent");
         if (tag.contains("foodFreezingSpeedPercent")) this.foodFreezingSpeedPercent = tag.getInt("foodFreezingSpeedPercent");
@@ -540,6 +549,7 @@ public final class ServerSnowSettings {
         buf.writeBoolean(this.meltRoofSnowFromWarmBlocks);
         buf.writeFloat(this.roomSourcePower);
         buf.writeFloat(this.roomAirMixing);
+        buf.writeInt(this.roomMixingSweeps);
 
         buf.writeFloat(this.globalHeatBonusC);
         buf.writeFloat(this.globalHeatingSpeedMultiplier);
@@ -629,6 +639,7 @@ public final class ServerSnowSettings {
         this.meltRoofSnowFromWarmBlocks = buf.readBoolean();
         this.roomSourcePower = buf.readFloat();
         this.roomAirMixing = buf.readFloat();
+        this.roomMixingSweeps = buf.readInt();
 
         this.globalHeatBonusC = buf.readFloat();
         this.globalHeatingSpeedMultiplier = buf.readFloat();

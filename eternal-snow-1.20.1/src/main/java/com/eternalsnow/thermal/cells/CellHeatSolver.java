@@ -274,6 +274,27 @@ public final class CellHeatSolver {
             temperature[i]+=externalScale[i]*(power[i]+boundaryG[i]*(boundaryT[i]-temperature[i]));
     }
 
+    /**
+     * One mixing sweep: every air-air pair is set to its capacity-weighted mean.
+     *
+     * <p>Why this instead of a bigger conductance: with a small air capacity the pairwise
+     * transfer factor saturates within one substep, so raising G does nothing. What actually
+     * needs to happen is that information travels across the room, and one pass of pairwise
+     * equalisation only moves it one block. Several sweeps spread it across the whole volume,
+     * so a hall becomes near-isothermal without inventing new nodes. Every sweep is a convex
+     * combination, so energy is conserved exactly and nothing can overshoot.
+     */
+    public void mixingSweep(boolean[] airNode) {
+        for(int e=0;e<edgeCount;e++) {
+            int a=edgeA[e],b=edgeB[e];
+            if(!loaded[a]||!loaded[b]||!airNode[a]||!airNode[b])continue;
+            double ca=capacity[a],cb=capacity[b],sum=ca+cb;
+            if(sum<=0)continue;
+            double mean=(temperature[a]*ca+temperature[b]*cb)/sum;
+            temperature[a]=mean;temperature[b]=mean;
+        }
+    }
+
     public double totalEnergy() {
         double energy = 0;
         for (int i = 0; i < size(); i++) energy += temperature[i] * capacity[i];

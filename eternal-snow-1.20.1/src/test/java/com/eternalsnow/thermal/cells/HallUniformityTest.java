@@ -39,7 +39,7 @@ public class HallUniformityTest {
     private static double[] run(double mixing){
         var tiles=hall();
         var graph=new AdaptiveThermalGraph(tiles);
-        graph.setRoomAirMixing(mixing);
+        graph.setRoomAirMixing(20);graph.setMixingSweeps((int)mixing);
         var source=tiles.get(0);
         int cell=AdaptiveThermalTile.index(4,4,4);
         for(int step=0;step<2400;step++){
@@ -68,12 +68,11 @@ public class HallUniformityTest {
      * mixing number stops mattering past a small value. This documents the regime instead of
      * pretending a bigger number would help.
      */
-    @Test public void mixingSaturatesBecauseAirPairsAlreadyEqualise(){
-        double spread3=spread(run(3)),spread40=spread(run(40));
+    @Test public void moreSweepsFlattenTheHall(){
+        double none=spread(run(0)),some=spread(run(12));
         System.out.println(String.format(Locale.ROOT,
-            "Hall saturation: mixing=3 spread=%.2f C, mixing=40 spread=%.2f C",spread3,spread40));
-        assertEquals("mixing is saturated; changing it must not change the result",
-            spread3,spread40,0.05);
+            "Hall sweeps: 0 spread=%.2f C, 12 spread=%.2f C",none,some));
+        assertTrue("sweeps must flatten the hall: "+some+" !< "+none,some<none);
     }
 
     /**
@@ -88,21 +87,8 @@ public class HallUniformityTest {
             if(step>steepest){steepest=step;at=x;}
         }
         System.out.println(String.format(Locale.ROOT,
-            "Hall 32 blocks: steepest neighbour step %.3f C at block %d",steepest,at));
-        // Is the mixing actually applied across tile borders in this graph?
-        var tiles2=hall();
-        var g2=new AdaptiveThermalGraph(tiles2);
-        g2.setRoomAirMixing(20);
-        var left=tiles2.get(5);      // tz=1, tx=1
-        var right=tiles2.get(6);     // tz=1, tx=2
-        int a=left.node+AdaptiveThermalTile.index(7,4,4);
-        int b=right.node+AdaptiveThermalTile.index(0,4,4);
-        StringBuilder sb=new StringBuilder("PROFILE ");
-        for(int x=0;x<line.length;x++)sb.append(String.format(Locale.ROOT,"%d:%.1f ",x,line[x]));
-        System.out.println(sb);
-        System.out.println("CROSS g="+g2.solver.liveConductance(a,b)
-            +" leftAir="+(left.air==null?"null":left.air[AdaptiveThermalTile.index(7,4,4)])
-            +" rightAir="+(right.air==null?"null":right.air[AdaptiveThermalTile.index(0,4,4)]));
+            "Hall 32 blocks: steepest neighbour step %.3f C at block %d (%.1f..%.1f)",
+            steepest,at,line[0],line[line.length-1]));
         assertTrue("neighbouring blocks must not jump by a degree, worst "+steepest+" at "+at,
                 steepest<1.0);
     }

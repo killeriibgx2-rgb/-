@@ -11,6 +11,8 @@ public final class AdaptiveThermalGraph {
     private final double[] power;
     /** Air mixing above plain face contact; a closed room mixes in seconds. 1 = old behaviour. */
     private double roomAirMixing=1;
+    /** Equalisation sweeps per step; 0 disables forced mixing. */
+    private int mixingSweeps=0;
     /**
      * Highest air temperature a source can hold, in C. Disabled by default: with a physical air
      * heat capacity the room finds its own equilibrium, and a flame cap only got in the way.
@@ -132,6 +134,9 @@ public final class AdaptiveThermalGraph {
      * <p>No room detection, no flood fill: an open door simply lets heat flow out through the
      * same law. Air becomes nearly isothermal, which is what a real closed room does.
      */
+    /** @param sweeps equalisation passes per step; 0 keeps only the plain conductance. */
+    public void setMixingSweeps(int sweeps) { mixingSweeps=Math.max(0,Math.min(64,sweeps)); }
+
     public void setRoomAirMixing(double value) {
         roomAirMixing=Math.max(1,Math.min(200,value));
         if(roomAirMixing<=1)return;
@@ -214,7 +219,17 @@ public final class AdaptiveThermalGraph {
         for(var t:tiles)t.configureBoundary(solver,ambient);
         applySourceBoundary(ambient);
         solver.stepConservative(seconds);
+        mixAir();
         for(var t:tiles)t.capture(solver,seconds);
+    }
+    /**
+     * Spread air temperature across the room. Each sweep equalises every air-air pair, which
+     * moves heat by one block; several sweeps make a whole hall behave as one volume.
+     */
+    private void mixAir() {
+        if(mixingSweeps<=0)return;
+        boolean[] airNode=airNodeTable();
+        for(int sweep=0;sweep<mixingSweeps;sweep++)solver.mixingSweep(airNode);
     }
     public int fineCells(){int n=0;for(var t:tiles)if(t.detailed)n+=512;return n;}
 }
