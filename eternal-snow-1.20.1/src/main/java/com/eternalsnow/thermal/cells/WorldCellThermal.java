@@ -196,7 +196,13 @@ public final class WorldCellThermal {
      * to the weather through that hole. Without this, breaking one roof block only chilled the
      * block under it and the rest of the room stayed warm forever, which was the report.
      */
-    static void applyVents(boolean[] air,double[] g) {
+    static void applyVents(boolean[] air,double[] g) { applyVents(air,g,null); }
+    /**
+     * @param openSky per-cell "this air cell directly sees the sky"; without it a tile whose top
+     *                layer is its own ceiling would vent the room below, because that ceiling is
+     *                not sky-coupled for the tile but the next tile is
+     */
+    static void applyVents(boolean[] air,double[] g,boolean[] openSky) {
         for(int y=1;y<7;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++){
             int i=AdaptiveThermalTile.index(x,y,z);
             if(!air[i]||g[i]>0)continue;
@@ -205,7 +211,8 @@ public final class WorldCellThermal {
             // weather coupling" is wrong — the sealed room sits in the middle of a tile whose
             // outer air is open, so it would vent through its own wall and the room would never
             // warm at all (measured: -17 C instead of +4 C).
-            if(air[above]&&g[above]>0&&g[below]==0) g[i]=VENT_COUPLING;
+            boolean hole=air[above]&&g[above]>0&&(openSky==null||openSky[above]);
+            if(hole&&g[below]==0) g[i]=VENT_COUPLING;
         }
     }
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
@@ -234,7 +241,7 @@ public final class WorldCellThermal {
         var old=data.chunks.get(chunkKey(origin));
         double[] c=new double[512],k=new double[512],g=new double[512],slope=new double[512],offset=new double[512];
         var sources=new IntArrayList();var settings=EternalSnowState.getServerSettings();
-        double[] raw=new double[512];boolean[] air=new boolean[512];
+        double[] raw=new double[512];boolean[] air=new boolean[512];boolean[] skyTable=new boolean[512];
         double mixing=settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1;
         // MOTION_BLOCKING height is per column; one query per 8-block column, not per block.
         int[] columnHeight=new int[64];
@@ -244,7 +251,7 @@ public final class WorldCellThermal {
             BlockPos p=origin.offset(i&7,i>>6,(i>>3)&7);BlockState block=chunk.getBlockState(p);
             Material m=material(w,block,settings);c[i]=m.capacity;k[i]=m.conductivity;raw[i]=m.air?1:m.conductivity;air[i]=m.air;
             // Skylight, not MOTION_BLOCKING: glass roofs must still see the sky.
-            boolean sky=level.canSeeSky(p);
+            boolean sky=level.canSeeSky(p);skyTable[i]=sky;
             int surfaceY=columnHeight[(i&7)|(((i>>3)&7)<<3)];
             g[i]=weatherCoupling(m.air,sky,p.getY(),surfaceY,m.conductivity);
             double blend=p.getY()<52&&!sky?Math.max(0,Math.min(.85,(surfaceY-p.getY()-8)/36.0)):0;
@@ -257,7 +264,7 @@ public final class WorldCellThermal {
             }
             if(ThermalEngine.isPotentialHeatEmitter(block))sources.add(i);
         }
-        applyVents(air,g);
+        applyVents(air,g,skyTable);
         if(fresh) {
             state=data.migrateTile(key,temperatures);
         }

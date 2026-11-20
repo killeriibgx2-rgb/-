@@ -29,7 +29,7 @@ public class HallUniformityTest {
                 if(shell){cap[i]=5.0*20;k[i]=0.42;g[i]=0.42;}
                 else{air[i]=true;cap[i]=AIR_CAPACITY;}
             }
-            WorldCellThermal.applyVents(air,g);
+            WorldCellThermal.applyVents(air,g,new boolean[512]);
         tile.configure(true,cap,k,g,filled(1),filled(0));
             tile.fineMaterials(filled(1),air,3);
             list.add(tile);

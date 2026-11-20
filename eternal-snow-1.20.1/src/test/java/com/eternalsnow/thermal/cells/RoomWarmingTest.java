@@ -32,7 +32,8 @@ public class RoomWarmingTest {
                 if(shell){cap[i]=wallC*20;k[i]=wallK;g[i]=Math.min(1,wallK);}
                 else{air[i]=true;cap[i]=AIR_CAPACITY;}
             }
-            WorldCellThermal.applyVents(air,g);
+            boolean[] skyTable=new boolean[512];   // a sealed test box has no sky anywhere
+            WorldCellThermal.applyVents(air,g,skyTable);
         tile.configure(true,cap,k,g,filled(1),filled(0));
             tile.fineMaterials(filled(1),air,3);
             list.add(tile);
