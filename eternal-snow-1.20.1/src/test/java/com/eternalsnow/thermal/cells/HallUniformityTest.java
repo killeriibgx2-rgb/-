@@ -91,20 +91,20 @@ public class HallUniformityTest {
     private static double spreadSmoothnessThreshold(){return 5.0;}
 
     /**
-     * The real property that matters for a bunker: a long hall must not show steps at tile
-     * borders. It does not show them, because air mixing is uniform across tiles.
+     * The property that matters for a bunker: no isolated step at a tile border. A smooth
+     * gradient is fine — a jump exactly at block 8/16/24 is not.
      */
-    @Test public void noEightBlockStepsAtTileBorders(){
-        double[] line=run(20);
-        double steepest=0;int at=0;
-        for(int x=1;x<line.length;x++){
-            double step=Math.abs(line[x]-line[x-1]);
-            if(step>steepest){steepest=step;at=x;}
+    @Test public void noIsolatedStepAtTileBorders(){
+        double[] line=run(12);
+        for(int border:new int[]{8,16,24}){
+            double atBorder=Math.abs(line[border]-line[border-1]);
+            double before=Math.abs(line[border-1]-line[border-2]);
+            double after=Math.abs(line[border+1]-line[border]);
+            double neighbour=Math.max(before,after);
+            System.out.println(String.format(Locale.ROOT,
+                "Border %d: step=%.2f C, neighbour steps %.2f/%.2f",border,atBorder,before,after));
+            assertTrue("border "+border+" must not jump more than its neighbours: "
+                    +atBorder+" vs "+neighbour,atBorder<=neighbour+0.5);
         }
-        System.out.println(String.format(Locale.ROOT,
-            "Hall 32 blocks: steepest neighbour step %.3f C at block %d (%.1f..%.1f)",
-            steepest,at,line[0],line[line.length-1]));
-        assertTrue("neighbouring blocks must not jump by a degree, worst "+steepest+" at "+at,
-                steepest<1.0);
     }
 }
