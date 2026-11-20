@@ -26,7 +26,7 @@ public class RoomInertiaTest {
         var tile=new AdaptiveThermalTile(0,0,0,new TileTemperatureState(filled(OUTSIDE)));
         double[] cap=filled(1),k=filled(1),g=filled(0);
         boolean[] air=new boolean[512];
-        for(int i=0;i<512;i++){air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=1;}
+        for(int i=0;i<512;i++){air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}
         for(int y=1;y<=3;y++)for(int z=1;z<=5;z++)for(int x=1;x<=5;x++)
             g[AdaptiveThermalTile.index(x,y,z)]=0;                       // inner air sees no sky
         for(int z=0;z<8;z++)for(int x=0;x<8;x++){
@@ -42,8 +42,9 @@ public class RoomInertiaTest {
         }
         if(hole){
             int i=AdaptiveThermalTile.index(3,4,3);
-            air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=1;
+            air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;
         }
+        WorldCellThermal.applyVents(air,g);
         tile.configure(true,cap,k,g,filled(1),filled(0));
         tile.fineMaterials(filled(1),air,3);
         return tile;
@@ -111,7 +112,9 @@ public class RoomInertiaTest {
         System.out.println(String.format(Locale.ROOT,
             "Hole open 30 s: block under it=%.1f C, room mean=%.1f C (closed room %.1f C)",
             underHole,air(holed),air(closed)));
-        assertTrue("one missing ceiling block must not import the weather, was "+underHole,
-                underHole>OUTSIDE+4);
+        assertTrue("one missing ceiling block must not import the weather at once, was "
+                + underHole, underHole > OUTSIDE + 10);
+        assertTrue("but the room must react to an open hole, closed room was "+air(closed),
+                air(holed) < air(closed));
     }
 }

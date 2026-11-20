@@ -228,9 +228,10 @@ public final class AdaptiveThermalGraph {
     private void mixAir() {
         if(mixingSweeps<=0)return;
         boolean[] airNode=airNodeTable();
-        // Only enclosed air is forced to equalise. Open-sky air is moved by wind and convection
-        // far faster than by conduction, and forced mixing there let a single torch warm a
-        // twelve-block bubble of open air. A cell that sees the sky keeps its own boundary.
+        // Only enclosed air is equalised. Mixing the whole room straight into the open sky made a
+        // single broken ceiling block cool a +16 C room to -11 C in thirty seconds, which is not
+        // what a hole does. A hole ventilates through the cell beneath it (see the world adapter),
+        // and the room then spreads that cold through its own volume at a room-like pace.
         for(int i=0;i<airNode.length;i++)
             if(airNode[i]&&solver.outsideConductance(i)>0)airNode[i]=false;
         for(int sweep=0;sweep<mixingSweeps;sweep++)solver.mixingSweep(airNode);

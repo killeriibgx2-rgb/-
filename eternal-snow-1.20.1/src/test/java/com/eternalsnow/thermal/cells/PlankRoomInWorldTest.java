@@ -28,7 +28,7 @@ public class PlankRoomInWorldTest {
         var tile=new AdaptiveThermalTile(0,0,0,new TileTemperatureState(filled(OUTSIDE)));
         double[] cap=filled(1),k=filled(1),g=filled(0);
         boolean[] air=new boolean[512];
-        for(int i=0;i<512;i++){air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=1;}
+        for(int i=0;i<512;i++){air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}
         for(int y=1;y<=3;y++)for(int z=1;z<=5;z++)for(int x=1;x<=5;x++){
             int i=AdaptiveThermalTile.index(x,y,z);g[i]=0;
         }
@@ -38,6 +38,7 @@ public class PlankRoomInWorldTest {
         for(int z=1;z<=5;z++)for(int x=1;x<=5;x++){
             plank(cap,k,g,air,x,0,z,pg);plank(cap,k,g,air,x,4,z,pg);
         }
+        WorldCellThermal.applyVents(air,g);
         tile.configure(true,cap,k,g,filled(1),filled(0));
         tile.fineMaterials(filled(1),air,3);
         return tile;

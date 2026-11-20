@@ -25,10 +25,11 @@ public class OutdoorTorchTest {
             boolean[] air=new boolean[512];
             for(int y=0;y<8;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++){
                 int i=AdaptiveThermalTile.index(x,y,z);
-                if(y==0){cap[i]=4*20;k[i]=4;g[i]=1;}                  // exposed ground
-                else{air[i]=true;cap[i]=AIR_CAPACITY;g[i]=1;}          // open sky
+                if(y==0){cap[i]=4*20;k[i]=4;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}                  // exposed ground
+                else{air[i]=true;cap[i]=AIR_CAPACITY;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}          // open sky
             }
-            tile.configure(true,cap,k,g,filled(1),filled(0));
+            WorldCellThermal.applyVents(air,g);
+        tile.configure(true,cap,k,g,filled(1),filled(0));
             tile.fineMaterials(filled(1),air,3);
             list.add(tile);
         }
