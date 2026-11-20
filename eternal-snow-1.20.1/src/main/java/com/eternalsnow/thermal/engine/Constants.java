@@ -34,6 +34,15 @@ public final class Constants {
     /** Free-convection coefficient from a solid surface to still air, W/(m²·K). */
     public static final double FREE_CONVECTION = 10.0;
 
+    /** Standard atmospheric pressure, Pa. */
+    public static final double STANDARD_PRESSURE = 101_325.0;
+
+    /** Specific gas constant of dry air, J/(kg·K). */
+    public static final double SPECIFIC_GAS_AIR = 287.05;
+
+    /** Specific heat capacity of air at constant pressure, J/(kg·K). */
+    public static final double SPECIFIC_HEAT_AIR = 1005.0;
+
     /** Seconds in one game tick, at the vanilla 20 ticks per second. */
     public static final double SECONDS_PER_TICK = 0.05;
 

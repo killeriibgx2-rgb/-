@@ -22,6 +22,9 @@ public final class ThermalGrid {
     private final int sizeY;
     private final int sizeZ;
     private final ThermalCell[] cells;
+    private final List<ExternalLink> externalLinks = new ArrayList<>();
+    private final List<InfiltrationPath> infiltrations = new ArrayList<>();
+    private double speedMultiplier = 1.0;
 
     public ThermalGrid(int sizeX, int sizeY, int sizeZ) {
         if (sizeX <= 0 || sizeY <= 0 || sizeZ <= 0) {
@@ -172,27 +175,46 @@ public final class ThermalGrid {
         if (!(seconds > 0) || !Double.isFinite(seconds)) {
             throw new IllegalArgumentException("seconds must be finite and > 0");
         }
+        if (speedMultiplier == 0) return 0;
+        // Scaling fluxes by N is identical to letting N times more time pass,
+        // and it leaves the stability limit unchanged (§5.3).
+        double dt = seconds * speedMultiplier;
         List<Face> faces = faces();
         double stable = stableStep(faces);
-        int substeps = Math.max(1, (int) Math.ceil(seconds / stable));
-        double dt = seconds / substeps;
+        int substeps = Math.max(1, (int) Math.ceil(dt / stable));
+        double sub = dt / substeps;
 
         double[] delta = new double[cells.length];
-        for (int sub = 0; sub < substeps; sub++) {
+        for (int iteration = 0; iteration < substeps; iteration++) {
             java.util.Arrays.fill(delta, 0.0);
             for (int i = 0; i < cells.length; i++) {
                 ThermalCell cell = cells[i];
                 if (cell == null) continue;
-                // External power first: it is the only non-conservative term,
-                // and keeping it out of the face loop makes the audit exact.
-                delta[i] += cell.externalPowerWatts() * dt;
+                // External power is the only non-conservative term kept out of
+                // the face loop, so the audit stays exact.
+                delta[i] += cell.externalPowerWatts() * sub;
             }
             for (Face face : faces) {
                 double flow = face.conductance()
                         * (cells[face.b()].temperatureKelvin() - cells[face.a()].temperatureKelvin())
-                        * dt;
+                        * sub;
                 delta[face.a()] += flow;
                 delta[face.b()] -= flow;
+            }
+            for (ExternalLink link : externalLinks) {
+                ThermalCell cell = cells[link.cellIndex()];
+                if (cell == null) continue;
+                double outside = link.ambient().temperatureKelvin(0, 0, 0);
+                delta[link.cellIndex()] += link.conductance()
+                        * (outside - cell.temperatureKelvin()) * sub;
+            }
+            for (InfiltrationPath path : infiltrations) {
+                double conductance = Infiltration.conductance(path.apertureAreaM2(), path.heightM(),
+                        cells[path.cellIndex()].temperatureKelvin(),
+                        path.ambient().temperatureKelvin(0, 0, 0));
+                double outside = path.ambient().temperatureKelvin(0, 0, 0);
+                delta[path.cellIndex()] += conductance
+                        * (outside - cells[path.cellIndex()].temperatureKelvin()) * sub;
             }
             for (int i = 0; i < cells.length; i++) {
                 ThermalCell cell = cells[i];
@@ -204,10 +226,28 @@ public final class ThermalGrid {
         return substeps;
     }
 
-    /**
-     * Largest Δt that keeps every cell within 90% of its stability limit:
-     * {@code Δt ≤ 0.9 · C_i / Σ G_i}.
-     */
+    /** Adds a fixed-temperature reservoir outside the grid. */
+    public void addExternalLink(ExternalLink link) {
+        externalLinks.add(link);
+    }
+
+    /** Adds a gap that leaks outside air into this cell (spec §3.7). */
+    public void addInfiltration(InfiltrationPath path) {
+        infiltrations.add(path);
+    }
+
+    /** Model-time multiplier, 0 pauses physics (§5.3). */
+    public void setSpeedMultiplier(double value) {
+        if (!Double.isFinite(value) || value < 0 || value > SimulationClock.MAX_SPEED) {
+            throw new IllegalArgumentException("bad speed multiplier " + value);
+        }
+        this.speedMultiplier = value;
+    }
+
+    public double speedMultiplier() {
+        return speedMultiplier;
+    }
+
     private double stableStep(List<Face> faces) {
         double[] rate = new double[cells.length];
         for (Face face : faces) {
