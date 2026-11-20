@@ -99,6 +99,15 @@ public class RoomInertiaTest {
             int i=AdaptiveThermalTile.index(x,y,z);
             if(t.air!=null&&!t.air[i])cShell+=t.capacities[i];
         }
+        var sol=g.solver;
+        int airC=AdaptiveThermalTile.index(3,2,3), plankC=AdaptiveThermalTile.index(0,2,3);
+        double gAirAir=sol.liveConductance(airC,AdaptiveThermalTile.index(4,2,3));
+        double gAirPlank=sol.liveConductance(airC,plankC);
+        double gPlankOut=sol.outsideConductance(plankC);
+        double kAir=t.conductivities[airC],kPlank=t.conductivities[plankC];
+        System.err.println(String.format(Locale.ROOT,
+            "DIAG edges: air-air G=%.3f (k=%s), air-plank G=%.3f (kPlank=%s), plank->weather G=%.4f",
+            gAirAir,"?",gAirPlank,"?",gPlankOut));
         System.out.println(String.format(Locale.ROOT,
             "DIAG capacities: air=%.1f shell=%.1f  =>  G_room_to_out approx %.1f W/K",
             cAir,cShell,(e0-e1)/10/Math.max(0.1,a0-OUTSIDE)));
