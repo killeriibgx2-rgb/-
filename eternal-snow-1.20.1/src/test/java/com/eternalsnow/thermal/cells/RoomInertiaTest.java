@@ -111,7 +111,9 @@ public class RoomInertiaTest {
         System.out.println(String.format(Locale.ROOT,
             "Hole open 30 s: block under it=%.1f C, room mean=%.1f C (closed room %.1f C)",
             underHole,air(holed),air(closed)));
-        assertTrue("one missing ceiling block must not import the weather, was "+underHole,
-                underHole>OUTSIDE+4);
+        assertTrue("one missing ceiling block must not import the weather at once, was "
+                + underHole, underHole > OUTSIDE + 10);
+        assertTrue("but the room must react to an open hole, closed room was "+air(closed),
+                air(holed) < air(closed));
     }
 }
