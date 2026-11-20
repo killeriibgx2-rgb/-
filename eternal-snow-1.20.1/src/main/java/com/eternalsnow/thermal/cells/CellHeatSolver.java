@@ -115,6 +115,12 @@ public final class CellHeatSolver {
             edgeIndices=new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap(edgeCount);
             edgeIndices.defaultReturnValue(-1);
             for(int e=0;e<edgeCount;e++)edgeIndices.put(pair(edgeA[e],edgeB[e]),e);
+        } else if(edgeIndices.size()!=edgeCount) {
+            // The index may be stale: it is created lazily, while earlier pairs may have been
+            // appended without being registered. A stale index makes setConnection append a
+            // duplicate edge instead of updating, so the real conductance never changes.
+            edgeIndices.clear();
+            for(int e=0;e<edgeCount;e++)edgeIndices.put(pair(edgeA[e],edgeB[e]),e);
         }
         long key=pair(a,b);int index=edgeIndices.get(key);
         if(index>=0) {
