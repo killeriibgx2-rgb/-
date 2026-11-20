@@ -78,10 +78,11 @@ public class FrozenRegionTest {
     public void aFrozenRoomDoesNotLoseHeatToTheOutside() {
         // The key promise: an abandoned warm base is still warm when you return.
         ThermalGrid grid = heatedRoom();
-        for (int i = 0; i < 2000; i++) grid.step(1.0);
+        // The start state is already warm (+20 C air); simulating it would only
+        // cool it, because this small box has a huge envelope for its volume.
         double warm = grid.cell(1, 1, 1).temperatureCelsius();
         FrozenRegion frozen = FrozenRegion.capture(grid);
-        assertTrue("the room must actually be warm before we freeze it: " + warm, warm > -50);
+        assertEquals("the fixture starts warm", 20.0, warm, 1e-9);
 
         // No steps at all while frozen: the user's rule is that being away
         // means nothing happens, not that something happens slowly.

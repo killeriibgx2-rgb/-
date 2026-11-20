@@ -44,7 +44,7 @@ public class LodTest {
         // and face = factor². Factor 2 gives a 2 m block with a 4 m² face.
         assertEquals(1.0, new LodScale(1).faceArea(), 1e-12);
         assertEquals(4.0, new LodScale(2).faceArea(), 1e-12);
-        assertEquals(64.0, new LodScale(4).faceArea(), 1e-12);
+        assertEquals(16.0, new LodScale(4).faceArea(), 1e-12); // 4 m × 4 m
         assertEquals(2.0, new LodScale(2).cellSize(), 1e-12);
         assertEquals(4.0, new LodScale(4).cellSize(), 1e-12);
     }
