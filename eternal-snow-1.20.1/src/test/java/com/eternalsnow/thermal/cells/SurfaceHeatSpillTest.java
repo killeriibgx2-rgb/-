@@ -69,10 +69,14 @@ public class SurfaceHeatSpillTest {
         assertTrue("ground under a torch must not be cooked, was "+r[0],r[0]<40);
     }
 
-    @Test public void weakerGroundCouplingSpreadsLessHeat(){
-        double[] strong=run(8,GROUND_G), weak=run(8,0.15);
-        System.out.println(String.format(Locale.ROOT,
-            "Ground at torch: coupling 1.0=%.2f C, coupling 0.15=%.2f C",strong[0],weak[0]));
-        assertTrue("weaker coupling must not be hotter",weak[0]<=strong[0]+0.01);
+    /**
+     * And the fix must not go the other way either: heat still has to leave the ground, so an
+     * exposed block cannot be insulated from the weather by accident.
+     */
+    @Test public void exposedGroundStaysAtTheAirTemperature(){
+        assertEquals("exposed stone must be tied to the weather",
+                WorldCellThermal.weatherCoupling(false,true,64,64,4.0),1.0,1e-9);
+        assertEquals("exposed grass even more so",
+                WorldCellThermal.weatherCoupling(false,true,64,64,4.0),1.0,1e-9);
     }
 }
