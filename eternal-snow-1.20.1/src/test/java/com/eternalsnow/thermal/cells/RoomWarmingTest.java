@@ -62,7 +62,6 @@ public class RoomWarmingTest {
 
     @Test public void oneCampfireMakesABrickRoomHabitable() {
         double[] r=warm(1,1,1,0.42,5.0,68*10);
-        System.out.println("MAXCHECK peak="+r[1]);
         System.out.println(String.format(Locale.ROOT,
                 "8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=%.2f C peak=%.2f C",
                 r[0],r[1]));
