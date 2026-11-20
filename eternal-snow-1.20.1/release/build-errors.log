@@ -1,29 +1,29 @@
 55:    java.lang.AssertionError at WinterPresetTest.java:25
-    Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
-
-HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
-    Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
-
-HallUniformityTest > noIsolatedStepAtTileBorders STANDARD_OUT
-    Border 8: step=0.40 C, neighbour steps 1.10/1.07
-    Border 16: step=0.25 C, neighbour steps 0.64/0.57
-    Border 24: step=0.07 C, neighbour steps 0.17/0.14
-
-HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
-    Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
-
-OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
-    Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
-
-PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=305.018743ms packed=213.807693ms; synthetic, not server TPS
+    CALCHECK house ts=60.0
+    CALCHECK g(3,2,3)=0.0 k(0,2,3)=0.08 capAir=30.0
 
 RoomInertiaSweepTest > sweep STANDARD_OUT
-    CAL wall0.024 ts60 P680        1m=  -1.5 3m=   1.0 5m=   1.6 10m=   2.0 15m=   2.0 | off10s=  -5.2 1m=  -8.5 5m= -11.6 15m= -12.0
-    CAL wall0.024 ts60 P300        1m=  -7.4 3m=  -6.3 5m=  -6.0 10m=  -5.8 15m=  -5.8 | off10s=  -9.0 1m= -10.4 5m= -11.8 15m= -12.0
     CAL wall0.08 ts60 P680         1m=  -1.5 3m=   1.0 5m=   1.6 10m=   2.0 15m=   2.0 | off10s=  -5.2 1m=  -8.5 5m= -11.6 15m= -12.0
+
+RoomInertiaSweepTest > sweep STANDARD_ERROR
+    CALCHECK house ts=60.0
+    CALCHECK g(3,2,3)=0.0 k(0,2,3)=0.08 capAir=30.0
+
+RoomInertiaSweepTest > sweep STANDARD_OUT
     CAL wall0.08 ts60 P300         1m=  -7.4 3m=  -6.3 5m=  -6.0 10m=  -5.8 15m=  -5.8 | off10s=  -9.0 1m= -10.4 5m= -11.8 15m= -12.0
+
+RoomInertiaSweepTest > sweep STANDARD_ERROR
+    CALCHECK house ts=60.0
+    CALCHECK g(3,2,3)=0.0 k(0,2,3)=0.024 capAir=30.0
+
+RoomInertiaSweepTest > sweep STANDARD_OUT
     CAL wall.024 ts60 P1200        1m=   6.5 3m=  10.9 5m=  12.1 10m=  12.7 15m=  12.7 | off10s=  -0.1 1m=  -5.8 5m= -11.4 15m= -12.0
+
+RoomInertiaSweepTest > sweep STANDARD_ERROR
+    CALCHECK house ts=120.0
+    CALCHECK g(3,2,3)=0.0 k(0,2,3)=0.024 capAir=60.0
+
+RoomInertiaSweepTest > sweep STANDARD_OUT
     CAL wall.024 ts120 P680        1m=  -3.1 3m=  -0.5 5m=   0.6 10m=   1.6 15m=   1.9 | off10s=  -4.8 1m=  -7.0 5m= -10.7 15m= -11.9
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
@@ -57,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 2m 13s
+BUILD FAILED in 2m 22s
 13 actionable tasks: 13 executed
