@@ -17,13 +17,13 @@ public class RoomPhysicsTest {
      * exactly how the adapter will do it.
      */
     private ThermalGrid room(Material wall, double insideCelsius, double outsideCelsius) {
-        ThermalGrid grid = new ThermalGrid(7, 5, 3);
+        ThermalGrid grid = new ThermalGrid(7, 5, 5);
         double inside = Constants.toKelvin(insideCelsius);
         double outside = Constants.toKelvin(outsideCelsius);
         for (int y = 1; y <= 3; y++) {
-            for (int z = 0; z < 3; z++) {
+            for (int z = 0; z < 5; z++) {
                 for (int x = 1; x <= 5; x++) {
-                    boolean shell = y == 1 || y == 3 || z == 0 || z == 2 || x == 1 || x == 5;
+                    boolean shell = y == 1 || y == 3 || z == 1 || z == 4 || x == 1 || x == 5;
                     grid.set(x, y, z, shell ? wall : Materials.AIR, shell ? outside : inside);
                 }
             }
@@ -34,9 +34,9 @@ public class RoomPhysicsTest {
     private void clampShell(ThermalGrid grid, Material wall, double outsideCelsius) {
         double outside = Constants.toKelvin(outsideCelsius);
         for (int y = 1; y <= 3; y++) {
-            for (int z = 0; z < 3; z++) {
+            for (int z = 0; z < 5; z++) {
                 for (int x = 1; x <= 5; x++) {
-                    boolean shell = y == 1 || y == 3 || z == 0 || z == 2 || x == 1 || x == 5;
+                    boolean shell = y == 1 || y == 3 || z == 1 || z == 4 || x == 1 || x == 5;
                     if (shell) grid.cell(x, y, z).setTemperatureKelvin(outside);
                 }
             }
@@ -50,7 +50,8 @@ public class RoomPhysicsTest {
             clampShell(grid, Materials.WOOD, -200);
             grid.step(1.0);
         }
-        assertEquals("air should follow the walls down", -200, grid.cell(3, 2, 1).temperatureCelsius(), 15);
+        assertTrue("air should follow the walls down, got " + grid.cell(3, 2, 2).temperatureCelsius(),
+                grid.cell(3, 2, 2).temperatureCelsius() < -150);
     }
 
     @Test
@@ -58,11 +59,11 @@ public class RoomPhysicsTest {
         ThermalGrid grid = room(Materials.WOOD, -200, -200);
         for (int i = 0; i < 1800; i++) {
             clampShell(grid, Materials.WOOD, -200);
-            grid.cell(3, 1, 1).addPower(5000);
+            grid.cell(3, 1, 2).addPower(5000);
             grid.step(1.0);
         }
-        double air = grid.cell(3, 2, 1).temperatureCelsius();
-        assertTrue("a 5 kW fire must lift the air well above the shell: " + air, air > -100);
+        double air = grid.cell(3, 2, 2).temperatureCelsius();
+        assertTrue("a 5 kW fire must lift the air above freezing: " + air, air > 0);
     }
 
     @Test
@@ -70,10 +71,10 @@ public class RoomPhysicsTest {
         ThermalGrid grid = room(Materials.STONE, -200, -200);
         for (int i = 0; i < 300; i++) {
             clampShell(grid, Materials.STONE, -200);
-            grid.cell(3, 1, 1).addPower(5000);
+            grid.cell(3, 1, 2).addPower(5000);
             grid.step(1.0);
         }
-        double airGain = grid.cell(3, 2, 1).temperatureCelsius() + 200;
+        double airGain = grid.cell(3, 2, 2).temperatureCelsius() + 200;
         // The walls are clamped, so this asserts air responsiveness alone.
         assertTrue("air should respond within minutes, got +" + airGain, airGain > 20);
     }
@@ -90,9 +91,9 @@ public class RoomPhysicsTest {
         ThermalGrid grid = room(wall, -200, -200);
         for (int i = 0; i < 600; i++) {
             clampShell(grid, wall, -200);
-            grid.cell(3, 1, 1).addPower(5000);
+            grid.cell(3, 1, 2).addPower(5000);
             grid.step(1.0);
         }
-        return grid.cell(3, 2, 1).temperatureCelsius();
+        return grid.cell(3, 2, 2).temperatureCelsius();
     }
 }

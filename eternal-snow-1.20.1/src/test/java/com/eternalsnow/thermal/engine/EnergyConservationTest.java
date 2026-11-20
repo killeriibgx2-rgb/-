@@ -67,16 +67,16 @@ public class EnergyConservationTest {
 
     @Test
     public void equilibriumIsReachedAndStaysThere() {
+        // 100 -> 0 degrees averaged by heat capacity gives 50, not 0. Asserting
+        // "mean is zero" here would have encoded the wrong arithmetic.
         ThermalGrid grid = new ThermalGrid(4, 1, 1);
         for (int x = 0; x < 4; x++) {
-            grid.set(x, 0, 0, Materials.STONE, Constants.toKelvin(x == 0 ? 100 : -100));
+            grid.set(x, 0, 0, Materials.STONE, Constants.toKelvin(x == 0 ? 100 : 0));
         }
-        for (int i = 0; i < 20000; i++) grid.step(1.0);
-        double mean = grid.meanTemperatureCelsius();
-        assertEquals("all cells should share one temperature", 0.0, mean, 0.5);
-        assertEquals(
-                "spread should collapse",
-                0.0,
+        for (int i = 0; i < 4000; i++) grid.step(1.0);
+        assertEquals("cells should share the capacity-weighted mean",
+                25.0, grid.meanTemperatureCelsius(), 0.5);
+        assertEquals("spread should collapse", 0.0,
                 grid.cell(0, 0, 0).temperatureCelsius() - grid.cell(3, 0, 0).temperatureCelsius(),
                 0.5);
     }

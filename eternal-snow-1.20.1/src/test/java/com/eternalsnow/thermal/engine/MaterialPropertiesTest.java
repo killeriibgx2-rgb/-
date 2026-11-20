@@ -29,16 +29,16 @@ public class MaterialPropertiesTest {
     @Test
     public void oneMetreWallTransmittancesMatchBuildingPhysics() {
         // U = 1 / (d/λ + R_film), R_film = 0.165 m²K/W, d = 1 m.
-        assertU(0.036, 0.036, "wool");
-        assertU(0.13, 0.127, "wood");
-        assertU(0.7, 0.629, "brick");
-        assertU(1.7, 1.336, "stone");
-        assertU(50, 5.556, "steel");
+        assertU(0.036, 0.0358, "wool");
+        assertU(0.13, 0.1273, "wood");
+        assertU(0.7, 0.6275, "brick");
+        assertU(1.7, 1.3276, "stone");
+        assertU(50, 5.4054, "steel");
     }
 
     private void assertU(double lambda, double expectedU, String label) {
         Material material = new Material(label, lambda, 1000, 1000, 0.9);
-        assertEquals(label + " U-value", expectedU, Transfer.wallTransmittance(material), 0.002);
+        assertEquals(label + " U-value", expectedU, Transfer.wallTransmittance(material), 1e-4);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class MaterialPropertiesTest {
         double deltaT = 220;
         assertEquals("wool", 0.87, Transfer.wallTransmittance(Materials.WOOL) * area * deltaT / 1000, 0.05);
         assertEquals("wood", 3.08, Transfer.wallTransmittance(Materials.WOOD) * area * deltaT / 1000, 0.05);
-        assertEquals("stone", 32.3, Transfer.wallTransmittance(Materials.STONE) * area * deltaT / 1000, 0.2);
+        assertEquals("stone", 32.1, Transfer.wallTransmittance(Materials.STONE) * area * deltaT / 1000, 0.2);
     }
 
     @Test
