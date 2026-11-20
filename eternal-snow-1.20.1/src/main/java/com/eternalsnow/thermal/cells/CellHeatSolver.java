@@ -28,6 +28,8 @@ public final class CellHeatSolver {
     private int activeCount, lastSubsteps;
     private boolean topologyDirty=true;
     private double[] pairTransfer=new double[0], externalScale=new double[0], inverseCapacity;
+    /** Conductance each transfer factor was computed from; catches a stale increment. */
+    private double[] preparedG=new double[0];
     private double splitHalf=Double.NaN;
     private boolean splitDirty=true;
     private final it.unimi.dsi.fastutil.ints.IntOpenHashSet splitEdgesDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
@@ -239,6 +241,7 @@ public final class CellHeatSolver {
         boolean all=splitDirty || splitHalf!=half;
         splitHalf=half;
         if(pairTransfer.length<edgeA.length)pairTransfer=Arrays.copyOf(pairTransfer,edgeA.length);
+        if(preparedG.length<edgeA.length)preparedG=Arrays.copyOf(preparedG,edgeA.length);
         if(externalScale.length<temperature.length)externalScale=Arrays.copyOf(externalScale,temperature.length);
         if(all) {
             for(int e=0;e<edgeCount;e++)preparePair(e);
@@ -248,10 +251,13 @@ public final class CellHeatSolver {
             for(int i:externalDirty)prepareExternal(i);
         }
         splitEdgesDirty.clear();externalDirty.clear();splitDirty=false;
+        // Safety net: an incremental update must never leave a stale transfer factor behind.
+        for(int e=0;e<edgeCount;e++)if(preparedG[e]!=edgeG[e])preparePair(e);
     }
     private void preparePair(int e) {
         double inverse=inverseCapacity[edgeA[e]]+inverseCapacity[edgeB[e]];
         pairTransfer[e]=-Math.expm1(-edgeG[e]*inverse*splitHalf)/inverse;
+        preparedG[e]=edgeG[e];
     }
     private void prepareExternal(int i) {
         externalScale[i]=boundaryG[i]==0?splitHalf/capacity[i]
