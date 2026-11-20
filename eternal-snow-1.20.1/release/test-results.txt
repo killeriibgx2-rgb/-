@@ -1,0 +1,6 @@
+Thermal build regression results (synthetic; not Minecraft TPS)
+com.eternalsnow.thermal.engine.EnergyConservationTest: tests=5, failures=0, errors=0, seconds=0.012
+com.eternalsnow.thermal.engine.HeatTransferTest: tests=7, failures=0, errors=0, seconds=0.006
+com.eternalsnow.thermal.engine.MaterialPropertiesTest: tests=5, failures=0, errors=0, seconds=0.006
+com.eternalsnow.thermal.engine.RoomPhysicsTest: tests=5, failures=0, errors=0, seconds=3.113
+com.eternalsnow.thermal.engine.StabilityTest: tests=2, failures=0, errors=0, seconds=0.0
