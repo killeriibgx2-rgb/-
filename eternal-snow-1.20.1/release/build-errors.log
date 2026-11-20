@@ -1,37 +1,37 @@
-82:    java.lang.AssertionError at HallUniformityTest.java:75
-88:    java.lang.AssertionError at HallUniformityTest.java:92
-AdaptiveThermalTest > inPlaceEditIsCheaperThanFullRebuild STANDARD_OUT
-    Adaptive 4096 tiles: full rebuild x20=69.829766ms, in-place tile edit x20=4.371011ms
-
-AirHeatTransferTest > enclosedRoomWarmsBeyondOneBlockWithoutIncreasingPower STANDARD_OUT
+86:    java.lang.AssertionError at HallUniformityTest.java:87
+92:    java.lang.AssertionError at HallUniformityTest.java:104
     Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
     Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
     Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
     Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
 
 CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
-    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 96 ms (CI, not Minecraft TPS)
+    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 149 ms (CI, not Minecraft TPS)
 
 ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
-    Conservative million-cell test 10 steps ms=157.466525
+    Conservative million-cell test 10 steps ms=201.93132
 
 ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
-    Conservative 64^3 G=3 20 steps ms=228.042803
+    Conservative 64^3 G=3 20 steps ms=282.432139
+
+HallUniformityTest > profile STANDARD_OUT
+    PROFILE 0:-18.8 1:-9.1 2:-9.5 3:-10.8 4:-8.9 5:-9.1 6:-9.5 7:-10.8 8:-13.4 9:-14.5 10:-14.9 11:-15.7 12:-13.4 13:-14.5 14:-14.9 15:-15.7 16:-17.5 17:-18.2 18:-18.3 19:-18.6 20:-17.5 21:-18.2 22:-18.3 23:-18.6 24:-19.2 25:-19.4 26:-19.4 27:-19.4 28:-19.2 29:-19.4 30:-19.4 31:-19.9 
+    PROFILE3D min=-20.0 max=-0.8
 
 HallUniformityTest > moreSweepsFlattenTheHall STANDARD_OUT
     Hall sweeps: 0 spread=8.59 C, 12 spread=10.99 C
 
 HallUniformityTest > moreSweepsFlattenTheHall FAILED
-    java.lang.AssertionError at HallUniformityTest.java:75
+    java.lang.AssertionError at HallUniformityTest.java:87
 
 HallUniformityTest > noEightBlockStepsAtTileBorders STANDARD_OUT
     Hall 32 blocks: steepest neighbour step 7.894 C at block 1 (-18.9..-19.9)
 
 HallUniformityTest > noEightBlockStepsAtTileBorders FAILED
-    java.lang.AssertionError at HallUniformityTest.java:92
+    java.lang.AssertionError at HallUniformityTest.java:104
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=265.11202ms packed=179.817514ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=308.983093ms packed=210.18028ms; synthetic, not server TPS
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
     8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=1.25 C peak=56.49 C
@@ -39,7 +39,7 @@ RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
 RoomWarmingTest > insulationMattersMoreThanRoomSize STANDARD_OUT
     brick mean=1.25 C, wool mean=39.61 C
 
-86 tests completed, 2 failed
+87 tests completed, 2 failed
 
 > Task :test FAILED
 
@@ -58,5 +58,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 45s
+BUILD FAILED in 59s
 13 actionable tasks: 13 executed
