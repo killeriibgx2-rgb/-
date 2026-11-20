@@ -1,57 +1,54 @@
-43:    java.lang.AssertionError at BodyModelTest.java:31
-46:    java.lang.AssertionError at BodyModelTest.java:55
-49:    java.lang.AssertionError at BodyModelTest.java:26
-52:    java.lang.AssertionError at BodyModelTest.java:21
+24:/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/world/MaterialMapper.java:59: error: cannot find symbol
+29:/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/world/TemperatureStore.java:33: error: cannot find symbol
+34:/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/world/TemperatureStore.java:52: error: cannot find symbol
+
+Welcome to Gradle 8.8!
+
+Here are the highlights of this release:
+ - Running Gradle on Java 22
+ - Configurable Gradle daemon JVM
+ - Improved IDE performance for large projects
+
+For more details see https://docs.gradle.org/8.8/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
 MixinGradle did not locate the diffplug APT plugin, skipping eclipse task configuration
 
 > Task :downloadMcpConfig
 > Task :extractSrg
 > Task :createMcpToSrg
 
-> Task :compileJava
+> Task :compileJava FAILED
 Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
 Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
-
-> Task :addMixinsToJar
-> Task :processResources
-> Task :classes
-> Task :jar
-> Task :configureReobfTaskForReobfJar
-> Task :reobfJar
-> Task :configureReobfTaskForReobfJarJar
-> Task :addMixinsToJarJar
-> Task :jarJar SKIPPED
-> Task :reobfJarJar SKIPPED
-> Task :assemble
-> Task :compileTestJava
-> Task :processTestResources NO-SOURCE
-> Task :testClasses
-
-> Task :test
-
-BodyModelTest > polarKitIsComfortableJustAboveFreezing FAILED
-    java.lang.AssertionError at BodyModelTest.java:31
-
-BodyModelTest > aBodyInFreezingAirLosesHeatFast FAILED
-    java.lang.AssertionError at BodyModelTest.java:55
-
-BodyModelTest > aWinterCoatMovesComfortToFourteenDegrees FAILED
-    java.lang.AssertionError at BodyModelTest.java:26
-
-BodyModelTest > nakedComfortIsAboutThirtyOneDegrees FAILED
-    java.lang.AssertionError at BodyModelTest.java:21
-
-73 tests completed, 4 failed
-
-> Task :test FAILED
+/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/world/MaterialMapper.java:59: error: cannot find symbol
+        if (state.is(BlockTags.BRICKS) || state.is(BlockTags.TERRACOTTA)) {
+                              ^
+  symbol:   variable BRICKS
+  location: class BlockTags
+/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/world/TemperatureStore.java:33: error: cannot find symbol
+        float[] values = tag.getFloatArray("kelvin");
+                            ^
+  symbol:   method getFloatArray(String)
+  location: variable tag of type CompoundTag
+/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/world/TemperatureStore.java:52: error: cannot find symbol
+        tag.putFloatArray("kelvin", values);
+           ^
+  symbol:   method putFloatArray(String,float[])
+  location: variable tag of type CompoundTag
+3 errors
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':test'.
-> There were failing tests. See the report at: file:///home/runner/work/-/-/eternal-snow-1.20.1/build/reports/tests/test/index.html
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.
 
 * Try:
+> Run with --info option to get more log output.
 > Run with --scan to get full insights.
 
 Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
@@ -60,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 40s
-13 actionable tasks: 13 executed
+BUILD FAILED in 15s
+4 actionable tasks: 4 executed
