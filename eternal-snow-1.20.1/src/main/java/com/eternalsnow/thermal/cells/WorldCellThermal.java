@@ -36,7 +36,7 @@ public final class WorldCellThermal {
      * instant it was relit. At 0.5 the same room warms over minutes and keeps heat for half an
      * hour after the fire dies, which is what a room with a mass of wooden walls should do.
      */
-    static final double AIR_HEAT_CAPACITY=0.5;
+    static final double AIR_HEAT_CAPACITY=2.5;
     /**
      * Everything in this model was reaching equilibrium in seconds, so a room behaved as if it
      * had no mass: a campfire out, outdoor temperature ten seconds later. Scaling every heat
@@ -44,7 +44,7 @@ public final class WorldCellThermal {
      * steady state at all (equilibrium is P/G and does not contain capacity). Sixty turns the
      * second-scale response into the minute-scale one a player expects from a wooden house.
      */
-    static final double THERMAL_TIME_SCALE=30;
+    static final double THERMAL_TIME_SCALE=12;
     /** Air is a poor conductor: about twenty times worse than brick. See BlockThermalCategory. */
     static final double AIR_CONDUCTIVITY=0.1;
     private static final class Region {
