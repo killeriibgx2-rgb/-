@@ -30,10 +30,12 @@ public final class TemperatureStore extends SavedData {
     public static TemperatureStore load(CompoundTag tag) {
         TemperatureStore store = new TemperatureStore();
         long[] keys = tag.getLongArray("positions");
-        float[] values = tag.getFloatArray("kelvin");
-        int n = Math.min(keys.length, values.length);
+        // CompoundTag in 1.20.1 has no float array, so temperatures travel as
+        // the raw bits of a double in a parallel long array.
+        long[] bits = tag.getLongArray("kelvinBits");
+        int n = Math.min(keys.length, bits.length);
         for (int i = 0; i < n; i++) {
-            store.temperatures.put(keys[i], values[i]);
+            store.temperatures.put(keys[i], (float) Double.longBitsToDouble(bits[i]));
         }
         return store;
     }
@@ -41,15 +43,15 @@ public final class TemperatureStore extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag) {
         long[] keys = new long[temperatures.size()];
-        float[] values = new float[temperatures.size()];
+        long[] bits = new long[temperatures.size()];
         int i = 0;
         for (Map.Entry<Long, Float> entry : temperatures.entrySet()) {
             keys[i] = entry.getKey();
-            values[i] = entry.getValue();
+            bits[i] = Double.doubleToRawLongBits(entry.getValue());
             i++;
         }
         tag.putLongArray("positions", keys);
-        tag.putFloatArray("kelvin", values);
+        tag.putLongArray("kelvinBits", bits);
         return tag;
     }
 

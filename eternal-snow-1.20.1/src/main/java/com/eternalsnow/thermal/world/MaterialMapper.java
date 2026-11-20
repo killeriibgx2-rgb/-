@@ -56,7 +56,7 @@ public final class MaterialMapper {
                 || block == Blocks.OBSIDIAN) {
             return Materials.STONE;
         }
-        if (state.is(BlockTags.BRICKS) || state.is(BlockTags.TERRACOTTA)) {
+        if (block == Blocks.BRICKS || state.is(BlockTags.TERRACOTTA)) {
             return Materials.BRICK;
         }
         if (state.is(BlockTags.STONE_BUTTONS)) {
