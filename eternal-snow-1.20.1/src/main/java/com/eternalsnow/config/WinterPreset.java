@@ -31,9 +31,15 @@ public enum WinterPreset {
         target.globalConductivityMultiplier=1;target.globalCapacityMultiplier=1;
         System.arraycopy(defaults.blockConductivity,0,target.blockConductivity,0,defaults.blockConductivity.length);
         System.arraycopy(defaults.blockCapacity,0,target.blockCapacity,0,defaults.blockCapacity.length);
-        target.heatTorch=7*heat;target.heatLantern=20*heat;target.heatFurnace=48*heat;
-        target.heatBlastSmoker=62*heat;target.heatCampfire=68*heat;target.heatSoulCampfire=45*heat;
-        target.heatFireplace=94*heat;target.heatMagma=75*heat;target.heatLava=115*heat;
+        // Scale the CURRENT defaults instead of hard-coding watts. The hard-coded numbers were
+        // the old, too-weak values, so every world load silently reset a rebalanced source back
+        // to "a campfire warms a room by one degree".
+        target.heatTorch=defaults.heatTorch*heat;target.heatLantern=defaults.heatLantern*heat;
+        target.heatFurnace=defaults.heatFurnace*heat;
+        target.heatBlastSmoker=defaults.heatBlastSmoker*heat;target.heatCampfire=defaults.heatCampfire*heat;
+        target.heatSoulCampfire=defaults.heatSoulCampfire*heat;
+        target.heatFireplace=defaults.heatFireplace*heat;target.heatMagma=defaults.heatMagma*heat;
+        target.heatLava=defaults.heatLava*heat;
         target.enableConvection=true;target.convectionStrengthPercent=100;
         target.freezeWater=true;target.meltRoofSnowFromWarmBlocks=true;
     }

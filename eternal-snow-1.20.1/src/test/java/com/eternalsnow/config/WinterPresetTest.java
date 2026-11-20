@@ -22,7 +22,7 @@ public class WinterPresetTest {
         var s=new ServerSnowSettings();s.customDrinks="example:drink";
         s.heatTorch=80;s.blockConductivity[0]=.9F;s.enablePlayerTemperature=false;
         WinterPreset.MEDIUM.apply(s);
-        assertTrue(s.enablePlayerTemperature);assertEquals(.05F,s.blockConductivity[0],.0001F);
+        assertTrue(s.enablePlayerTemperature);assertEquals(new ServerSnowSettings().blockConductivity[0],s.blockConductivity[0],.0001F);
         assertEquals("example:drink",s.customDrinks);
         var other=new ServerSnowSettings();WinterPreset.HARD.apply(other);WinterPreset.MEDIUM.apply(other);
         assertEquals(s.heatFireplace,other.heatFireplace,0);

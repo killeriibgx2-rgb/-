@@ -93,7 +93,7 @@ public final class ServerSnowSettings {
     public float heatBlastSmoker = 140.0F;
     public float heatCampfire = 150.0F;
     public float heatSoulCampfire = 100.0F;
-    public float heatFireplace = 94.0F;
+    public float heatFireplace = 200.0F;
     public float heatMagma = 170.0F;
     public float heatLava = 260.0F;
 
