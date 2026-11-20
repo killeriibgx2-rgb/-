@@ -3,6 +3,7 @@
 62:    org.junit.runners.model.TestTimedOutException at AdaptiveThermalTest.java:106
 65:    java.lang.AssertionError at AdaptiveThermalTest.java:36
 71:    java.lang.AssertionError at AdaptiveThermalTest.java:96
+92:    java.lang.AssertionError at EnclosureDetailTest.java:56
 HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
     Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
@@ -10,7 +11,7 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=539.401763ms packed=356.670586ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=324.801716ms packed=240.946994ms; synthetic, not server TPS
 
 PlankRoomInWorldTest > fireInTheMiddleOfTheRoomWarmsIt STANDARD_OUT
     Real fire in a real plank room (-15 C outside): inside=14.5 C after 15 min
@@ -42,7 +43,7 @@ SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
 SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
     Exposed ground coupling = 0.080
 
-110 tests completed, 5 failed
+113 tests completed, 6 failed
 
 > Task :test FAILED
 
@@ -61,5 +62,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 2m 53s
+BUILD FAILED in 3m 8s
 13 actionable tasks: 13 executed
