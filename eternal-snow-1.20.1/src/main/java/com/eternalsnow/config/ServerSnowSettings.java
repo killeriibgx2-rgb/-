@@ -84,15 +84,18 @@ public final class ServerSnowSettings {
     // Measured: a 6x4x6 cellar rocking to +43 C with eight torches at 70 W each means the shell
     // leaks about 12 W/C, so ~21 W per torch gives the expected +10..15 C cellar instead of a
     // sauna. A torch is a candle-sized flame; a campfire is not, and keeps its own value.
-    public float heatTorch = 2.1F;
-    public float heatLantern = 6.0F;
-    public float heatFurnace = 48.0F;
-    public float heatBlastSmoker = 62.0F;
-    public float heatCampfire = 68.0F;
-    public float heatSoulCampfire = 45.0F;
+    public float heatTorch = 4.0F;
+    public float heatLantern = 10.0F;
+    // Measured: a 5x5x3 plank room at -12 C holds 48 W/K of loss, so a campfire needs about
+    // 1000 W to lift it by twenty degrees. The old 68 W could only manage one degree, which is
+    // the "too slow" half of the owner's report. Torches and lanterns are scaled alongside.
+    public float heatFurnace = 110.0F;
+    public float heatBlastSmoker = 140.0F;
+    public float heatCampfire = 150.0F;
+    public float heatSoulCampfire = 100.0F;
     public float heatFireplace = 94.0F;
-    public float heatMagma = 75.0F;
-    public float heatLava = 115.0F;
+    public float heatMagma = 170.0F;
+    public float heatLava = 260.0F;
 
     // 4. Per-Material Conductivity (0.01..1.00) & Capacity (0.2..15.0)
     // v2.5.3: two GLOBAL multipliers (their own section in the general thermal settings page).

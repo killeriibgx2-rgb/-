@@ -44,7 +44,7 @@ public final class WorldCellThermal {
      * steady state at all (equilibrium is P/G and does not contain capacity). Sixty turns the
      * second-scale response into the minute-scale one a player expects from a wooden house.
      */
-    static final double THERMAL_TIME_SCALE=60;
+    static final double THERMAL_TIME_SCALE=30;
     /** Air is a poor conductor: about twenty times worse than brick. See BlockThermalCategory. */
     static final double AIR_CONDUCTIVITY=0.1;
     private static final class Region {
