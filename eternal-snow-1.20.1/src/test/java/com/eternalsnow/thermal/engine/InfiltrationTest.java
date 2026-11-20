@@ -90,17 +90,21 @@ public class InfiltrationTest {
     @Test
     public void aLeakCoolsARoomThatWouldOtherwiseHoldHeat() {
         // The awkward fact this fixes: a sealed timber room holds +20 C against
-        // -200 C for months (shell mass 94 MJ/K). With a 100 cm² gap the same
-        // room should lose most of its heat in the first hour.
+        // -200 C for months (shell mass 94 MJ/K). A 100 cm² gap dumps ~21 kW
+        // straight into the room's ~11 kJ/K of air, which is a time constant of
+        // seconds — but the wooden shell then pumps heat back in, so the air
+        // settles somewhere in between. What matters is that the gap moves the
+        // room a long way towards the outside temperature.
         ThermalGrid sealed = room(0);
         ThermalGrid leaky = room(1);
-        run(sealed, 3600);
-        run(leaky, 3600);
+        run(sealed, 600);
+        run(leaky, 600);
         double sealedAir = airMean(sealed);
         double leakyAir = airMean(leaky);
         assertTrue("sealed room should still be warm, got " + sealedAir, sealedAir > 0);
-        assertTrue("leaky room " + leakyAir + " must plummet below the sealed one " + sealedAir,
-                leakyAir < sealedAir - 50);
+        assertTrue("a 10 cm gap must pull the room hard towards -200: sealed " + sealedAir
+                        + " vs leaky " + leakyAir,
+                leakyAir < -120);
     }
 
     private ThermalGrid room(int leakApertureHundredths) {
