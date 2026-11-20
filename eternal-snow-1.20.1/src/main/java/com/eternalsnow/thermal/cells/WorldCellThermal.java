@@ -200,8 +200,12 @@ public final class WorldCellThermal {
         for(int y=1;y<7;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++){
             int i=AdaptiveThermalTile.index(x,y,z);
             if(!air[i]||g[i]>0)continue;
-            if(g[AdaptiveThermalTile.index(x,y-1,z)]>0||g[AdaptiveThermalTile.index(x,y+1,z)]>0)
-                g[i]=VENT_COUPLING;
+            int below=AdaptiveThermalTile.index(x,y-1,z),above=AdaptiveThermalTile.index(x,y+1,z);
+            // Only a vertical hole: enclosed air with open SKY above it. Testing "a neighbour has
+            // weather coupling" is wrong — the sealed room sits in the middle of a tile whose
+            // outer air is open, so it would vent through its own wall and the room would never
+            // warm at all (measured: -17 C instead of +4 C).
+            if(air[above]&&g[above]>0&&g[below]==0) g[i]=VENT_COUPLING;
         }
     }
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
