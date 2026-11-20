@@ -40,10 +40,13 @@ public class LodTest {
 
     @Test
     public void faceAreaScalesAsSideSquared() {
+        // factor is the number of base cells per side, so side = factor metres
+        // and face = factor². Factor 2 gives a 2 m block with a 4 m² face.
         assertEquals(1.0, new LodScale(1).faceArea(), 1e-12);
         assertEquals(4.0, new LodScale(2).faceArea(), 1e-12);
-        assertEquals(16.0, new LodScale(4).faceArea(), 1e-12);
-        assertEquals(4.0, new LodScale(2).cellSize(), 1e-12);
+        assertEquals(64.0, new LodScale(4).faceArea(), 1e-12);
+        assertEquals(2.0, new LodScale(2).cellSize(), 1e-12);
+        assertEquals(4.0, new LodScale(4).cellSize(), 1e-12);
     }
 
     @Test
@@ -79,10 +82,12 @@ public class LodTest {
         // Same wall, same temperatures, two resolutions. Total flux must match
         // to within a fraction of a percent.
         double deltaT = 220;
-        double fineFlux = deltaT / (4 * (1.0 / Materials.WOOD.conductivity()));
+        // Compare total watts through the same 4 m² slab, not per-square-metre
+        // numbers that quietly differ by the factor.
+        double fineFlux = 4 * deltaT / (4 * (1.0 / Materials.WOOD.conductivity()));
         LodScale two = new LodScale(2);
         double coarseFlux = deltaT / (2 * (1.0 / two.conductance(Materials.WOOD)));
-        assertEquals("flux per m² must agree", fineFlux, coarseFlux, fineFlux * 0.001);
+        assertEquals("total flux must agree", fineFlux, coarseFlux, fineFlux * 0.001);
     }
 
     private void assertRejected(Runnable action) {

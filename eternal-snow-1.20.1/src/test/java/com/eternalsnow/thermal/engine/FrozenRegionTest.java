@@ -81,13 +81,13 @@ public class FrozenRegionTest {
         for (int i = 0; i < 2000; i++) grid.step(1.0);
         double warm = grid.cell(1, 1, 1).temperatureCelsius();
         FrozenRegion frozen = FrozenRegion.capture(grid);
+        assertTrue("the room must actually be warm before we freeze it: " + warm, warm > -50);
 
         // No steps at all while frozen: the user's rule is that being away
         // means nothing happens, not that something happens slowly.
         frozen.restoreInto(grid);
         assertEquals("come back to the same warmth", warm,
                 grid.cell(1, 1, 1).temperatureCelsius(), 1e-9);
-        assertTrue("and it should still be warm, not frozen solid", warm > -100);
     }
 
     private void assertThrows(Runnable action) {
