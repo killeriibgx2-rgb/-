@@ -119,8 +119,10 @@ public class RoomInertiaTest {
     }
 
     @Test public void oneHoleInTheCeilingDoesNotFreezeTheRoom(){
-        var closed=room(false),holed=room(true);
-        var gc=graph(closed),gh=graph(holed);
+        var closed=room(false);
+        var holed=room(true);
+        var gc=graph(closed);
+        var gh=graph(holed);
         fire(gc,closed,CAMPFIRE,1800);
         fire(gh,holed,CAMPFIRE,1800);
         cool(gh,60);                                   // thirty seconds with the hole open
