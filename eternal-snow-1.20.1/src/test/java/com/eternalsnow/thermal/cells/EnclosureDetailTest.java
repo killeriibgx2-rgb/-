@@ -52,7 +52,8 @@ public class EnclosureDetailTest {
             double inside=t.temperatures.get(AdaptiveThermalTile.index(3,2,3));
             double field=t.temperatures.get(AdaptiveThermalTile.index(7,2,7));
             System.out.println(String.format(Locale.ROOT,
-                "detailed=%-5s room=%.1f C, field outside=%.1f C",detailed,inside,field));
+                "detail=%s room=%.1f C field=%.1f C keepDetailed=%s enclosure=%s",
+                detailed,inside,field,t.keepDetailed(),t.holdsEnclosure));
             if(detailed)assertTrue("a detailed tile must keep the room warm, was "+inside,
                     inside>OUTSIDE+8);
             else assertTrue("a coarse tile cannot: this is the reported bug",inside<OUTSIDE+8);
