@@ -27,8 +27,16 @@ public final class WorldCellThermal {
     private static final Map<ResourceKey<Level>,Workspace> WORLDS=new ConcurrentHashMap<>();
     private static final Direction[] DIRECTIONS=Direction.values();
     private static final int DETAIL_HOLD_TICKS=200;
-    /** Heat capacity of one air cell relative to solid materials; see {@link #material}. */
-    static final double AIR_HEAT_CAPACITY=0.02;
+    /**
+     * Heat capacity of one air cell relative to solid materials.
+     *
+     * <p>Measured, not guessed. At 0.02 the time constant of one cell was 0.02 s, so the room sat
+     * exactly at its quasi-static equilibrium at all times: the owner reported that a 5x5x3 room
+     * dropped to outdoor temperature ten seconds after the campfire went out, and came back the
+     * instant it was relit. At 0.5 the same room warms over minutes and keeps heat for half an
+     * hour after the fire dies, which is what a room with a mass of wooden walls should do.
+     */
+    static final double AIR_HEAT_CAPACITY=0.5;
     private static final class Region {
         final AdaptiveThermalTile field;
         final IntArrayList sources=new IntArrayList();
@@ -145,12 +153,17 @@ public final class WorldCellThermal {
      */
     static double weatherCoupling(boolean air,boolean sky,int y,int surfaceY,double conductivity) {
         if(air)return sky?1:0;
-        // Solid ground is an effectively infinite reservoir: for any fire a player can build, the
-        // rock it touches stays at the ground temperature of that depth. Treating it as a closed
-        // body was the bug — a cellar carved into rock then had no sink at all (air inside never
-        // sees the sky, buried rock had g = 0) and eight torches pushed it to +150 C. Coupling
-        // every solid cell to the ambient of its own depth makes the ground soak up heat instead.
-        return Math.min(1,Math.max(0.05,conductivity));
+        // A wall block touches the weather on one face out of six, so its coupling must be a
+        // fraction of its conductivity, not the conductivity itself. Giving planks 1.0 made a
+        // small room a short circuit to the outside: measured, a 5x5x3 room fell from +13 C to
+        // +3 C in ten seconds once the fire died.
+        double surface=Math.max(0.02,Math.min(0.35,0.02*conductivity));
+        if(sky||y>=surfaceY-1)return surface;
+        // Buried solid is an effectively infinite reservoir at the ground temperature of its
+        // depth: no player fire heats the rock around a cellar. Keeping it strongly coupled is
+        // what stops a cellar from running away to +150 C with a handful of torches.
+        int depth=Math.max(0,surfaceY-y);
+        return Math.min(1,surface*(depth<=8?3.0:10.0));
     }
 
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
