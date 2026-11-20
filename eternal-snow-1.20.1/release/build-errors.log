@@ -1,5 +1,15 @@
-138:    java.lang.AssertionError at RoomInertiaTest.java:114
-150:    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
+139:    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
+GroundAnchorTest > heatedGroundLosesItsHeatAgain STANDARD_OUT
+    Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
+
+HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
+    Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
+
+HallUniformityTest > noIsolatedStepAtTileBorders STANDARD_OUT
+    Border 8: step=0.40 C, neighbour steps 1.10/1.07
+    Border 16: step=0.25 C, neighbour steps 0.64/0.57
+    Border 24: step=0.07 C, neighbour steps 0.17/0.14
+
 HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
     Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
@@ -7,25 +17,14 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=-2.10 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=348.076098ms packed=227.71027ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=306.529572ms packed=209.033966ms; synthetic, not server TPS
 
 RoomInertiaSweepTest > sweep STANDARD_OUT
-    COOL ts=60 P=680        after10m: air=  -4.8 ceil= -10.9 | 10s=  -7.2 1m= -10.6 5m= -11.0 10m= -11.1 20m= -11.3 50m= -11.6 (ceil now -11.6)
-    COOL ts=60 P=1500       after10m: air=   3.9 ceil=  -9.6 | 10s=  -1.3 1m=  -8.9 5m=  -9.9 10m= -10.1 20m= -10.5 50m= -11.1 (ceil now -11.1)
-    COOL ts=20 P=1500       after10m: air=   7.4 ceil=  -6.0 | 10s=  -3.1 1m=  -6.6 5m=  -7.8 10m=  -8.7 20m=  -9.8 50m= -11.0 (ceil now -11.1)
-    COOL ts=20 P=680        after10m: air=  -3.2 ceil=  -9.3 | 10s=  -8.0 1m=  -9.5 5m= -10.1 10m= -10.5 20m= -11.0 50m= -11.5 (ceil now -11.6)
-
-RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
-    Hole open: block under it=-4.9 C, room mean=-5.0 C (closed room was 6.6 C)
-
-RoomInertiaTest > theRoomTakesMinutesToWarm STANDARD_OUT
-    Plank room 5x5x3 at -12 C: 2 min=3.0 C, 15 min=6.6 C
-
-RoomInertiaTest > theRoomKeepsHeatAfterTheFireDies STANDARD_OUT
-    Fire out: was 6.6 C, 20 s later=-4.0 C, 15 min later=-11.9 C
-
-RoomInertiaTest > theRoomKeepsHeatAfterTheFireDies FAILED
-    java.lang.AssertionError at RoomInertiaTest.java:114
+    HOUSE ts=1   P=680  1m= -10.2 3m= -10.2 5m= -10.2 10m= -10.2 15m= -10.2 | off10s= -12.0 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
+    HOUSE ts=1   P=300  1m= -11.2 3m= -11.2 5m= -11.2 10m= -11.2 15m= -11.2 | off10s= -12.0 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
+    HOUSE ts=5   P=680  1m= -10.2 3m= -10.2 5m= -10.2 10m= -10.2 15m= -10.2 | off10s= -11.9 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
+    HOUSE ts=5   P=300  1m= -11.2 3m= -11.2 5m= -11.2 10m= -11.2 15m= -11.2 | off10s= -12.0 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
+    HOUSE ts=20  P=680  1m= -10.4 3m= -10.2 5m= -10.2 10m= -10.2 15m= -10.2 | off10s= -11.6 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
     8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
@@ -39,7 +38,7 @@ SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
 SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature FAILED
     java.lang.AssertionError at SurfaceHeatSpillTest.java:77
 
-105 tests completed, 2 failed
+102 tests completed, 1 failed
 
 > Task :test FAILED
 
@@ -58,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 18s
+BUILD FAILED in 4m 19s
 13 actionable tasks: 13 executed
