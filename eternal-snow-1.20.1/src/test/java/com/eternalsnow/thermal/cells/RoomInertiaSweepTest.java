@@ -25,6 +25,8 @@ public class RoomInertiaSweepTest {
         double[] cap=filled(1),k=filled(1),g=filled(0);
         boolean[] air=new boolean[512];
         for(int i=0;i<512;i++){air[i]=true;cap[i]=WorldCellThermal.AIR_HEAT_CAPACITY*ts;k[i]=AIR_K;g[i]=1;}
+        // Inner air must NOT be coupled to the weather directly; the whole point of a wall.
+        for(int y=1;y<=3;y++)for(int z=1;z<=5;z++)for(int x=1;x<=5;x++)g[AdaptiveThermalTile.index(x,y,z)]=0;
         for(int z=0;z<8;z++)for(int x=0;x<8;x++){
             int i=AdaptiveThermalTile.index(x,0,z);air[i]=false;cap[i]=8*20*ts;k[i]=8;g[i]=1;
         }
@@ -59,8 +61,6 @@ public class RoomInertiaSweepTest {
         var g=new AdaptiveThermalGraph(List.of(t));
         g.setRoomAirMixing(20);g.setMixingSweeps(12);
         int cell=AdaptiveThermalTile.index(3,1,3);
-        // The real fire is at floor level in the middle of the room.
-        for(int i=0;i<512;i++)if(t.air[i])t.outsideG[i]=g0(t,i);
         double[] warm=new double[5];
         int[] marks={60,180,300,600,900};
         int s=0;
