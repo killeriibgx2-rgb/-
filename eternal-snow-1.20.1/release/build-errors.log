@@ -1,5 +1,4 @@
-56:    java.lang.AssertionError at BalanceMigrationTest.java:51
-59:    java.lang.AssertionError at BalanceMigrationTest.java:66
+56:    java.lang.AssertionError at BalanceMigrationTest.java:66
 
 HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
     Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
@@ -16,7 +15,7 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=265.490891ms packed=177.509666ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=328.855643ms packed=205.153778ms; synthetic, not server TPS
 
 RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
     Hole open 30 s: block under it=11.9 C, room mean=11.9 C (closed room 20.1 C)
@@ -39,7 +38,7 @@ SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
 SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
     Exposed ground coupling = 0.080
 
-107 tests completed, 2 failed
+107 tests completed, 1 failed
 
 > Task :test FAILED
 
@@ -58,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m
+BUILD FAILED in 1m 9s
 13 actionable tasks: 13 executed
