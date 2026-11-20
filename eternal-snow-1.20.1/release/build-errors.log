@@ -5,13 +5,13 @@
     Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
 
 CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
-    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 69 ms (CI, not Minecraft TPS)
+    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 156 ms (CI, not Minecraft TPS)
 
 ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
-    Conservative million-cell test 10 steps ms=136.809003
+    Conservative million-cell test 10 steps ms=197.875568
 
 ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
-    Conservative 64^3 G=3 20 steps ms=161.741092
+    Conservative 64^3 G=3 20 steps ms=266.53126
 
 HallUniformityTest > mixingNumberChangesHeatSpread STANDARD_OUT
       TWOCELL mixing=3.0 live G(512,+1)=3.0 crossTile G=-1.0
@@ -31,7 +31,7 @@ HallUniformityTest > noEightBlockStepsAtTileBorders FAILED
     java.lang.AssertionError at HallUniformityTest.java:106
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=194.869104ms packed=161.480966ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=352.636784ms packed=226.780728ms; synthetic, not server TPS
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
     MAXCHECK peak=56.49381263743422
@@ -59,5 +59,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 36s
+BUILD FAILED in 44s
 13 actionable tasks: 13 executed
