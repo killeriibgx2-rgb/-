@@ -39,6 +39,12 @@ public class RoomInertiaSweepTest {
         int i=AdaptiveThermalTile.index(x,y,z);
         air[i]=false;cap[i]=2.5*20*ts;k[i]=2.5;g[i]=pg;
     }
+    /** outsideG as the world adapter sets it: 1 for air with sky, 1 for planks, 0 inside. */
+    private static double g0(AdaptiveThermalTile t,int i){
+        int x=i&7,y=i>>6,z=(i>>3)&7;
+        boolean inside=x>=1&&x<=5&&z>=1&&z<=5&&y>=1&&y<=3;
+        return inside?0:1;
+    }
     private static double airMean(AdaptiveThermalTile t,int x0,int x1,int y0,int y1,int z0,int z1){
         double s=0;int n=0;
         for(int y=y0;y<=y1;y++)for(int z=z0;z<=z1;z++)for(int x=x0;x<=x1;x++){
@@ -51,6 +57,8 @@ public class RoomInertiaSweepTest {
         var g=new AdaptiveThermalGraph(List.of(t));
         g.setRoomAirMixing(20);g.setMixingSweeps(12);
         int cell=AdaptiveThermalTile.index(3,1,3);
+        // The real fire is at floor level in the middle of the room.
+        for(int i=0;i<512;i++)if(t.air[i])t.outsideG[i]=g0(t,i);
         double[] warm=new double[5];
         int[] marks={60,180,300,600,900};
         int s=0;
