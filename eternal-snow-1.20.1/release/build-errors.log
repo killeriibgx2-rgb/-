@@ -1,4 +1,4 @@
-83:    java.lang.AssertionError at EnclosureDetailTest.java:57
+83:    java.lang.AssertionError at EnclosureDetailTest.java:59
 HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
     Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
@@ -6,7 +6,7 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=288.877002ms packed=203.181751ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=299.267928ms packed=211.408823ms; synthetic, not server TPS
 
 PlankRoomInWorldTest > fireInTheMiddleOfTheRoomWarmsIt STANDARD_OUT
     Real fire in a real plank room (-15 C outside): inside=14.5 C after 15 min
@@ -57,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 15s
+BUILD FAILED in 1m 10s
 13 actionable tasks: 13 executed
