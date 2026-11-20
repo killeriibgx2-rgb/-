@@ -1,49 +1,51 @@
 Thermal build regression results (synthetic; not Minecraft TPS)
-com.eternalsnow.config.FoodSettingsTest: tests=4, failures=0, errors=0, seconds=0.526
-2026-11-20 11:55:42,216 Test worker WARN Advanced terminal features are not available in this environment
-com.eternalsnow.config.WinterPresetTest: tests=3, failures=0, errors=0, seconds=0.0
+com.eternalsnow.config.FoodSettingsTest: tests=4, failures=0, errors=0, seconds=0.957
+2026-11-20 11:59:08,398 Test worker WARN Advanced terminal features are not available in this environment
+com.eternalsnow.config.WinterPresetTest: tests=3, failures=0, errors=0, seconds=0.001
 com.eternalsnow.food.FoodCoolingTest: tests=8, failures=0, errors=0, seconds=0.001
 com.eternalsnow.thermal.RoomThermalBalanceTest: tests=5, failures=0, errors=0, seconds=0.002
-com.eternalsnow.thermal.cells.AdaptiveThermalTest: tests=15, failures=0, errors=0, seconds=2.136
-Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=1384.397107
-Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=313.930661
-Adaptive 4096 tiles: full rebuild x20=47.960555ms, in-place tile edit x20=3.202923ms
-com.eternalsnow.thermal.cells.AirHeatTransferTest: tests=4, failures=0, errors=0, seconds=0.173
+com.eternalsnow.thermal.cells.AdaptiveThermalTest: tests=15, failures=0, errors=0, seconds=3.165
+Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=2136.536123
+Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=400.849709
+Adaptive 4096 tiles: full rebuild x20=70.003775ms, in-place tile edit x20=4.612244ms
+com.eternalsnow.thermal.cells.AirHeatTransferTest: tests=4, failures=0, errors=0, seconds=0.238
 Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
 Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
 Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
 Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
-com.eternalsnow.thermal.cells.CellHeatSolverScaleTest: tests=3, failures=0, errors=0, seconds=0.097
-Thermal regression: 3 x 262144 cells / 774144 edges + steps: 68 ms (CI, not Minecraft TPS)
+com.eternalsnow.thermal.cells.CellHeatSolverScaleTest: tests=3, failures=0, errors=0, seconds=0.129
+Thermal regression: 3 x 262144 cells / 774144 edges + steps: 91 ms (CI, not Minecraft TPS)
 com.eternalsnow.thermal.cells.CellHeatSolverTest: tests=12, failures=0, errors=0, seconds=0.003
-com.eternalsnow.thermal.cells.CellTemperatureSnapshotTest: tests=6, failures=0, errors=0, seconds=0.0
-com.eternalsnow.thermal.cells.CellThermalSavedDataTest: tests=3, failures=0, errors=0, seconds=0.002
-com.eternalsnow.thermal.cells.ConservativeHeatSolverTest: tests=7, failures=0, errors=0, seconds=0.417
-Conservative million-cell test 10 steps ms=120.908979
-Conservative 64^3 G=3 20 steps ms=163.774072
-com.eternalsnow.thermal.cells.FloorHeatTest: tests=3, failures=0, errors=0, seconds=0.405
+com.eternalsnow.thermal.cells.CellTemperatureSnapshotTest: tests=6, failures=0, errors=0, seconds=0.002
+com.eternalsnow.thermal.cells.CellThermalSavedDataTest: tests=3, failures=0, errors=0, seconds=0.001
+com.eternalsnow.thermal.cells.ConservativeHeatSolverTest: tests=7, failures=0, errors=0, seconds=0.641
+Conservative million-cell test 10 steps ms=181.52084
+Conservative 64^3 G=3 20 steps ms=268.007159
+com.eternalsnow.thermal.cells.FloorHeatTest: tests=3, failures=0, errors=0, seconds=0.577
 Stone floor at -15 C outside, no fire: air mean=-15.00 C
 One campfire: stone floor=35.1 C, sealed floor=40.2 C
 Stone floor, one campfire: air mean=33.4 C, peak=34.2 C
-com.eternalsnow.thermal.cells.GroundAnchorTest: tests=6, failures=0, errors=0, seconds=1.352
+com.eternalsnow.thermal.cells.GroundAnchorTest: tests=6, failures=0, errors=0, seconds=2.092
 Fixed, 8 torches: air mean=11.4 C, peak=11.6 C, rock=-1.7 C
 Fixed, 8 vs 11 torches: air mean 11.4 vs 16.6 C
 Fixed, 8 torches: 30 min=11.4 C, 60 min=11.4 C (level)
 Weather coupling: buried stone=1.000 (was 0.000)
 Old rules, 8 torches: 30 min=18.2 C, 60 min=24.1 C (still climbing)
 Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
-com.eternalsnow.thermal.cells.HallUniformityTest: tests=3, failures=0, errors=0, seconds=6.424
+com.eternalsnow.thermal.cells.HallUniformityTest: tests=3, failures=0, errors=0, seconds=9.857
 Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
 Border 8: step=0.40 C, neighbour steps 1.10/1.07
 Border 16: step=0.25 C, neighbour steps 0.64/0.57
 Border 24: step=0.07 C, neighbour steps 0.17/0.14
 Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
-com.eternalsnow.thermal.cells.IncrementalHeatGraphTest: tests=4, failures=0, errors=0, seconds=0.027
-com.eternalsnow.thermal.cells.OutdoorTorchTest: tests=2, failures=0, errors=0, seconds=3.171
+com.eternalsnow.thermal.cells.IncrementalHeatGraphTest: tests=4, failures=0, errors=0, seconds=0.047
+com.eternalsnow.thermal.cells.OutdoorTorchTest: tests=2, failures=0, errors=0, seconds=5.385
 Outdoors, 8 torches: air at the torches=-2.10 C, ten blocks away=-2.20 C (outside -2.2)
-com.eternalsnow.thermal.cells.PackedHeatSolverTest: tests=3, failures=0, errors=0, seconds=0.409
-THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=176.355573ms packed=134.033013ms; synthetic, not server TPS
-com.eternalsnow.thermal.cells.RoomWarmingTest: tests=4, failures=0, errors=0, seconds=0.3
+com.eternalsnow.thermal.cells.PackedHeatSolverTest: tests=3, failures=0, errors=0, seconds=0.56
+THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=234.174529ms packed=182.701225ms; synthetic, not server TPS
+com.eternalsnow.thermal.cells.RoomWarmingTest: tests=4, failures=0, errors=0, seconds=0.452
 8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
 brick mean=4.08 C, wool mean=42.40 C
+com.eternalsnow.thermal.cells.SurfaceHeatSpillTest: tests=3, failures=0, errors=0, seconds=5.224
+Ground: at the torches=-2.19 C, eight blocks away=-2.19 C, air at torch=-2.01 C (outside -2.2)
 com.eternalsnow.village.ConfectionerPolicyTest: tests=3, failures=0, errors=0, seconds=0.001
