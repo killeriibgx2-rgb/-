@@ -37,6 +37,14 @@ public final class WorldCellThermal {
      * hour after the fire dies, which is what a room with a mass of wooden walls should do.
      */
     static final double AIR_HEAT_CAPACITY=0.5;
+    /**
+     * Everything in this model was reaching equilibrium in seconds, so a room behaved as if it
+     * had no mass: a campfire out, outdoor temperature ten seconds later. Scaling every heat
+     * capacity by the same factor slows every approach curve by that factor and changes no
+     * steady state at all (equilibrium is P/G and does not contain capacity). Sixty turns the
+     * second-scale response into the minute-scale one a player expects from a wooden house.
+     */
+    static final double THERMAL_TIME_SCALE=60;
     private static final class Region {
         final AdaptiveThermalTile field;
         final IntArrayList sources=new IntArrayList();
@@ -173,9 +181,9 @@ public final class WorldCellThermal {
             // hundreds of thousands of energy units to warm, so even a huge fire took tens of
             // minutes to make a room habitable. This keeps the ratio between air and solid
             // materials close to reality while letting a normal fire warm a room in minutes.
-            if(air)return new Material(AIR_HEAT_CAPACITY,settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1,true);
+            if(air)return new Material(AIR_HEAT_CAPACITY*THERMAL_TIME_SCALE,settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1,true);
             var category=BlockThermalCategory.classify(s);
-            double c=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
+            double c=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20)*THERMAL_TIME_SCALE;
             if(s.getBlock() instanceof HeatAccumulatorBlock)c*=4;
             return new Material(c,Math.max(.001,settings.blockConductivity[category.ordinal()]*settings.globalConductivityMultiplier),false);
         });
