@@ -1,10 +1,10 @@
 94:    java.lang.AssertionError at GroundAnchorTest.java:88
 
 GroundAnchorTest > eightTorchesInACellarStayHabitable STANDARD_OUT
-    Fixed, 8 torches: air mean=43.3 C, peak=43.7 C, rock=-0.7 C
+    Fixed, 8 torches: air mean=11.4 C, peak=11.6 C, rock=-1.7 C
 
 GroundAnchorTest > elevenTorchesAreWarmerButNotRunaway STANDARD_OUT
-    Fixed, 8 vs 11 torches: air mean 43.3 vs 60.3 C
+    Fixed, 8 vs 11 torches: air mean 11.4 vs 16.6 C
 
 GroundAnchorTest > buriedGroundAlwaysActsAsAReservoir STANDARD_OUT
     Weather coupling: buried stone=1.000 (was 0.000)
@@ -13,7 +13,7 @@ GroundAnchorTest > heatedGroundLosesItsHeatAgain STANDARD_OUT
     Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
 
 GroundAnchorTest > theSealedCellarReproducesTheReport STANDARD_OUT
-    Old rules, 8 torches: air mean=65.9 C, peak=66.4 C, rock=14.9 C
+    Old rules, 8 torches: air mean=18.2 C, peak=18.4 C, rock=2.9 C
 
 GroundAnchorTest > theSealedCellarReproducesTheReport FAILED
     java.lang.AssertionError at GroundAnchorTest.java:88
@@ -30,7 +30,7 @@ HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
     Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=310.57054ms packed=203.826144ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=314.266686ms packed=211.740772ms; synthetic, not server TPS
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
     8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
@@ -57,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 49s
+BUILD FAILED in 51s
 13 actionable tasks: 13 executed
