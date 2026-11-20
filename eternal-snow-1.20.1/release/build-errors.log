@@ -1,6 +1,8 @@
-43:    java.lang.AssertionError at FrozenRegionTest.java:90
-46:    java.lang.AssertionError at LodTest.java:46
-49:    java.lang.AssertionError at LodTest.java:85
+43:    java.lang.AssertionError at FrozenRegionTest.java:84
+46:    java.lang.AssertionError at LodTest.java:47
+For more details see https://docs.gradle.org/8.8/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
 > Configure project :
@@ -32,15 +34,12 @@ Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] Obfusc
 > Task :test
 
 FrozenRegionTest > aFrozenRoomDoesNotLoseHeatToTheOutside FAILED
-    java.lang.AssertionError at FrozenRegionTest.java:90
+    java.lang.AssertionError at FrozenRegionTest.java:84
 
 LodTest > faceAreaScalesAsSideSquared FAILED
-    java.lang.AssertionError at LodTest.java:46
+    java.lang.AssertionError at LodTest.java:47
 
-LodTest > coarseAndFineWallsLoseTheSameHeat FAILED
-    java.lang.AssertionError at LodTest.java:85
-
-57 tests completed, 3 failed
+57 tests completed, 2 failed
 
 > Task :test FAILED
 
@@ -59,5 +58,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 42s
+BUILD FAILED in 30s
 13 actionable tasks: 13 executed
