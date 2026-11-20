@@ -97,6 +97,9 @@ public class HallUniformityTest {
         var right=tiles2.get(6);     // tz=1, tx=2
         int a=left.node+AdaptiveThermalTile.index(7,4,4);
         int b=right.node+AdaptiveThermalTile.index(0,4,4);
+        StringBuilder sb=new StringBuilder("PROFILE ");
+        for(int x=0;x<line.length;x++)sb.append(String.format(Locale.ROOT,"%d:%.1f ",x,line[x]));
+        System.out.println(sb);
         System.out.println("CROSS g="+g2.solver.liveConductance(a,b)
             +" leftAir="+(left.air==null?"null":left.air[AdaptiveThermalTile.index(7,4,4)])
             +" rightAir="+(right.air==null?"null":right.air[AdaptiveThermalTile.index(0,4,4)]));
