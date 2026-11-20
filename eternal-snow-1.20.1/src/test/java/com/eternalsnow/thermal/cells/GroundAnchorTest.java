@@ -20,13 +20,14 @@ public class GroundAnchorTest {
     private static final double AIR_CAPACITY = 0.02;
     /** One torch as the world adapter injects it: heatTorch 7 x roomSourcePower 10. */
     private static final double TORCH_POWER = 70;
-    private static final int W = 16, H = 8, D = 16;
+    /** A real cellar is small: 6x6 floor with four blocks of headroom inside one tile. */
+    private static final int W = 8, H = 8, D = 8;
     /** Surface is far above the cellar: every block of it is deep rock. */
     private static final int SURFACE_Y = 60, CELLAR_Y = 20;
 
     private static double[] filled(double v){double[] a=new double[512];Arrays.fill(a,v);return a;}
     private static int localIndex(int x,int y,int z){return AdaptiveThermalTile.index(x&7,y,z&7);}
-    private static int tileIndex(int x,int z){return (x>>3)+2*(z>>3);}
+    private static int tileIndex(int x,int z){return 0;}
 
     /**
      * @param oldRules true reproduces the shipped behaviour (buried solid g = 0, no anchor)
@@ -34,7 +35,7 @@ public class GroundAnchorTest {
      */
     private static List<AdaptiveThermalTile> cellar(boolean oldRules,boolean anchor){
         var list=new ArrayList<AdaptiveThermalTile>();
-        for(int tz=0;tz<D/8;tz++)for(int tx=0;tx<W/8;tx++){
+        for(int tz=0;tz<1;tz++)for(int tx=0;tx<1;tx++){
             var tile=new AdaptiveThermalTile(tx*8,CELLAR_Y,tz*8,
                     new TileTemperatureState(filled(-2.2)));
             double[] cap=filled(1),k=filled(1),g=filled(0),anchorArr=new double[512];
@@ -42,7 +43,8 @@ public class GroundAnchorTest {
             for(int y=0;y<H;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++){
                 int gx=tx*8+x,gz=tz*8+z;
                 int i=AdaptiveThermalTile.index(x,y,z);
-                boolean shell=y==0||y==H-1||gx==0||gz==0||gx==W-1||gz==D-1;
+                boolean inside=gx>=1&&gx<=6&&gz>=1&&gz<=6&&y>=1&&y<=4;
+                boolean shell=!inside;
                 if(shell){
                     cap[i]=8*20;k[i]=8;                      // stone
                     int depth=SURFACE_Y-(CELLAR_Y+y);
@@ -64,8 +66,8 @@ public class GroundAnchorTest {
         var graph=new AdaptiveThermalGraph(tiles);
         graph.setRoomAirMixing(20);
         graph.setMixingSweeps(12);
-        int[][] spots={{3,1,3},{11,1,3},{3,1,11},{11,1,11},{7,1,7},{6,1,6},{9,1,9},{4,1,8},
-                {12,1,12},{5,1,5},{8,1,2}};
+        int[][] spots={{2,1,2},{5,1,2},{2,1,5},{5,1,5},{3,1,3},{4,1,4},{2,1,4},{5,1,3},
+                {3,1,5},{4,1,2},{4,1,5}};
         for(int step=0;step<3600;step++){
             graph.clearPower();
             for(int i=0;i<torches&&i<spots.length;i++)
@@ -129,7 +131,7 @@ public class GroundAnchorTest {
         graph.setMixingSweeps(12);
         for(int step=0;step<1200;step++){
             graph.clearPower();
-            graph.addPower(tiles.get(tileIndex(7,7)),localIndex(7,1,7),TORCH_POWER*4);
+            graph.addPower(tiles.get(0),localIndex(3,1,3),TORCH_POWER*4);
             graph.step(.5,-2.2);
         }
         double[] afterHeat=run(0,false,true);
