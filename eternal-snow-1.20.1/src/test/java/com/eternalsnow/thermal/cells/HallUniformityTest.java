@@ -36,8 +36,9 @@ public class HallUniformityTest {
         return list;
     }
 
+    private static List<AdaptiveThermalTile> lastTiles;
     private static double[] run(double mixing){
-        var tiles=hall();
+        var tiles=hall();lastTiles=tiles;
         var graph=new AdaptiveThermalGraph(tiles);
         graph.setRoomAirMixing(20);graph.setMixingSweeps((int)mixing);
         var source=tiles.get(0);
@@ -68,6 +69,17 @@ public class HallUniformityTest {
      * mixing number stops mattering past a small value. This documents the regime instead of
      * pretending a bigger number would help.
      */
+    @Test public void profile(){
+        double[] line=run(12);
+        StringBuilder sb=new StringBuilder("PROFILE ");
+        for(int x=0;x<line.length;x++)sb.append(String.format(Locale.ROOT,"%d:%.1f ",x,line[x]));
+        System.out.println(sb);
+        // Also report the 3D field spread, not just one line.
+        double min=1e9,max=-1e9;
+        for(var t:lastTiles)for(int i=0;i<512;i++){double v=t.temperatures.get(i);min=Math.min(min,v);max=Math.max(max,v);}
+        System.out.println(String.format(Locale.ROOT,"PROFILE3D min=%.1f max=%.1f",min,max));
+    }
+
     @Test public void moreSweepsFlattenTheHall(){
         double none=spread(run(0)),some=spread(run(12));
         System.out.println(String.format(Locale.ROOT,
