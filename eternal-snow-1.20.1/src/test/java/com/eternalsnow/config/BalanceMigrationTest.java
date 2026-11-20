@@ -56,14 +56,14 @@ public class BalanceMigrationTest {
 
     @Test public void aTunedWorldKeepsItsRatio() {
         CompoundTag tag = legacyWorld(0);
-        tag.putFloat("heatCampfire", 136.0F);          // player doubled the campfire
+        tag.putFloat("heatCampfire", 34.0F);           // player turned the campfire down to half
         CompoundTag cond = tag.getCompound("blockConductivity");
         cond.putFloat(BlockThermalCategory.BRICK.id, .84F);   // and made brick a leak
         tag.put("blockConductivity", cond);
         var s = new ServerSnowSettings();
         s.loadFromTag(tag);
         var now = new ServerSnowSettings();
-        assertEquals("a doubled campfire stays doubled", now.heatCampfire * 2, s.heatCampfire, 1F);
+        assertEquals("a halved campfire stays halved", now.heatCampfire / 2, s.heatCampfire, 1F);
         assertEquals("a doubled conductivity stays doubled",
                 now.blockConductivity[BlockThermalCategory.BRICK.ordinal()] * 2,
                 s.blockConductivity[BlockThermalCategory.BRICK.ordinal()], 0.001F);
