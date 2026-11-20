@@ -1,31 +1,30 @@
 55:    java.lang.AssertionError at WinterPresetTest.java:7
-144:    java.lang.AssertionError at RoomInertiaTest.java:140
+HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
+    Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
+
 OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=270.773806ms packed=183.622998ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=229.714683ms packed=154.676733ms; synthetic, not server TPS
 
 RoomInertiaTest > diagnoseWhereTheHeatGoes STANDARD_OUT
-    DIAG over 10 s: E 22142 -> 7595 (lost 14547 = 1455 W); air 21.27->18.08 C; shell 7.29->7.07 C
+    DIAG over 10 s: E -39497 -> -53183 (lost 13686 = 1369 W); air 20.09->18.43 C; shell 6.40->6.32 C
 
 RoomInertiaTest > diagnoseWhereTheHeatGoes STANDARD_ERROR
     DIAG edges: air-air G=20.000 (k=?), air-plank G=-1.000 (kPlank=?), plank->weather G=0.0500
 
 RoomInertiaTest > diagnoseWhereTheHeatGoes STANDARD_OUT
-    DIAG capacities: air=4125.0 shell=9340.0  =>  G_room_to_out approx 43.7 W/K
+    DIAG capacities: air=8250.0 shell=9340.0  =>  G_room_to_out approx 42.7 W/K
 
 RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
-    Hole open 30 s: block under it=9.6 C, room mean=9.6 C (closed room 21.3 C)
+    Hole open 30 s: block under it=11.9 C, room mean=11.9 C (closed room 20.1 C)
 
 RoomInertiaTest > theRoomWarmsInMinutesNotHours STANDARD_OUT
-    Plank room 5x5x3, one campfire at -12 C outside: 1.5 min=4.3 C, 15 min=21.3 C
+    Plank room 5x5x3, one campfire at -12 C outside: 1.5 min=-0.9 C, 15 min=20.1 C
 
 RoomInertiaTest > theRoomHoldsHeatWhenTheFireDies STANDARD_OUT
-    Fire out: 21.3 C, 10 s later=18.1 C, 2 min later=0.4 C
-
-RoomInertiaTest > theRoomHoldsHeatWhenTheFireDies FAILED
-    java.lang.AssertionError at RoomInertiaTest.java:140
+    Fire out: 20.1 C, 10 s later=18.4 C, 2 min later=5.0 C
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
     8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
@@ -39,7 +38,7 @@ SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
 SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
     Exposed ground coupling = 0.080
 
-105 tests completed, 2 failed
+105 tests completed, 1 failed
 
 > Task :test FAILED
 
@@ -58,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 53s
+BUILD FAILED in 54s
 13 actionable tasks: 13 executed
