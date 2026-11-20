@@ -1,54 +1,55 @@
-47:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:74: error: incompatible types: void cannot be converted to CompoundTag
+56:    java.lang.AssertionError at BalanceMigrationTest.java:51
+59:    java.lang.AssertionError at BalanceMigrationTest.java:66
 
-To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
-Daemon will be stopped at the end of the build 
+HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
+    Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
 
-> Configure project :
-MixinGradle did not locate the diffplug APT plugin, skipping eclipse task configuration
+HallUniformityTest > noIsolatedStepAtTileBorders STANDARD_OUT
+    Border 8: step=0.40 C, neighbour steps 1.10/1.07
+    Border 16: step=0.25 C, neighbour steps 0.64/0.57
+    Border 24: step=0.07 C, neighbour steps 0.17/0.14
 
-> Task :downloadMcpConfig
-> Task :extractSrg
-> Task :createMcpToSrg
+HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
+    Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
-> Task :compileJava
-Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
-Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
-Note: Loading searge mappings from /home/runner/work/-/-/eternal-snow-1.20.1/build/createMcpToSrg/output.tsrg
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
-Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
-Note: Some input files use or override a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
+OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
+    Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
-> Task :addMixinsToJar
-> Task :processResources
-> Task :classes
-> Task :jar
-> Task :configureReobfTaskForReobfJar
-> Task :reobfJar
-> Task :configureReobfTaskForReobfJarJar
-> Task :addMixinsToJarJar
-> Task :jarJar SKIPPED
-> Task :reobfJarJar SKIPPED
-> Task :assemble
+PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=265.490891ms packed=177.509666ms; synthetic, not server TPS
 
-> Task :compileTestJava FAILED
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:74: error: incompatible types: void cannot be converted to CompoundTag
-        CompoundTag tag = fresh.saveToTag(new CompoundTag());
-                                         ^
-1 error
+RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
+    Hole open 30 s: block under it=11.9 C, room mean=11.9 C (closed room 20.1 C)
+
+RoomInertiaTest > theRoomWarmsInMinutesNotHours STANDARD_OUT
+    Plank room 5x5x3, one campfire at -12 C outside: 1.5 min=-0.9 C, 15 min=20.1 C
+
+RoomInertiaTest > theRoomHoldsHeatWhenTheFireDies STANDARD_OUT
+    Fire out: 20.1 C, 10 s later=18.4 C, 2 min later=5.0 C
+
+RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
+    8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
+
+RoomWarmingTest > insulationMattersMoreThanRoomSize STANDARD_OUT
+    brick mean=4.08 C, wool mean=42.40 C
+
+SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
+    Ground: at the torches=-1.92 C, eight blocks away=-2.20 C, air at torch=-2.20 C (outside -2.2)
+
+SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
+    Exposed ground coupling = 0.080
+
+107 tests completed, 2 failed
+
+> Task :test FAILED
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':compileTestJava'.
-> Compilation failed; see the compiler error output for details.
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///home/runner/work/-/-/eternal-snow-1.20.1/build/reports/tests/test/index.html
 
 * Try:
-> Run with --info option to get more log output.
 > Run with --scan to get full insights.
 
 Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
@@ -57,5 +58,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 38s
-12 actionable tasks: 12 executed
+BUILD FAILED in 1m
+13 actionable tasks: 13 executed
