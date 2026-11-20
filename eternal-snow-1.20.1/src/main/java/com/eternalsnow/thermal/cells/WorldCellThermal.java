@@ -131,6 +131,30 @@ public final class WorldCellThermal {
                 !=ThermalEngine.isPotentialHeatEmitter(level.getBlockState(pos)))w.dirty.add(key);
         halo(level,w,BlockPos.of(key));
     }
+    /**
+     * How strongly one block is tied to the weather, and at which temperature.
+     *
+     * <p>This is the single place where "heat has a way out" is decided, so it is pure and
+     * strongly tested. An air cell with a free path to the sky follows the weather directly.
+     * Solid blocks follow the weather only through their outer face.
+     *
+     * <p>Owner's report: a basement with eight torches reached +150 C while the outside air was
+     * -2.2 C. The cause was here: an undisturbed solid block under the surface got no weather
+     * coupling at all, so the ground around a cellar was a heat reservoir with no leak. It has
+     * to be tied to the weather — quickly when it is shallow, slowly when it is deep.
+     */
+    static double weatherCoupling(boolean air,boolean sky,int y,int surfaceY,double conductivity) {
+        if(air)return sky?1:0;
+        if(sky||y>=surfaceY-1)return Math.min(1,conductivity);
+        // Buried solid: still exchanges heat with the surrounding ground and that ground with the
+        // surface. Deep rock is a better insulator, but never a perfect one.
+        int depth=Math.max(0,surfaceY-y);
+        double leak=depth<=8?0.25:depth<=32?0.06:0.02;
+        return leak*Math.max(0.05,Math.min(1,conductivity));
+    }
+    /** Time constant of one buried solid cell, in seconds; deeper means slower. */
+    static double groundTimeSeconds(int depth){return depth<=8?400:depth<=32?2400:9600;}
+
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
         return w.materials.computeIfAbsent(state,s->{
             boolean air=ThermalEngine.isAirOrOpenPassage(s);
@@ -153,7 +177,7 @@ public final class WorldCellThermal {
         var old=data.chunks.get(chunkKey(origin));
         double[] c=new double[512],k=new double[512],g=new double[512],slope=new double[512],offset=new double[512];
         var sources=new IntArrayList();var settings=EternalSnowState.getServerSettings();
-        double[] raw=new double[512];boolean[] air=new boolean[512];
+        double[] raw=new double[512];boolean[] air=new boolean[512];double[] anchor=new double[512];
         double mixing=settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1;
         // MOTION_BLOCKING height is per column; one query per 8-block column, not per block.
         int[] columnHeight=new int[64];
@@ -165,7 +189,9 @@ public final class WorldCellThermal {
             // Skylight, not MOTION_BLOCKING: glass roofs must still see the sky.
             boolean sky=level.canSeeSky(p);
             int surfaceY=columnHeight[(i&7)|(((i>>3)&7)<<3)];
-            g[i]=(m.air?sky:p.getY()>=surfaceY-1)?(m.air?1:Math.min(1,m.conductivity)):0;
+            g[i]=weatherCoupling(m.air,sky,p.getY(),surfaceY,m.conductivity);
+            // Solid, buried, and not directly weather-coupled: give the ground its own anchor.
+            if(!m.air&&!sky&&p.getY()<surfaceY-1)anchor[i]=groundTimeSeconds(surfaceY-p.getY());
             double blend=p.getY()<52&&!sky?Math.max(0,Math.min(.85,(surfaceY-p.getY()-8)/36.0)):0;
             slope[i]=1-blend;offset[i]=(p.getY()>85?-(p.getY()-85)*.12:0)*(1-blend)+6*blend;
             if(fresh) {
@@ -181,7 +207,7 @@ public final class WorldCellThermal {
         }
         Region previous=w.regions.get(key);
         Region region=new Region(new AdaptiveThermalTile(origin.getX(),origin.getY(),origin.getZ(),state));
-        region.field.configure(detail,c,k,g,slope,offset);region.field.fineMaterials(raw,air,mixing);region.sources.addAll(sources);
+        region.field.configure(detail,c,k,g,slope,offset);region.field.fineMaterials(raw,air,mixing);region.field.anchor=anchor;region.sources.addAll(sources);
         region.detailedUntil=previous==null?0:previous.detailedUntil;
         if(detail&&w.wanted.contains(key))region.detailedUntil=level.getGameTime()+DETAIL_HOLD_TICKS;
         w.regions.put(key,region);w.initializedLast++;

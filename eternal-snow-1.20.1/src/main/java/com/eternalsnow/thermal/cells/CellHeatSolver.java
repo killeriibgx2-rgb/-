@@ -295,6 +295,21 @@ public final class CellHeatSolver {
         }
     }
 
+    /**
+     * Deep ground is coupled only weakly to the weather, so its steady state takes hours of real
+     * time to reach. A cellar then sits stuck between the rock it touches and its fire — the
+     * reported +150 C. This pulls an equilibrated cell towards the temperature it would have with
+     * no heat sources at all, and the removed energy leaves the world. It never acts away from
+     * that ambient, so it cannot invent heat, and it is applied to blocks, never to air.
+     *
+     * @param relaxation fraction of the remaining gap per call, 0 disables
+     */
+    public void anchorToAmbient(int cell,double relaxation) {
+        if(relaxation<=0||!loaded[cell])return;
+        double target=boundaryT[cell];
+        temperature[cell]+=(target-temperature[cell])*Math.min(1,relaxation);
+    }
+
     public double totalEnergy() {
         double energy = 0;
         for (int i = 0; i < size(); i++) energy += temperature[i] * capacity[i];

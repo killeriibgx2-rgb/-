@@ -209,6 +209,7 @@ public final class AdaptiveThermalGraph {
         for(int i=0;i<power.length;i++)solver.setPower(i,power[i]);
         for(var t:tiles)t.configureBoundary(solver,ambient);
         applySourceBoundary(ambient);
+        for(var t:tiles)t.anchor(solver,ambient,seconds);
         solver.stepConservative(seconds);
         mixAir();
         for(var t:tiles)t.capture(solver,seconds);
