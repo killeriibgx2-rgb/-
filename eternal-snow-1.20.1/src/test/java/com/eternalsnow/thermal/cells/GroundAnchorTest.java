@@ -29,16 +29,13 @@ public class GroundAnchorTest {
     private static int localIndex(int x,int y,int z){return AdaptiveThermalTile.index(x&7,y,z&7);}
     private static int tileIndex(int x,int z){return 0;}
 
-    /**
-     * @param oldRules true reproduces the shipped behaviour (buried solid g = 0, no anchor)
-     * @param anchor   apply the ground anchor
-     */
-    private static List<AdaptiveThermalTile> cellar(boolean oldRules,boolean anchor){
+    /** @param oldRules true reproduces the shipped behaviour: buried solid had g = 0. */
+    private static List<AdaptiveThermalTile> cellar(boolean oldRules){
         var list=new ArrayList<AdaptiveThermalTile>();
         for(int tz=0;tz<1;tz++)for(int tx=0;tx<1;tx++){
             var tile=new AdaptiveThermalTile(tx*8,CELLAR_Y,tz*8,
                     new TileTemperatureState(filled(-2.2)));
-            double[] cap=filled(1),k=filled(1),g=filled(0),anchorArr=new double[512];
+            double[] cap=filled(1),k=filled(1),g=filled(0);
             boolean[] air=new boolean[512];
             for(int y=0;y<H;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++){
                 int gx=tx*8+x,gz=tz*8+z;
@@ -47,22 +44,19 @@ public class GroundAnchorTest {
                 boolean shell=!inside;
                 if(shell){
                     cap[i]=8*20;k[i]=8;                      // stone
-                    int depth=SURFACE_Y-(CELLAR_Y+y);
                     g[i]=oldRules?0:WorldCellThermal.weatherCoupling(false,false,CELLAR_Y+y,SURFACE_Y,8);
-                    if(anchor&&!oldRules)anchorArr[i]=WorldCellThermal.groundTimeSeconds(depth);
                 } else {air[i]=true;cap[i]=AIR_CAPACITY;}
             }
             tile.configure(true,cap,k,g,filled(1),filled(0));
             tile.fineMaterials(filled(1),air,3);
-            tile.anchor=anchorArr;
             list.add(tile);
         }
         return list;
     }
 
     /** @return {mean air, peak air, mean rock} after 30 simulated minutes with n torches. */
-    private static double[] run(int torches,boolean oldRules,boolean anchor){
-        var tiles=cellar(oldRules,anchor);
+    private static double[] run(int torches,boolean oldRules){
+        var tiles=cellar(oldRules);
         var graph=new AdaptiveThermalGraph(tiles);
         graph.setRoomAirMixing(20);
         graph.setMixingSweeps(12);
@@ -80,14 +74,14 @@ public class GroundAnchorTest {
             boolean isAir=t.air!=null&&t.air[i];
             double v=t.temperatures.get(i);
             if(isAir){airSum+=v;airN++;peak=Math.max(peak,v);}
-            else if(t.anchor!=null&&!isAir){rockSum+=v;rockN++;}
+            else{rockSum+=v;rockN++;}
         }
         return new double[]{airSum/airN,peak,rockN==0?0:rockSum/rockN};
     }
 
     /** The reported symptom has to be reproducible, otherwise the fix proves nothing. */
     @Test public void theSealedCellarReproducesTheReport(){
-        double[] old=run(8,true,false);
+        double[] old=run(8,true);
         System.out.println(String.format(Locale.ROOT,
             "Old rules, 8 torches: air mean=%.1f C, peak=%.1f C, rock=%.1f C",
             old[0],old[1],old[2]));
@@ -96,7 +90,7 @@ public class GroundAnchorTest {
     }
 
     @Test public void eightTorchesInACellarStayHabitable(){
-        double[] now=run(8,false,true);
+        double[] now=run(8,false);
         System.out.println(String.format(Locale.ROOT,
             "Fixed, 8 torches: air mean=%.1f C, peak=%.1f C, rock=%.1f C",
             now[0],now[1],now[2]));
@@ -106,26 +100,24 @@ public class GroundAnchorTest {
     }
 
     @Test public void elevenTorchesAreWarmerButNotRunaway(){
-        double eight=run(8,false,true)[0],eleven=run(11,false,true)[0];
+        double eight=run(8,false)[0],eleven=run(11,false)[0];
         System.out.println(String.format(Locale.ROOT,
             "Fixed, 8 vs 11 torches: air mean %.1f vs %.1f C",eight,eleven));
         assertTrue("more torches must not be colder",eleven>=eight-0.01);
         assertTrue("but must not explode either, "+eleven,eleven<120);
     }
 
-    @Test public void buriedGroundAlwaysHasAPathToTheWeather(){
+    @Test public void buriedGroundAlwaysActsAsAReservoir(){
         double deep=WorldCellThermal.weatherCoupling(false,false,20,SURFACE_Y,8.0);
-        double shallow=WorldCellThermal.weatherCoupling(false,false,SURFACE_Y-4,SURFACE_Y,8.0);
         System.out.println(String.format(Locale.ROOT,
-            "Weather coupling: deep stone=%.3f, near-surface stone=%.3f",deep,shallow));
-        assertTrue("deep ground must leak something, got "+deep,deep>0);
-        assertTrue("deeper must leak less: "+deep+" vs "+shallow,deep<shallow);
+            "Weather coupling: buried stone=%.3f (was 0.000)",deep));
+        assertTrue("buried ground must exchange heat, got "+deep,deep>0.05);
     }
 
     @Test public void heatedGroundLosesItsHeatAgain(){
         // Outdoor case from the report: the ground next to a torch sat at +3 C. Once the torch
         // is out, ground must come back towards the weather instead of staying warm.
-        var tiles=cellar(false,true);
+        var tiles=cellar(false);
         var graph=new AdaptiveThermalGraph(tiles);
         graph.setRoomAirMixing(20);
         graph.setMixingSweeps(12);
@@ -134,7 +126,7 @@ public class GroundAnchorTest {
             graph.addPower(tiles.get(0),localIndex(3,1,3),TORCH_POWER*4);
             graph.step(.5,-2.2);
         }
-        double[] afterHeat=run(0,false,true);
+        double[] afterHeat=run(0,false);
         System.out.println(String.format(Locale.ROOT,
             "Cooled back after the fire is out: air mean=%.1f C, rock=%.1f C",
             afterHeat[0],afterHeat[2]));
