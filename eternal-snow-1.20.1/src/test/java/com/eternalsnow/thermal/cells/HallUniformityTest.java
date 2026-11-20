@@ -72,8 +72,8 @@ public class HallUniformityTest {
     }
 
     private static double spreadTwoCells(double mixing){
-        var cold=new AdaptiveThermalTile(0,0,0,-20,true);
-        var hot=new AdaptiveThermalTile(8,0,0,-20,true);
+        var cold=new AdaptiveThermalTile(0,0,0,new TileTemperatureState(filled(-20)));
+        var hot=new AdaptiveThermalTile(8,0,0,new TileTemperatureState(filled(-20)));
         double[] c=filled(AIR_CAPACITY),k=filled(1),g=filled(0);
         boolean[] air=new boolean[512];Arrays.fill(air,true);
         hot.temperatures.set(0,200);hot.configure(true,c,k,g,filled(1),filled(0));
