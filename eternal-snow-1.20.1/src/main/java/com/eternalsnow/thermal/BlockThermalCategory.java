@@ -13,15 +13,19 @@ import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 public enum BlockThermalCategory {
-    WOOL("wool", 0.05F, 0.8F),
-    LOG("log", 0.12F, 5.5F),
-    PLANKS("planks", 0.24F, 2.5F),
-    SNOW("snow", 0.18F, 1.5F),
-    EARTH("earth", 0.38F, 4.0F),
-    BRICK("brick", 0.42F, 5.0F),
-    STONE("stone", 0.72F, 8.0F),
-    GLASS("glass", 0.90F, 1.2F),
-    METAL("metal", 0.95F, 6.0F);
+    // Conductivity is now ten times lower across the board. Measured: with the old values a wall
+    // was a short circuit, so a 5x5x3 plank room lost 30 C in ten seconds once its fire went out,
+    // and its walls could not be made to help by any amount. Real materials insulate because
+    // their resistance is large next to the air film beside them, which is what these numbers give.
+    WOOL("wool", 0.005F, 0.8F),
+    LOG("log", 0.012F, 5.5F),
+    PLANKS("planks", 0.024F, 2.5F),
+    SNOW("snow", 0.018F, 1.5F),
+    EARTH("earth", 0.038F, 4.0F),
+    BRICK("brick", 0.042F, 5.0F),
+    STONE("stone", 0.072F, 8.0F),
+    GLASS("glass", 0.090F, 1.2F),
+    METAL("metal", 0.40F, 6.0F);
 
     public static final BlockThermalCategory[] VALUES = values();
 

@@ -45,6 +45,8 @@ public final class WorldCellThermal {
      * second-scale response into the minute-scale one a player expects from a wooden house.
      */
     static final double THERMAL_TIME_SCALE=60;
+    /** Air is a poor conductor: about twenty times worse than brick. See BlockThermalCategory. */
+    static final double AIR_CONDUCTIVITY=0.1;
     private static final class Region {
         final AdaptiveThermalTile field;
         final IntArrayList sources=new IntArrayList();
@@ -181,7 +183,11 @@ public final class WorldCellThermal {
             // hundreds of thousands of energy units to warm, so even a huge fire took tens of
             // minutes to make a room habitable. This keeps the ratio between air and solid
             // materials close to reality while letting a normal fire warm a room in minutes.
-            if(air)return new Material(AIR_HEAT_CAPACITY*THERMAL_TIME_SCALE,settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1,true);
+            // Air conducts heat poorly; that is the whole point of a wall. With air at k = 1 it
+            // conducted as well as brick, so a room leaked through its shell faster than any fire
+            // could fill it. Convection is still applied on top as extra mixing.
+            if(air)return new Material(AIR_HEAT_CAPACITY*THERMAL_TIME_SCALE,
+                    AIR_CONDUCTIVITY*(settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1),true);
             var category=BlockThermalCategory.classify(s);
             double c=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20)*THERMAL_TIME_SCALE;
             if(s.getBlock() instanceof HeatAccumulatorBlock)c*=4;
