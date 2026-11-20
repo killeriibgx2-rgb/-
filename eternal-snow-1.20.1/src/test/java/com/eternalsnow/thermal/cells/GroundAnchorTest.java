@@ -47,7 +47,8 @@ public class GroundAnchorTest {
                     g[i]=oldRules?0:WorldCellThermal.weatherCoupling(false,false,CELLAR_Y+y,SURFACE_Y,8);
                 } else {air[i]=true;cap[i]=AIR_CAPACITY;}
             }
-            tile.configure(true,cap,k,g,filled(1),filled(0));
+            WorldCellThermal.applyVents(air,g);
+        tile.configure(true,cap,k,g,filled(1),filled(0));
             tile.fineMaterials(filled(1),air,3);
             list.add(tile);
         }

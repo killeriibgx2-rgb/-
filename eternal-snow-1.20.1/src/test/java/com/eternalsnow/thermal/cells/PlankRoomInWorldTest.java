@@ -38,6 +38,7 @@ public class PlankRoomInWorldTest {
         for(int z=1;z<=5;z++)for(int x=1;x<=5;x++){
             plank(cap,k,g,air,x,0,z,pg);plank(cap,k,g,air,x,4,z,pg);
         }
+        WorldCellThermal.applyVents(air,g);
         tile.configure(true,cap,k,g,filled(1),filled(0));
         tile.fineMaterials(filled(1),air,3);
         return tile;

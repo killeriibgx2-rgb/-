@@ -44,6 +44,7 @@ public class RoomInertiaTest {
             int i=AdaptiveThermalTile.index(3,4,3);
             air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;
         }
+        WorldCellThermal.applyVents(air,g);
         tile.configure(true,cap,k,g,filled(1),filled(0));
         tile.fineMaterials(filled(1),air,3);
         return tile;

@@ -34,6 +34,7 @@ public class HoleSpreadTest {
             int i=AdaptiveThermalTile.index(1,4,1);       // a corner ceiling block
             air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;
         }
+        WorldCellThermal.applyVents(air,g);
         t.configure(true,cap,k,g,filled(1),filled(0));
         t.fineMaterials(filled(1),air,3);
         return t;

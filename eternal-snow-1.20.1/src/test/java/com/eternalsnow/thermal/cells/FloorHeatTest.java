@@ -33,6 +33,7 @@ public class FloorHeatTest {
             else if(edge){cap[i]=2.5*20;k[i]=0.24;g[i]=0.24;}          // plank walls
             else{air[i]=true;cap[i]=AIR_CAPACITY;}
         }
+        WorldCellThermal.applyVents(air,g);
         tile.configure(true,cap,k,g,filled(1),filled(0));
         tile.fineMaterials(filled(1),air,3);
         return List.of(tile);

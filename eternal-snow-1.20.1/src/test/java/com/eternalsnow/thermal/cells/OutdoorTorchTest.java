@@ -28,7 +28,8 @@ public class OutdoorTorchTest {
                 if(y==0){cap[i]=4*20;k[i]=4;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}                  // exposed ground
                 else{air[i]=true;cap[i]=AIR_CAPACITY;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}          // open sky
             }
-            tile.configure(true,cap,k,g,filled(1),filled(0));
+            WorldCellThermal.applyVents(air,g);
+        tile.configure(true,cap,k,g,filled(1),filled(0));
             tile.fineMaterials(filled(1),air,3);
             list.add(tile);
         }
