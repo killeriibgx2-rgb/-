@@ -1,5 +1,4 @@
-139:    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
-GroundAnchorTest > heatedGroundLosesItsHeatAgain STANDARD_OUT
+140:    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
     Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
 
 HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
@@ -17,14 +16,15 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=-2.10 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=306.529572ms packed=209.033966ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=229.321457ms packed=159.441282ms; synthetic, not server TPS
 
 RoomInertiaSweepTest > sweep STANDARD_OUT
-    HOUSE ts=1   P=680  1m= -10.2 3m= -10.2 5m= -10.2 10m= -10.2 15m= -10.2 | off10s= -12.0 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
-    HOUSE ts=1   P=300  1m= -11.2 3m= -11.2 5m= -11.2 10m= -11.2 15m= -11.2 | off10s= -12.0 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
-    HOUSE ts=5   P=680  1m= -10.2 3m= -10.2 5m= -10.2 10m= -10.2 15m= -10.2 | off10s= -11.9 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
-    HOUSE ts=5   P=300  1m= -11.2 3m= -11.2 5m= -11.2 10m= -11.2 15m= -11.2 | off10s= -12.0 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
-    HOUSE ts=20  P=680  1m= -10.4 3m= -10.2 5m= -10.2 10m= -10.2 15m= -10.2 | off10s= -11.6 1m= -12.0 5m= -12.0 10m= -12.0 20m= -12.0 50m= -12.0
+    CAL house ts=20 P=200          1m= -11.5 3m= -11.5 5m= -11.5 10m= -11.5 15m= -11.5 | off10s= -11.9 1m= -12.0 5m= -12.0 15m= -12.0
+    CAL house ts=20 P=680          1m= -10.4 3m= -10.3 5m= -10.3 10m= -10.3 15m= -10.3 | off10s= -11.5 1m= -11.9 5m= -12.0 15m= -12.0
+    CAL house ts=20 P=1500         1m=  -8.4 3m=  -8.3 5m=  -8.3 10m=  -8.3 15m=  -8.3 | off10s= -11.0 1m= -11.9 5m= -12.0 15m= -12.0
+    CAL house ts=60 P=200          1m= -11.6 3m= -11.5 5m= -11.5 10m= -11.5 15m= -11.5 | off10s= -11.8 1m= -11.9 5m= -12.0 15m= -12.0
+    CAL house ts=60 P=680          1m= -10.6 3m= -10.4 5m= -10.3 10m= -10.3 15m= -10.3 | off10s= -11.3 1m= -11.7 5m= -12.0 15m= -12.0
+    CAL house ts=60 P=1500         1m=  -8.9 3m=  -8.4 5m=  -8.3 10m=  -8.3 15m=  -8.3 | off10s= -10.4 1m= -11.4 5m= -12.0 15m= -12.0
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
     8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
@@ -57,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 4m 19s
+BUILD FAILED in 1m 45s
 13 actionable tasks: 13 executed
