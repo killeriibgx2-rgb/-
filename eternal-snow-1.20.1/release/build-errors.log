@@ -1,9 +1,4 @@
-56:    org.junit.runners.model.TestTimedOutException at AdaptiveThermalTest.java:139
-59:    java.lang.AssertionError at AdaptiveThermalTest.java:185
-62:    org.junit.runners.model.TestTimedOutException at AdaptiveThermalTest.java:106
-65:    java.lang.AssertionError at AdaptiveThermalTest.java:36
-71:    java.lang.AssertionError at AdaptiveThermalTest.java:96
-92:    java.lang.AssertionError at EnclosureDetailTest.java:57
+83:    java.lang.AssertionError at EnclosureDetailTest.java:57
 HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
     Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
@@ -11,7 +6,7 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=432.107669ms packed=309.740633ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=288.877002ms packed=203.181751ms; synthetic, not server TPS
 
 PlankRoomInWorldTest > fireInTheMiddleOfTheRoomWarmsIt STANDARD_OUT
     Real fire in a real plank room (-15 C outside): inside=14.5 C after 15 min
@@ -20,7 +15,7 @@ PlankRoomInWorldTest > theRoomDoesNotNeedToBeDetailed STANDARD_OUT
     Detailed room mean=14.5 C, whole-tile mean=-4.6 C
 
 PlankRoomInWorldTest > aCoarseTileLosesTheRoom STANDARD_OUT
-    Room while detailed=14.5 C, after the tile went coarse=14.5 C
+    Room while detailed=14.5 C, after the tile went coarse=-5.0 C
 
 RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
     Hole open 30 s: block under it=11.9 C, room mean=11.9 C (closed room 20.1 C)
@@ -43,7 +38,7 @@ SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
 SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
     Exposed ground coupling = 0.080
 
-113 tests completed, 6 failed
+113 tests completed, 1 failed
 
 > Task :test FAILED
 
@@ -62,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m 11s
+BUILD FAILED in 1m 15s
 13 actionable tasks: 13 executed
