@@ -1,56 +1,53 @@
-121:    java.lang.AssertionError at HoleSpreadTest.java:93
-127:    java.lang.AssertionError at HoleSpreadTest.java:76
-148:    java.lang.AssertionError at RoomInertiaTest.java:114
-OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
-    Outdoors, 8 torches: air at the torches=-2.17 C, ten blocks away=-2.20 C (outside -2.2)
+31:/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/cells/WorldCellThermal.java:243: error: cannot find symbol
 
-PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=183.823871ms packed=144.594222ms; synthetic, not server TPS
+Welcome to Gradle 8.8!
 
-PlankRoomInWorldTest > fireInTheMiddleOfTheRoomWarmsIt STANDARD_OUT
-    Real fire in a real plank room (-15 C outside): inside=10.1 C after 15 min
+Here are the highlights of this release:
+ - Running Gradle on Java 22
+ - Configurable Gradle daemon JVM
+ - Improved IDE performance for large projects
 
-PlankRoomInWorldTest > theRoomDoesNotNeedToBeDetailed STANDARD_OUT
-    Detailed room mean=10.1 C, whole-tile mean=-8.4 C
+For more details see https://docs.gradle.org/8.8/release-notes.html
 
-PlankRoomInWorldTest > aCoarseTileLosesTheRoom STANDARD_OUT
-    Room while detailed=10.1 C, after the tile went coarse=-8.8 C
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
 
-RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
-    Hole open 30 s: block under it=-11.4 C, room mean=-11.4 C (closed room 16.7 C)
+> Configure project :
+MixinGradle did not locate the diffplug APT plugin, skipping eclipse task configuration
 
-RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom FAILED
-    java.lang.AssertionError at RoomInertiaTest.java:114
+> Task :downloadMcpConfig
+> Task :extractSrg
+> Task :createMcpToSrg
 
-RoomInertiaTest > theRoomWarmsInMinutesNotHours STANDARD_OUT
-    Plank room 5x5x3, one campfire at -12 C outside: 1.5 min=-0.9 C, 15 min=16.7 C
+> Task :compileJava
+Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
+Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
+Note: Loading searge mappings from /home/runner/work/-/-/eternal-snow-1.20.1/build/createMcpToSrg/output.tsrg
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
+/home/runner/work/-/-/eternal-snow-1.20.1/src/main/java/com/eternalsnow/thermal/cells/WorldCellThermal.java:243: error: cannot find symbol
+        applyVents(air,g);
+        ^
+  symbol:   method applyVents(boolean[],double[])
+  location: class WorldCellThermal
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+1 error
 
-RoomInertiaTest > theRoomHoldsHeatWhenTheFireDies STANDARD_OUT
-    Fire out: 16.7 C, 10 s later=15.0 C, 2 min later=1.5 C
-
-RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
-    8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
-
-RoomWarmingTest > insulationMattersMoreThanRoomSize STANDARD_OUT
-    brick mean=4.08 C, wool mean=42.40 C
-
-SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
-    Ground: at the torches=-2.15 C, eight blocks away=-2.20 C, air at torch=-2.17 C (outside -2.2)
-
-SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
-    Exposed ground coupling = 0.080
-
-115 tests completed, 3 failed
-
-> Task :test FAILED
+> Task :compileJava FAILED
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':test'.
-> There were failing tests. See the report at: file:///home/runner/work/-/-/eternal-snow-1.20.1/build/reports/tests/test/index.html
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.
 
 * Try:
+> Run with --info option to get more log output.
 > Run with --scan to get full insights.
 
 Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
@@ -59,5 +56,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 55s
-13 actionable tasks: 13 executed
+BUILD FAILED in 25s
+4 actionable tasks: 4 executed
