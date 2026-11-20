@@ -81,6 +81,9 @@ public class HallUniformityTest {
         hot.fineMaterials(filled(1),air,3);cold.fineMaterials(filled(1),air,3);
         var graph=new AdaptiveThermalGraph(List.of(hot,cold));
         graph.setRoomAirMixing(mixing);
+        double live=graph.solver.liveConductance(hot.node,hot.temperatures==null?0:hot.node+1);
+        System.out.println("  TWOCELL mixing="+mixing+" live G("+hot.node+",+1)="+live
+            +" crossTile G="+graph.solver.liveConductance(hot.node+7,cold.node));
         for(int i=0;i<40;i++){graph.clearPower();graph.step(.5,-20);}
         return graph.solver.temperature(cold.node+AdaptiveThermalTile.index(0,0,0));
     }

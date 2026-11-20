@@ -79,6 +79,12 @@ public final class CellHeatSolver {
     public double heatCapacity(int cell) { return capacity[cell]; }
     public double outsideConductance(int cell) { return boundaryG[cell]; }
     public int edgeA(int edge) { return edgeA[edge]; }
+    /** The conductance value the integrator actually uses for this pair (diagnostics). */
+    public double liveConductance(int a,int b) {
+        if(edgeIndices==null)return -1;
+        int index=edgeIndices.get(pair(a,b));
+        return index<0?-1:edgeG[index];
+    }
     /** Conductance of an existing edge, for diagnostics. */
     public double edgeConductance(int a,int b) {
         if(edgeIndices==null)return -1;
