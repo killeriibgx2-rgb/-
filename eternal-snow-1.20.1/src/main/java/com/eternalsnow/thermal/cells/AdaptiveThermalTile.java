@@ -10,6 +10,8 @@ public final class AdaptiveThermalTile {
     double[] capacities,conductivities,outsideG,slopes,offsets,rawConductivities;
     boolean[] air;
     double mixing=1;
+    /** Per-cell ground anchor (0..1); only solid cells that are weakly coupled get it. */
+    double[] anchor;
     void fineMaterials(double[] raw,boolean[] air,double mixing){this.rawConductivities=detailed?raw:null;this.air=detailed?air:null;this.mixing=mixing;}
     public AdaptiveThermalTile(int x,int y,int z,TileTemperatureState temperatures) {
         this.x=x;this.y=y;this.z=z;this.temperatures=temperatures;
@@ -27,7 +29,7 @@ public final class AdaptiveThermalTile {
             gTotal+=g[i];gSlope+=g[i]*slope[i];gOffset+=g[i]*offset[i];gBase+=g[i]*temperatures.base[i];
         }
         baseMean=energy/totalCapacity;conductivity=512/resistance;detailed=detail;
-        capacities=detail?c:null;conductivities=detail?k:null;rawConductivities=detail?k:null;air=null;mixing=1;
+        capacities=detail?c:null;conductivities=detail?k:null;rawConductivities=detail?k:null;air=null;mixing=1;anchor=null;
         outsideG=detail?g:null;slopes=detail?slope:null;offsets=detail?offset:null;
     }
     public double mean() {return baseMean*temperatures.scale+temperatures.offset;}
@@ -36,6 +38,20 @@ public final class AdaptiveThermalTile {
     public static int index(int x,int y,int z) {return x|(z<<3)|(y<<6);}
     public static double contact(double ka,double kb,double distanceA,double distanceB,double area) {
         return area/(distanceA/ka+distanceB/kb);
+    }
+    /**
+     * Weather coupling is weak for deep ground. Rather than wait hours of real time for the
+     * ground to reach its own steady state (meanwhile a cellar with torches runs away to +150 C),
+     * every so often pull each solid cell a small part of the way to the temperature it would
+     * have with no heat sources. Air is never anchored: a heated room must stay heated.
+     */
+    void anchor(CellHeatSolver solver,double ambient,double tickSeconds) {
+        if(anchor==null)return;
+        for(int i=0;i<512;i++) {
+            double a=anchor[i];if(a<=0)continue;
+            double relax=Math.min(1,tickSeconds/a);
+            solver.anchorToAmbient(node+i,relax);
+        }
     }
     void configureBoundary(CellHeatSolver solver,double ambient) {
         if(detailed) {

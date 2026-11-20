@@ -209,6 +209,7 @@ public final class AdaptiveThermalGraph {
         for(int i=0;i<power.length;i++)solver.setPower(i,power[i]);
         for(var t:tiles)t.configureBoundary(solver,ambient);
         applySourceBoundary(ambient);
+        for(var t:tiles)t.anchor(solver,ambient,seconds);
         solver.stepConservative(seconds);
         mixAir();
         for(var t:tiles)t.capture(solver,seconds);
@@ -220,6 +221,11 @@ public final class AdaptiveThermalGraph {
     private void mixAir() {
         if(mixingSweeps<=0)return;
         boolean[] airNode=airNodeTable();
+        // Only enclosed air is forced to equalise. Open-sky air is moved by wind and convection
+        // far faster than by conduction, and forced mixing there let a single torch warm a
+        // twelve-block bubble of open air. A cell that sees the sky keeps its own boundary.
+        for(int i=0;i<airNode.length;i++)
+            if(airNode[i]&&solver.outsideConductance(i)>0)airNode[i]=false;
         for(int sweep=0;sweep<mixingSweeps;sweep++)solver.mixingSweep(airNode);
     }
     public int fineCells(){int n=0;for(var t:tiles)if(t.detailed)n+=512;return n;}

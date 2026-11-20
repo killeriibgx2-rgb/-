@@ -131,6 +131,28 @@ public final class WorldCellThermal {
                 !=ThermalEngine.isPotentialHeatEmitter(level.getBlockState(pos)))w.dirty.add(key);
         halo(level,w,BlockPos.of(key));
     }
+    /**
+     * How strongly one block is tied to the weather, and at which temperature.
+     *
+     * <p>This is the single place where "heat has a way out" is decided, so it is pure and
+     * strongly tested. An air cell with a free path to the sky follows the weather directly.
+     * Solid blocks follow the weather only through their outer face.
+     *
+     * <p>Owner's report: a basement with eight torches reached +150 C while the outside air was
+     * -2.2 C. The cause was here: an undisturbed solid block under the surface got no weather
+     * coupling at all, so the ground around a cellar was a heat reservoir with no leak. It has
+     * to be tied to the weather — quickly when it is shallow, slowly when it is deep.
+     */
+    static double weatherCoupling(boolean air,boolean sky,int y,int surfaceY,double conductivity) {
+        if(air)return sky?1:0;
+        // Solid ground is an effectively infinite reservoir: for any fire a player can build, the
+        // rock it touches stays at the ground temperature of that depth. Treating it as a closed
+        // body was the bug — a cellar carved into rock then had no sink at all (air inside never
+        // sees the sky, buried rock had g = 0) and eight torches pushed it to +150 C. Coupling
+        // every solid cell to the ambient of its own depth makes the ground soak up heat instead.
+        return Math.min(1,Math.max(0.05,conductivity));
+    }
+
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
         return w.materials.computeIfAbsent(state,s->{
             boolean air=ThermalEngine.isAirOrOpenPassage(s);
@@ -165,7 +187,7 @@ public final class WorldCellThermal {
             // Skylight, not MOTION_BLOCKING: glass roofs must still see the sky.
             boolean sky=level.canSeeSky(p);
             int surfaceY=columnHeight[(i&7)|(((i>>3)&7)<<3)];
-            g[i]=(m.air?sky:p.getY()>=surfaceY-1)?(m.air?1:Math.min(1,m.conductivity)):0;
+            g[i]=weatherCoupling(m.air,sky,p.getY(),surfaceY,m.conductivity);
             double blend=p.getY()<52&&!sky?Math.max(0,Math.min(.85,(surfaceY-p.getY()-8)/36.0)):0;
             slope[i]=1-blend;offset[i]=(p.getY()>85?-(p.getY()-85)*.12:0)*(1-blend)+6*blend;
             if(fresh) {

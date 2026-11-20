@@ -1,36 +1,27 @@
-87:    java.lang.AssertionError at HallUniformityTest.java:79
+132:    java.lang.AssertionError at SurfaceHeatSpillTest.java:76
 
-AirHeatTransferTest > enclosedRoomWarmsBeyondOneBlockWithoutIncreasingPower STANDARD_OUT
-    Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
-    Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
-    Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
-    Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
+GroundAnchorTest > theSealedCellarRunsAway STANDARD_OUT
+    Old rules, 8 torches: 30 min=18.2 C, 60 min=24.1 C (still climbing)
 
-CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
-    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 125 ms (CI, not Minecraft TPS)
+GroundAnchorTest > heatedGroundLosesItsHeatAgain STANDARD_OUT
+    Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
 
-ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
-    Conservative million-cell test 10 steps ms=169.556112
-
-ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
-    Conservative 64^3 G=3 20 steps ms=212.279226
+HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
+    Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
 
 HallUniformityTest > noIsolatedStepAtTileBorders STANDARD_OUT
     Border 8: step=0.40 C, neighbour steps 1.10/1.07
     Border 16: step=0.25 C, neighbour steps 0.64/0.57
     Border 24: step=0.07 C, neighbour steps 0.17/0.14
 
-HallUniformityTest > sweepsRemoveTheTileSteps STANDARD_OUT
-    Hall across-room spread: no sweeps=3.37 C, 12 sweeps=8.92 C
-
-HallUniformityTest > sweepsRemoveTheTileSteps FAILED
-    java.lang.AssertionError at HallUniformityTest.java:79
-
 HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
     Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
+OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
+    Outdoors, 8 torches: air at the torches=-2.10 C, ten blocks away=-2.20 C (outside -2.2)
+
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=268.020685ms packed=176.944012ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=314.611191ms packed=206.062173ms; synthetic, not server TPS
 
 RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
     8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
@@ -38,7 +29,16 @@ RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
 RoomWarmingTest > insulationMattersMoreThanRoomSize STANDARD_OUT
     brick mean=4.08 C, wool mean=42.40 C
 
-87 tests completed, 1 failed
+SurfaceHeatSpillTest > weakerGroundCouplingSpreadsLessHeat STANDARD_OUT
+    Ground at torch: coupling 1.0=-2.19 C, coupling 0.15=-2.15 C
+
+SurfaceHeatSpillTest > weakerGroundCouplingSpreadsLessHeat FAILED
+    java.lang.AssertionError at SurfaceHeatSpillTest.java:76
+
+SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
+    Ground: at the torches=-2.19 C, eight blocks away=-2.19 C, air at torch=-2.01 C (outside -2.2)
+
+101 tests completed, 1 failed
 
 > Task :test FAILED
 
@@ -57,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 50s
+BUILD FAILED in 1m 13s
 13 actionable tasks: 13 executed
