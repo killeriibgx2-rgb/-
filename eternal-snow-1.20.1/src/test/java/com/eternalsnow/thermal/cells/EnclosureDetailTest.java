@@ -41,8 +41,10 @@ public class EnclosureDetailTest {
                 tile(false,true).keepDetailed());
     }
 
-    @Test public void detailIsWhatKeepsTheRoomAlive(){
-        // Same tile, same fire: detailed keeps the room, coarse cannot.
+    @Test public void theRoomSurvivesBothRepresentations(){
+        // Detailed tiles hold the room directly. Coarse tiles are one solver node, but the
+        // 512-cell pattern is kept, so the room is still there when the player walks away and
+        // comes back — it is no longer replaced by the mean of the field around the house.
         for(boolean detailed:new boolean[]{true,false}){
             var t=tile(true,detailed);
             var g=new AdaptiveThermalGraph(List.of(t));
@@ -54,9 +56,8 @@ public class EnclosureDetailTest {
             System.out.println(String.format(Locale.ROOT,
                 "detail=%s room=%.1f C field=%.1f C keepDetailed=%s enclosure=%s",
                 detailed,inside,field,t.keepDetailed(),t.holdsEnclosure));
-            if(detailed)assertTrue("a detailed tile must keep the room warm, was "+inside,
+            assertTrue("the room must stay warm in both representations, was "+inside,
                     inside>OUTSIDE+8);
-            else assertTrue("a coarse tile cannot: this is the reported bug",inside<OUTSIDE+8);
         }
     }
 }
