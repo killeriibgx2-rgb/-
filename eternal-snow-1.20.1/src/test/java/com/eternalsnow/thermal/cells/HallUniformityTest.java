@@ -63,6 +63,18 @@ public class HallUniformityTest {
         return max-min;
     }
 
+    @Test public void debugEdges(){
+        var tiles=hall();
+        var graph=new AdaptiveThermalGraph(tiles);
+        int before=graph.solver.edgeCount();
+        double gBefore=graph.solver.edgeConductance(graph.solver.edgeA(0),graph.solver.edgeB(0));
+        graph.setRoomAirMixing(40);
+        int after=graph.solver.edgeCount();
+        double gAfter=graph.solver.edgeConductance(graph.solver.edgeA(0),graph.solver.edgeB(0));
+        int air=0;for(var t:tiles)for(int i=0;i<512;i++)if(t.air!=null&&t.air[i])air++;
+        System.out.println("DEBUG edges="+before+"->"+after+" g0="+gBefore+"->"+gAfter+" airCells="+air+" nodes="+graph.solver.size());
+    }
+
     @Test public void uniformMixingFlattensATileHall(){
         double[] low=run(3),high=run(40);
         System.out.println(String.format(Locale.ROOT,

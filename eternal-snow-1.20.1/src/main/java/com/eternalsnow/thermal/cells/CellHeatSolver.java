@@ -77,6 +77,12 @@ public final class CellHeatSolver {
     public double heatCapacity(int cell) { return capacity[cell]; }
     public double outsideConductance(int cell) { return boundaryG[cell]; }
     public int edgeA(int edge) { return edgeA[edge]; }
+    /** Conductance of an existing edge, for diagnostics. */
+    public double edgeConductance(int a,int b) {
+        if(edgeIndices==null)return -1;
+        int index=edgeIndices.get(pair(a,b));
+        return index<0?-1:edgeG[index];
+    }
     public int edgeB(int edge) { return edgeB[edge]; }
     public double outsideTemperature(int cell) { return boundaryT[cell]; }
     public double[] temperatures() { return Arrays.copyOf(temperature,cellCount); }
