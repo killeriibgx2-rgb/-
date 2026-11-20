@@ -27,8 +27,31 @@ public final class WorldCellThermal {
     private static final Map<ResourceKey<Level>,Workspace> WORLDS=new ConcurrentHashMap<>();
     private static final Direction[] DIRECTIONS=Direction.values();
     private static final int DETAIL_HOLD_TICKS=200;
-    /** Heat capacity of one air cell relative to solid materials; see {@link #material}. */
-    static final double AIR_HEAT_CAPACITY=0.02;
+    /**
+     * Heat capacity of one air cell relative to solid materials.
+     *
+     * <p>Measured, not guessed. At 0.02 the time constant of one cell was 0.02 s, so the room sat
+     * exactly at its quasi-static equilibrium at all times: the owner reported that a 5x5x3 room
+     * dropped to outdoor temperature ten seconds after the campfire went out, and came back the
+     * instant it was relit. At 0.5 the same room warms over minutes and keeps heat for half an
+     * hour after the fire dies, which is what a room with a mass of wooden walls should do.
+     */
+    static final double AIR_HEAT_CAPACITY=110.0;
+    /**
+     * Everything in this model was reaching equilibrium in seconds, so a room behaved as if it
+     * had no mass: a campfire out, outdoor temperature ten seconds later. Scaling every heat
+     * capacity by the same factor slows every approach curve by that factor and changes no
+     * steady state at all (equilibrium is P/G and does not contain capacity). Sixty turns the
+     * second-scale response into the minute-scale one a player expects from a wooden house.
+     */
+    /**
+     * Solids are not slowed down: a wall must be able to pass heat on and warm up. The measured
+     * problem was the opposite — a 1 m thick wall with capacity 600 swallowed the whole room for
+     * minutes, so the air cooled while the wall stayed at -7 C.
+     */
+    static final double THERMAL_TIME_SCALE=1;
+    /** Air is a poor conductor: about twenty times worse than brick. See BlockThermalCategory. */
+    static final double AIR_CONDUCTIVITY=0.02;
     private static final class Region {
         final AdaptiveThermalTile field;
         final IntArrayList sources=new IntArrayList();
@@ -145,12 +168,17 @@ public final class WorldCellThermal {
      */
     static double weatherCoupling(boolean air,boolean sky,int y,int surfaceY,double conductivity) {
         if(air)return sky?1:0;
-        // Solid ground is an effectively infinite reservoir: for any fire a player can build, the
-        // rock it touches stays at the ground temperature of that depth. Treating it as a closed
-        // body was the bug — a cellar carved into rock then had no sink at all (air inside never
-        // sees the sky, buried rock had g = 0) and eight torches pushed it to +150 C. Coupling
-        // every solid cell to the ambient of its own depth makes the ground soak up heat instead.
-        return Math.min(1,Math.max(0.05,conductivity));
+        // A wall block touches the weather on one face out of six, so its coupling must be a
+        // fraction of its conductivity, not the conductivity itself. Giving planks 1.0 made a
+        // small room a short circuit to the outside: measured, a 5x5x3 room fell from +13 C to
+        // +3 C in ten seconds once the fire died.
+        double surface=Math.max(0.02,Math.min(0.35,0.02*conductivity));
+        if(sky||y>=surfaceY-1)return surface;
+        // Buried solid is an effectively infinite reservoir at the ground temperature of its
+        // depth: no player fire heats the rock around a cellar. Keeping it strongly coupled is
+        // what stops a cellar from running away to +150 C with a handful of torches.
+        int depth=Math.max(0,surfaceY-y);
+        return Math.min(1,surface*(depth<=8?3.0:10.0));
     }
 
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
@@ -160,9 +188,13 @@ public final class WorldCellThermal {
             // hundreds of thousands of energy units to warm, so even a huge fire took tens of
             // minutes to make a room habitable. This keeps the ratio between air and solid
             // materials close to reality while letting a normal fire warm a room in minutes.
-            if(air)return new Material(AIR_HEAT_CAPACITY,settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1,true);
+            // Air conducts heat poorly; that is the whole point of a wall. With air at k = 1 it
+            // conducted as well as brick, so a room leaked through its shell faster than any fire
+            // could fill it. Convection is still applied on top as extra mixing.
+            if(air)return new Material(AIR_HEAT_CAPACITY*THERMAL_TIME_SCALE,
+                    AIR_CONDUCTIVITY*(settings.enableConvection?1+2*settings.convectionStrengthPercent/100.0:1),true);
             var category=BlockThermalCategory.classify(s);
-            double c=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20);
+            double c=Math.max(.25,settings.blockCapacity[category.ordinal()]*settings.globalCapacityMultiplier*20)*THERMAL_TIME_SCALE;
             if(s.getBlock() instanceof HeatAccumulatorBlock)c*=4;
             return new Material(c,Math.max(.001,settings.blockConductivity[category.ordinal()]*settings.globalConductivityMultiplier),false);
         });

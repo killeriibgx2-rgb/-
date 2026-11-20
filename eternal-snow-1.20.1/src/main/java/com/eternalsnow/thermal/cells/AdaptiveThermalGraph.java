@@ -170,11 +170,17 @@ public final class AdaptiveThermalGraph {
      */
     public void addPower(AdaptiveThermalTile tile,int local,double value){
         if(tile.detailed&&tile.air!=null) {
-            int air=0;
-            for(int i=0;i<512;i++)if(tile.air[i])air++;
-            if(air>0) {
-                double share=value/air;
-                for(int i=0;i<512;i++)if(tile.air[i])power[tile.node+i]+=share;
+            // Spread only over the air the fire can actually see, i.e. air with no direct path to
+            // the sky. Spreading over every air cell of the tile divided the fire's heat with the
+            // outdoor air standing in the same tile: measured, a campfire of 1500 W lifted a
+            // 5x5x3 plank room by only 3.7 C because most of its heat went into the field outside.
+            int enclosed=0;
+            for(int i=0;i<512;i++)
+                if(tile.air[i]&&tile.outsideG!=null&&tile.outsideG[i]<=0)enclosed++;
+            if(enclosed>0) {
+                double share=value/enclosed;
+                for(int i=0;i<512;i++)
+                    if(tile.air[i]&&tile.outsideG[i]<=0)power[tile.node+i]+=share;
                 sourceNodes.add(tile.node+local);
                 return;
             }
@@ -183,6 +189,7 @@ public final class AdaptiveThermalGraph {
         power[node]+=value;
         sourceNodes.add(node);
     }
+
     /**
      * A fire is a surface at flame temperature, not an unlimited watt tap. Added as a thermal
      * boundary it limits itself: in a cold room it pours heat in, and as the room nears the

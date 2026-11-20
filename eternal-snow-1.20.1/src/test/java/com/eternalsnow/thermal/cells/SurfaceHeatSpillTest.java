@@ -74,9 +74,11 @@ public class SurfaceHeatSpillTest {
      * exposed block cannot be insulated from the weather by accident.
      */
     @Test public void exposedGroundStaysAtTheAirTemperature(){
-        assertEquals("exposed stone must be tied to the weather",
-                WorldCellThermal.weatherCoupling(false,true,64,64,4.0),1.0,1e-9);
-        assertEquals("exposed grass even more so",
-                WorldCellThermal.weatherCoupling(false,true,64,64,4.0),1.0,1e-9);
+        // A surface block touches the weather on one face, so its coupling is a fraction of its
+        // conductivity — small, but far from zero: the ground must follow the weather.
+        double g=WorldCellThermal.weatherCoupling(false,true,64,64,4.0);
+        System.out.println(String.format(Locale.ROOT,"Exposed ground coupling = %.3f",g));
+        assertTrue("exposed ground must follow the weather, got "+g,g>0.02);
+        assertTrue("and must not be a short circuit, got "+g,g<1);
     }
 }
