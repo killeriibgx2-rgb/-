@@ -123,9 +123,25 @@ public final class AdaptiveThermalGraph {
      * Without them the only path out of a fire is its six faces, so heat crawls out and a large
      * room never warms. With them the room's air is close to isothermal, like real air.
      */
+    /**
+     * Uniform air mixing: every air cell next to another air cell gets the same conductance,
+     * whether or not the two cells happen to share a tile. Tiles are our bookkeeping, not
+     * physics — the previous version mixed air strongly inside a tile and barely across tile
+     * borders, which would show up as 8-block temperature steps in a large hall.
+     *
+     * <p>No room detection, no flood fill: an open door simply lets heat flow out through the
+     * same law. Air becomes nearly isothermal, which is what a real closed room does.
+     */
     public void setRoomAirMixing(double value) {
         roomAirMixing=Math.max(1,Math.min(200,value));
         if(roomAirMixing<=1)return;
+        boolean[] airNode=airNodeTable();
+        // Face neighbours, including across tile borders.
+        for(int e=0;e<solver.edgeCount();e++) {
+            int a=solver.edgeA(e),b=solver.edgeB(e);
+            if(airNode[a]&&airNode[b])solver.setConnection(a,b,roomAirMixing);
+        }
+        // Long links inside a tile keep a whole 8-block volume from stratifying.
         for(var tile:tiles) {
             if(!tile.detailed)continue;
             for(int y=0;y<8;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++) {
@@ -136,6 +152,12 @@ public final class AdaptiveThermalGraph {
                 if(z<=3){int b=AdaptiveThermalTile.index(x,y,z+4);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
             }
         }
+    }
+    /** One flat answer per solver node: is this cell air? Built once per call, O(nodes). */
+    private boolean[] airNodeTable() {
+        boolean[] airNode=new boolean[solver.size()];
+        for(var t:tiles)for(int i=0;i<t.nodes();i++)airNode[t.node+i]=!t.detailed||isAir(t,i);
+        return airNode;
     }
     private static boolean isAir(AdaptiveThermalTile tile,int local) {
         return tile.air!=null && tile.air[local];

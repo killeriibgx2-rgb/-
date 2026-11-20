@@ -76,6 +76,8 @@ public final class CellHeatSolver {
     public double temperature(int cell) { return temperature[cell]; }
     public double heatCapacity(int cell) { return capacity[cell]; }
     public double outsideConductance(int cell) { return boundaryG[cell]; }
+    public int edgeA(int edge) { return edgeA[edge]; }
+    public int edgeB(int edge) { return edgeB[edge]; }
     public double outsideTemperature(int cell) { return boundaryT[cell]; }
     public double[] temperatures() { return Arrays.copyOf(temperature,cellCount); }
 
