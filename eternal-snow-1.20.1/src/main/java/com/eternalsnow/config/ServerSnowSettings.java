@@ -122,6 +122,14 @@ public final class ServerSnowSettings {
     public boolean enableConvection = true;        // cold floor / warm ceiling stratification
     public int convectionStrengthPercent = 100;    // 0..300: how strongly storeys differ in temperature
 
+    /**
+     * Bumped whenever the shipped thermal balance changes in a way that must reach existing
+     * worlds. Saved NBT holds every field, so without this a player's old world keeps the old
+     * wattages forever: the owner's room stayed at -8.1 C because his world still had a 68 W
+     * campfire while the new physics needs 150 W.
+     */
+    public static final int BALANCE_REVISION = 3;
+
     public ServerSnowSettings() {
         for (BlockThermalCategory cat : BlockThermalCategory.VALUES) {
             this.blockConductivity[cat.ordinal()] = cat.defaultConductivity;
@@ -318,6 +326,7 @@ public final class ServerSnowSettings {
     }
 
     public void saveToTag(CompoundTag tag) {
+        tag.putInt("balanceRevision", BALANCE_REVISION);
         tag.putBoolean("enabled", this.enabled);
         tag.putBoolean("autoWeatherEvents", this.autoWeatherEvents);
         tag.putInt("forcedEventOrdinal", this.forcedEventOrdinal);
@@ -408,6 +417,7 @@ public final class ServerSnowSettings {
     }
 
     public void loadFromTag(CompoundTag tag) {
+        int savedRevision = tag.contains("balanceRevision") ? tag.getInt("balanceRevision") : 0;
         if (tag.contains("enabled")) this.enabled = tag.getBoolean("enabled");
         if (tag.contains("autoWeatherEvents")) this.autoWeatherEvents = tag.getBoolean("autoWeatherEvents");
         if (tag.contains("forcedEventOrdinal")) this.forcedEventOrdinal = tag.getInt("forcedEventOrdinal");
@@ -515,6 +525,36 @@ public final class ServerSnowSettings {
         if (tag.contains("enableConvection")) this.enableConvection = tag.getBoolean("enableConvection");
         if (tag.contains("convectionStrengthPercent")) this.convectionStrengthPercent = tag.getInt("convectionStrengthPercent");
         this.clamp();
+        if (savedRevision < BALANCE_REVISION) {
+            // Only source power is migrated: it is a pure rescale of the physics and any world
+            // saved before this revision holds values that can no longer warm a room at all.
+            // Everything a player can meaningfully tune (block conductivities, weather, food)
+            // is left exactly as saved.
+            ServerSnowSettings now = new ServerSnowSettings();
+            float[] oldHeat = {7F, 20F, 48F, 62F, 68F, 45F, 94F, 75F, 115F};
+            float[] mine = {heatTorch, heatLantern, heatFurnace, heatBlastSmoker, heatCampfire,
+                    heatSoulCampfire, heatFireplace, heatMagma, heatLava};
+            float[] defaults = {now.heatTorch, now.heatLantern, now.heatFurnace, now.heatBlastSmoker,
+                    now.heatCampfire, now.heatSoulCampfire, now.heatFireplace, now.heatMagma,
+                    now.heatLava};
+            for (int i = 0; i < mine.length; i++) {
+                if (oldHeat[i] <= 0) continue;
+                mine[i] = defaults[i] * (mine[i] / oldHeat[i]);
+            }
+            heatTorch = mine[0]; heatLantern = mine[1]; heatFurnace = mine[2];
+            heatBlastSmoker = mine[3]; heatCampfire = mine[4]; heatSoulCampfire = mine[5];
+            heatFireplace = mine[6]; heatMagma = mine[7]; heatLava = mine[8];
+            // Old shipped defaults: wool, log, planks, snow, earth, brick, stone, glass, metal.
+            int[] oldConductivity = {5, 12, 24, 18, 38, 42, 72, 90, 95};   // x0.01
+            int[] oldCapacity = {80, 550, 250, 150, 400, 500, 800, 120, 600};  // x0.01
+            for (int i = 0; i < blockConductivity.length; i++) {
+                if (oldConductivity[i] <= 0) continue;
+                blockConductivity[i] *= 10F / oldConductivity[i];
+                blockCapacity[i] *= 1F / oldCapacity[i];
+                if (blockCapacity[i] < 0.25F) blockCapacity[i] = 0.25F;
+            }
+            clamp();
+        }
     }
 
     public void writeToBuf(FriendlyByteBuf buf) {
