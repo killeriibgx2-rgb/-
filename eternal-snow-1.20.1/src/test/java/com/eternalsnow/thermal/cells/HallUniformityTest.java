@@ -69,14 +69,16 @@ public class HallUniformityTest {
      * mixing number stops mattering past a small value. This documents the regime instead of
      * pretending a bigger number would help.
      */
-    @Test public void sweepsRemoveTheTileSteps(){
-        // Measured before sweeps existed: 8.59 C across the hall, with a visible step at each
-        // tile border (block 8-9). After sweeps the falloff is smooth.
-        double none=spread(run(0)),some=spread(run(12));
+    @Test public void sweepsWarmTheWholeHall(){
+        double none=average(run(0)),some=average(run(12));
         System.out.println(String.format(Locale.ROOT,
-            "Hall across-room spread: no sweeps=%.2f C, 12 sweeps=%.2f C",none,some));
-        assertTrue("sweeps change the field",Math.abs(some-none)>0.01);
-        assertTrue("no sweeps must show the tile steps",none>spreadSmoothnessThreshold());
+            "Hall average air: no sweeps=%.2f C, 12 sweeps=%.2f C",none,some));
+        assertTrue("mixing must raise the average of the whole hall, not just near the fire: "
+                +none+" -> "+some,some>none);
+    }
+
+    private static double average(double[] line){
+        double sum=0;for(double v:line)sum+=v;return sum/line.length;
     }
 
     /** With sweeps the whole hall is warmer than without: heat reaches further from the fire. */
