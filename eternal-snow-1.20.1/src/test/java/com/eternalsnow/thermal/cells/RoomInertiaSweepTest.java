@@ -4,7 +4,7 @@ import java.util.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/** Prints warm/cool curves for a 5x5x3 plank room; asserts nothing. */
+/** Prints the cooling curve of a 5x5x3 plank room; asserts nothing. */
 public class RoomInertiaSweepTest {
     private static final double OUTSIDE=-12;
     private static double[] filled(double v){double[] a=new double[512];Arrays.fill(a,v);return a;}
@@ -39,33 +39,26 @@ public class RoomInertiaSweepTest {
         var g=new AdaptiveThermalGraph(List.of(t));
         g.setRoomAirMixing(20);g.setMixingSweeps(12);
         int cell=AdaptiveThermalTile.index(3,1,3);
-        int[] marks={60,180,300,600,900};   // seconds*? -> minutes 1,3,5,10,15
-        double[] warm=new double[marks.length];
-        int s=0;
-        for(int m=0;m<marks.length;m++){
-            int target=marks[m]*120;
-            while(s<target){g.clearPower();g.addPower(t,cell,power);g.step(.5,OUTSIDE);s++;}
-            warm[m]=air(t);
-        }
-        double[] cool=new double[4];
-        int[] after={60,600,1200,1800};     // 1 s? -> seconds: 60*0.5=30 s, 5 min, 10 min, 15 min
+        int wall=AdaptiveThermalTile.index(3,5,3), ceiling=AdaptiveThermalTile.index(3,4,3);
+        // 10 minutes of fire
+        for(int s=0;s<1200;s++){g.clearPower();g.addPower(t,cell,power);g.step(.5,OUTSIDE);}
+        double a0=air(t),w0=t.temperatures.get(ceiling);
+        double[] steps=new double[6];
+        int[] marks={20,120,600,1200,2400,6000};   // 10 s, 1 min, 5, 10, 20, 50 min
         int prev=0;
-        for(int m=0;m<after.length;m++){
-            int target=after[m]*120;
-            while(prev<target){g.clearPower();g.step(.5,OUTSIDE);prev++;}
-            cool[m]=air(t);
+        for(int m=0;m<marks.length;m++){
+            while(prev<marks[m]){g.clearPower();g.step(.5,OUTSIDE);prev++;}
+            steps[m]=air(t);
         }
-        int wallIdx=AdaptiveThermalTile.index(3,4,3), soilIdx=AdaptiveThermalTile.index(7,7,7);
         System.out.println(String.format(Locale.ROOT,
-            "CURVE %-22s 1m=%6.1f 3m=%6.1f 5m=%6.1f 10m=%6.1f 15m=%6.1f | off30s=%6.1f off5m=%6.1f off10m=%6.1f off15m=%6.1f"
-            +" || now: airC=%.1f wallC=%.0f soilC=%.0f wallT=%.1f soilT=%.1f",
-            label,warm[0],warm[1],warm[2],warm[3],warm[4],cool[0],cool[1],cool[2],cool[3],
-            t.capacities[AdaptiveThermalTile.index(3,1,3)],t.capacities[wallIdx],t.capacities[soilIdx],
-            t.temperatures.get(wallIdx),t.temperatures.get(soilIdx)));
+            "COOL %-18s after10m: air=%6.1f ceil=%6.1f | 10s=%6.1f 1m=%6.1f 5m=%6.1f 10m=%6.1f 20m=%6.1f 50m=%6.1f (ceil now %.1f)",
+            label,a0,w0,steps[0],steps[1],steps[2],steps[3],steps[4],steps[5],t.temperatures.get(ceiling)));
     }
 
     @Test public void sweep(){
         curve("ts=60 P=680",60,680);
-        curve("ts=60 P=400",60,400);
+        curve("ts=60 P=1500",60,1500);
+        curve("ts=20 P=1500",20,1500);
+        curve("ts=20 P=680",20,680);
     }
 }
