@@ -63,38 +63,26 @@ public class HallUniformityTest {
         return max-min;
     }
 
-    @Test public void setConnectionReachesTheSolver(){
-        var s=new CellHeatSolver(new double[]{0,0},new double[]{.02,.02},
-                new CellHeatSolver.Edge[]{new CellHeatSolver.Edge(0,1,3)});
-        s.setOutside(0,0,-20);s.setOutside(1,0,-20);
-        s.setConnection(0,1,40);
-        System.out.println("PROBE edges="+s.edgeCount()+" g="+s.edgeConductance(0,1));
-        s.setPower(0,10);
-        for(int i=0;i<100;i++)s.stepConservative(.5);
-        System.out.println(String.format(Locale.ROOT,"PROBE after steps T0=%.2f T1=%.2f",s.temperature(0),s.temperature(1)));
-        assertEquals(40,s.edgeConductance(0,1),1e-9);
-        assertEquals(1,s.edgeCount());
-        assertTrue("heat must travel",s.temperature(1)>-20);
+    /** Decisive minimal check: does the mixing number change how fast heat spreads? */
+    @Test public void mixingNumberChangesHeatSpread(){
+        double slow=spreadTwoCells(3),fast=spreadTwoCells(40);
+        System.out.println(String.format(Locale.ROOT,
+            "TWOCELL mixing=3 air=%.2f C, mixing=40 air=%.2f C",slow,fast));
+        assertTrue("stronger mixing must move heat faster: "+fast+" !> "+slow,fast>slow);
     }
 
-    @Test public void debugEdges(){
-        var tiles=hall();
-        var graph=new AdaptiveThermalGraph(tiles);
-        int before=graph.solver.edgeCount();
-        int a0=graph.solver.edgeA(0),b0=graph.solver.edgeB(0);
-        double gBefore=graph.solver.edgeConductance(a0,b0);
-        graph.setRoomAirMixing(40);
-        int after=graph.solver.edgeCount();
-        double gAfter=graph.solver.edgeConductance(a0,b0);
-        int air=0;for(var t:tiles)for(int i=0;i<512;i++)if(t.air!=null&&t.air[i])air++;
-        // Find a genuine air-air face pair in the middle of the hall.
-        var tile=tiles.get(5);
-        int ia=AdaptiveThermalTile.index(4,4,4),ib=AdaptiveThermalTile.index(5,4,4);
-        double gAirBefore=graph.solver.edgeConductance(tile.node+ia,tile.node+ib);
-        graph.setRoomAirMixing(40);
-        double gAirAfter=graph.solver.edgeConductance(tile.node+ia,tile.node+ib);
-        System.out.println("DEBUG edges="+before+"->"+after+" g0="+gBefore+"->"+gAfter
-            +" airPair="+gAirBefore+"->"+gAirAfter+" airCells="+air+" nodes="+graph.solver.size());
+    private static double spreadTwoCells(double mixing){
+        var cold=new AdaptiveThermalTile(0,0,0,-20,true);
+        var hot=new AdaptiveThermalTile(8,0,0,-20,true);
+        double[] c=filled(AIR_CAPACITY),k=filled(1),g=filled(0);
+        boolean[] air=new boolean[512];Arrays.fill(air,true);
+        hot.temperatures.set(0,200);hot.configure(true,c,k,g,filled(1),filled(0));
+        cold.configure(true,c,k,g,filled(1),filled(0));
+        hot.fineMaterials(filled(1),air,3);cold.fineMaterials(filled(1),air,3);
+        var graph=new AdaptiveThermalGraph(List.of(hot,cold));
+        graph.setRoomAirMixing(mixing);
+        for(int i=0;i<40;i++){graph.clearPower();graph.step(.5,-20);}
+        return graph.solver.temperature(cold.node+AdaptiveThermalTile.index(0,0,0));
     }
 
     @Test public void uniformMixingFlattensATileHall(){
