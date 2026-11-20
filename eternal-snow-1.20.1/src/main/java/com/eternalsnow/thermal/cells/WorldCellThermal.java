@@ -236,6 +236,10 @@ public final class WorldCellThermal {
         Region previous=w.regions.get(key);
         Region region=new Region(new AdaptiveThermalTile(origin.getX(),origin.getY(),origin.getZ(),state));
         region.field.configure(detail,c,k,g,slope,offset);region.field.fineMaterials(raw,air,mixing);region.sources.addAll(sources);
+        if(previous!=null&&previous.field.detailed!=detail) {
+            region.field.switchShare=1;
+            region.field.switchPending=false;
+        }
         region.detailedUntil=previous==null?0:previous.detailedUntil;
         if(detail&&w.wanted.contains(key))region.detailedUntil=level.getGameTime()+DETAIL_HOLD_TICKS;
         w.regions.put(key,region);w.initializedLast++;

@@ -14,6 +14,9 @@ public final class AdaptiveThermalTile {
     boolean holdsEnclosure;
     /** Capacities of the last configured state, kept for the coarse energy bookkeeping. */
     double[] lastCapacities=new double[512];
+    /** 1 on the one capture that changes the physical content of the tile. */
+    double switchShare;
+    boolean switchPending;
     boolean[] air;
     double mixing=1;
     /** Per-cell ground anchor (0..1); only solid cells that are weakly coupled get it. */
@@ -75,6 +78,12 @@ public final class AdaptiveThermalTile {
             solver.setOutside(node,gTotal,gTotal==0?0:(gSlope*ambient+gOffset)/gTotal);
         }
     }
+    /**
+     * Promoting or demoting a tile changes what the tile physically holds. A detailed tile can
+     * keep a room at +14 C inside a field at -5 C; a coarse tile is one uniform body. Doing that
+     * for free would create or destroy energy on every walk-away, so the change is charged to the
+     * common pool of the graph exactly once, through the boundary term.
+     */
     void capture(CellHeatSolver solver,double seconds) {
         if(detailed) {
             temperatures.normalize();
@@ -82,18 +91,27 @@ public final class AdaptiveThermalTile {
             for(int i=0;i<512;i++){temperatures.base[i]=solver.temperature(node+i);energy+=capacities[i]*temperatures.base[i];gBase+=outsideG[i]*temperatures.base[i];}
             baseMean=energy/totalCapacity;temperatures.refreshExtrema();
         } else {
-            // A coarse tile is one reservoir, so the solver sees a single temperature. The full
-            // 512-cell pattern is kept as it was: without that, a player's room is erased the
-            // moment they walk away (the "hole in the ceiling shows outdoor temperature" report),
-            // because every cell of the tile collapses onto the mean of the field around it.
-            // Only the overall energy is taken from the solver.
-            double energy=0,total=0;
-            for(int i=0;i<512;i++){energy+=lastCapacities[i]*temperatures.get(i);total+=lastCapacities[i];}
-            double mean=total>0?energy/total:solver.temperature(node);
-            double target=solver.temperature(node);
-            double shift=target-mean;
-            if(Double.isFinite(shift)&&Math.abs(shift)>1e-9)
-                for(int i=0;i<512;i++)temperatures.set(i,temperatures.get(i)+shift);
+            // A coarse tile is one reservoir, so the solver holds a single temperature for it.
+            // The 512-cell pattern is kept as it is. Without that, a player's room is erased the
+            // moment the tile stops being detailed — every cell collapses onto the mean of the
+            // field around the house, which is the weather. That is the reported "a campfire in a
+            // 5x5x3 house does not warm anything".
+            //
+            // Keeping the pattern means the tile can hold more (or less) energy than the single
+            // number the solver tracks, so the difference is charged to the weather term once:
+            // it is neither invented nor silently lost.
+            if(switchShare>0&&!switchPending) {
+                temperatures.normalize();
+                double energy=0,total=0;
+                for(int i=0;i<512;i++){energy+=lastCapacities[i]*temperatures.base[i];total+=lastCapacities[i];}
+                if(total>0) {
+                    double patternMean=energy/total;
+                    gOffset-=(patternMean-solver.temperature(node))*switchShare*totalCapacity;
+                }
+                switchPending=true;
+            }
+            double decay=Math.exp(-seconds*8*conductivity/totalCapacity);
+            temperatures.coarseUpdate(solver.temperature(node),baseMean,decay);
         }
     }
 }
