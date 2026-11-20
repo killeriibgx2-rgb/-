@@ -18,6 +18,8 @@ public class RoomInertiaSweepTest {
     private static double[] filled(double v){double[] a=new double[512];Arrays.fill(a,v);return a;}
 
     /** Small house: 5x5x3 interior, planks, open air outside, ground below. */
+    static double WALL_K=2.5;
+    /** A second room: 24x8x24 brick hall, for cross-checking against the big room tests. */
     static AdaptiveThermalTile house(double ts){
         var tile=new AdaptiveThermalTile(0,0,0,new TileTemperatureState(filled(OUTSIDE)));
         double[] cap=filled(1),k=filled(1),g=filled(0);
@@ -37,7 +39,7 @@ public class RoomInertiaSweepTest {
     private static void plank(double[] cap,double[] k,double[] g,boolean[] air,
                               int x,int y,int z,double pg,double ts){
         int i=AdaptiveThermalTile.index(x,y,z);
-        air[i]=false;cap[i]=2.5*20*ts;k[i]=2.5;g[i]=pg;
+        air[i]=false;cap[i]=2.5*20*ts;k[i]=WALL_K;g[i]=pg;
     }
     /** outsideG as the world adapter sets it: 1 for air with sky, 1 for planks, 0 inside. */
     private static double g0(AdaptiveThermalTile t,int i){
@@ -80,10 +82,14 @@ public class RoomInertiaSweepTest {
 
     @Test public void sweep(){
         int[] room={1,5,1,3,1,5};
-        for(double ts:new double[]{20,60}){
-            for(double p:new double[]{200,680,1500}){
-                curve("house ts="+(int)ts+" P="+(int)p,house(ts),room,p);
-            }
-        }
+        WALL_K=2.5;
+        curve("wall2.5 ts60 P680",house(60),room,680);
+        WALL_K=0.25;
+        curve("wall.25 ts60 P680",house(60),room,680);
+        curve("wall.25 ts60 P300",house(60),room,300);
+        WALL_K=0.08;
+        curve("wall.08 ts60 P680",house(60),room,680);
+        curve("wall.08 ts60 P300",house(60),room,300);
+        curve("wall.08 ts20 P300",house(20),room,300);
     }
 }
