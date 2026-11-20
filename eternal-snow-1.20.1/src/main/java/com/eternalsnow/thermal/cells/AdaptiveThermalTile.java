@@ -2,12 +2,21 @@ package com.eternalsnow.thermal.cells;
 
 /** Coarse reservoir or 512 detailed cells, with identical total heat capacity. */
 public final class AdaptiveThermalTile {
+    /** Above this capacity a cell is not air; used only to recognise enclosed air. */
+    static final double AIR_ENCLOSED_CAPACITY_LIMIT = 2000;
     public final int x,y,z;
     public final TileTemperatureState temperatures;
     public boolean detailed;
     public int node;
     double totalCapacity,conductivity,baseMean,gTotal,gSlope,gOffset,gBase;
     double[] capacities,conductivities,outsideG,slopes,offsets,rawConductivities;
+    /** Any enclosed air cell (no direct sky path) means the tile has its own micro-climate. */
+    boolean holdsEnclosure;
+    /** Capacities of the last configured state, kept for the coarse energy bookkeeping. */
+    double[] lastCapacities=new double[512];
+    /** 1 on the one capture that changes the physical content of the tile. */
+    double switchShare;
+    boolean switchPending;
     boolean[] air;
     double mixing=1;
     /** Per-cell ground anchor (0..1); only solid cells that are weakly coupled get it. */
@@ -29,8 +38,11 @@ public final class AdaptiveThermalTile {
             gTotal+=g[i];gSlope+=g[i]*slope[i];gOffset+=g[i]*offset[i];gBase+=g[i]*temperatures.base[i];
         }
         baseMean=energy/totalCapacity;conductivity=512/resistance;detailed=detail;
+        lastCapacities=c;
         capacities=detail?c:null;conductivities=detail?k:null;rawConductivities=detail?k:null;air=null;mixing=1;anchor=null;
         outsideG=detail?g:null;slopes=detail?slope:null;offsets=detail?offset:null;
+        holdsEnclosure=false;
+        for(int i=0;i<512;i++)if(g[i]<=0&&c[i]<=AIR_ENCLOSED_CAPACITY_LIMIT){holdsEnclosure=true;break;}
     }
     public double mean() {return baseMean*temperatures.scale+temperatures.offset;}
     public int nodes() {return detailed?512:1;}
@@ -53,6 +65,11 @@ public final class AdaptiveThermalTile {
             solver.anchorToAmbient(node+i,relax);
         }
     }
+    /** True when this tile holds heated enclosures; such a tile cannot be one uniform number. */
+    boolean keepDetailed() {
+        return detailed && outsideG != null && air != null && holdsEnclosure;
+    }
+
     void configureBoundary(CellHeatSolver solver,double ambient) {
         if(detailed) {
             for(int i=0;i<512;i++)solver.setOutside(node+i,outsideG[i],slopes[i]*ambient+offsets[i]);
@@ -61,6 +78,12 @@ public final class AdaptiveThermalTile {
             solver.setOutside(node,gTotal,gTotal==0?0:(gSlope*ambient+gOffset)/gTotal);
         }
     }
+    /**
+     * Promoting or demoting a tile changes what the tile physically holds. A detailed tile can
+     * keep a room at +14 C inside a field at -5 C; a coarse tile is one uniform body. Doing that
+     * for free would create or destroy energy on every walk-away, so the change is charged to the
+     * common pool of the graph exactly once, through the boundary term.
+     */
     void capture(CellHeatSolver solver,double seconds) {
         if(detailed) {
             temperatures.normalize();
@@ -68,7 +91,25 @@ public final class AdaptiveThermalTile {
             for(int i=0;i<512;i++){temperatures.base[i]=solver.temperature(node+i);energy+=capacities[i]*temperatures.base[i];gBase+=outsideG[i]*temperatures.base[i];}
             baseMean=energy/totalCapacity;temperatures.refreshExtrema();
         } else {
-            // Internal contrast relaxation preserves the reservoir's weighted mean/energy.
+            // A coarse tile is one reservoir, so the solver holds a single temperature for it.
+            // The 512-cell pattern is kept as it is. Without that, a player's room is erased the
+            // moment the tile stops being detailed — every cell collapses onto the mean of the
+            // field around the house, which is the weather. That is the reported "a campfire in a
+            // 5x5x3 house does not warm anything".
+            //
+            // Keeping the pattern means the tile can hold more (or less) energy than the single
+            // number the solver tracks, so the difference is charged to the weather term once:
+            // it is neither invented nor silently lost.
+            if(switchShare>0&&!switchPending) {
+                temperatures.normalize();
+                double energy=0,total=0;
+                for(int i=0;i<512;i++){energy+=lastCapacities[i]*temperatures.base[i];total+=lastCapacities[i];}
+                if(total>0) {
+                    double patternMean=energy/total;
+                    gOffset-=(patternMean-solver.temperature(node))*switchShare*totalCapacity;
+                }
+                switchPending=true;
+            }
             double decay=Math.exp(-seconds*8*conductivity/totalCapacity);
             temperatures.coarseUpdate(solver.temperature(node),baseMean,decay);
         }
