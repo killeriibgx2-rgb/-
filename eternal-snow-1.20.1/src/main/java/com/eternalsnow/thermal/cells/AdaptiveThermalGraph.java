@@ -141,24 +141,15 @@ public final class AdaptiveThermalGraph {
         roomAirMixing=Math.max(1,Math.min(200,value));
         if(roomAirMixing<=1)return;
         boolean[] airNode=airNodeTable();
-        // Face neighbours, including across tile borders.
+        // Every air-air face pair gets exactly the same conductance, including pairs that cross
+        // a tile border. Tiles are our bookkeeping, not physics: adding extra "long" links inside
+        // a tile made border cells poorer than interior ones and produced a 2.5 C step at every
+        // 8-block boundary. Uniform links remove that asymmetry.
         for(int e=0;e<solver.edgeCount();e++) {
             int a=solver.edgeA(e),b=solver.edgeB(e);
             if(airNode[a]&&airNode[b])solver.setConnection(a,b,roomAirMixing);
         }
-        // Long links inside a tile keep a whole 8-block volume from stratifying.
-        for(var tile:tiles) {
-            if(!tile.detailed)continue;
-            for(int y=0;y<8;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++) {
-                int a=AdaptiveThermalTile.index(x,y,z);
-                if(!isAir(tile,a))continue;
-                if(x<=3){int b=AdaptiveThermalTile.index(x+4,y,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
-                if(y<=3){int b=AdaptiveThermalTile.index(x,y+4,z);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
-                if(z<=3){int b=AdaptiveThermalTile.index(x,y,z+4);if(isAir(tile,b))solver.setConnection(tile.node+a,tile.node+b,roomAirMixing);}
-            }
-        }
     }
-    /** One flat answer per solver node: is this cell air? Built once per call, O(nodes). */
     private boolean[] airNodeTable() {
         boolean[] airNode=new boolean[solver.size()];
         for(var t:tiles)for(int i=0;i<t.nodes();i++)airNode[t.node+i]=!t.detailed||isAir(t,i);
