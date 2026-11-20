@@ -228,11 +228,9 @@ public final class AdaptiveThermalGraph {
     private void mixAir() {
         if(mixingSweeps<=0)return;
         boolean[] airNode=airNodeTable();
-        // Only enclosed air is forced to equalise. Open-sky air is moved by wind and convection
-        // far faster than by conduction, and forced mixing there let a single torch warm a
-        // twelve-block bubble of open air. A cell that sees the sky keeps its own boundary.
-        for(int i=0;i<airNode.length;i++)
-            if(airNode[i]&&solver.outsideConductance(i)>0)airNode[i]=false;
+        // All air mixes, open sky included. Open air is held near the weather by its own strong
+        // coupling, so mixing with it does not warm the outdoors — it just means a hole in a
+        // ceiling actually lets the weather into the room, which is what a hole does.
         for(int sweep=0;sweep<mixingSweeps;sweep++)solver.mixingSweep(airNode);
     }
     public int fineCells(){int n=0;for(var t:tiles)if(t.detailed)n+=512;return n;}

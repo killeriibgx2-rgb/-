@@ -52,6 +52,14 @@ public final class WorldCellThermal {
     static final double THERMAL_TIME_SCALE=1;
     /** Air is a poor conductor: about twenty times worse than brick. See BlockThermalCategory. */
     static final double AIR_CONDUCTIVITY=0.02;
+    /**
+     * Open air is not a body that stores heat: it is flushed by wind and convection, so it stays
+     * at the weather. It used to be given the same coupling as a wall (1.0), which with the new
+     * air capacity means a time constant of a hundred seconds — so open air could be warmed, and
+     * a hole in a ceiling could not pull cold into the room because the air cell under the hole
+     * was excluded from mixing and only touched the room through air's own tiny conductivity.
+     */
+    static final double AIR_OPEN_COUPLING=6.0;
     private static final class Region {
         final AdaptiveThermalTile field;
         final IntArrayList sources=new IntArrayList();
@@ -167,7 +175,7 @@ public final class WorldCellThermal {
      * to be tied to the weather — quickly when it is shallow, slowly when it is deep.
      */
     static double weatherCoupling(boolean air,boolean sky,int y,int surfaceY,double conductivity) {
-        if(air)return sky?1:0;
+        if(air)return sky?AIR_OPEN_COUPLING:0;
         // A wall block touches the weather on one face out of six, so its coupling must be a
         // fraction of its conductivity, not the conductivity itself. Giving planks 1.0 made a
         // small room a short circuit to the outside: measured, a 5x5x3 room fell from +13 C to

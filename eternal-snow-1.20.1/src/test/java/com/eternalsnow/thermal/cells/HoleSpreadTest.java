@@ -16,13 +16,13 @@ public class HoleSpreadTest {
         var t=new AdaptiveThermalTile(0,0,0,new TileTemperatureState(filled(OUTSIDE)));
         double[] cap=filled(1),k=filled(1),g=filled(0);
         boolean[] air=new boolean[512];
-        for(int i=0;i<512;i++){air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=1;}
+        for(int i=0;i<512;i++){air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}
         for(int y=1;y<=3;y++)for(int z=1;z<=5;z++)for(int x=1;x<=5;x++)g[AdaptiveThermalTile.index(x,y,z)]=0;
         double pg=WorldCellThermal.weatherCoupling(false,true,64,64,2.5);
         for(int y=1;y<=3;y++)for(int z=1;z<=5;z++){plank(cap,k,g,air,0,y,z,pg);plank(cap,k,g,air,6,y,z,pg);}
         for(int y=1;y<=3;y++)for(int x=1;x<=5;x++){plank(cap,k,g,air,x,y,0,pg);plank(cap,k,g,air,x,y,6,pg);}
         for(int z=1;z<=5;z++)for(int x=1;x<=5;x++){plank(cap,k,g,air,x,0,z,pg);plank(cap,k,g,air,x,4,z,pg);}
-        if(hole){int i=AdaptiveThermalTile.index(1,4,1);air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=1;}
+        if(hole){int i=AdaptiveThermalTile.index(1,4,1);air[i]=true;cap[i]=AIR*TS;k[i]=AIR_K;g[i]=WorldCellThermal.AIR_OPEN_COUPLING;}
         t.configure(true,cap,k,g,filled(1),filled(0));
         t.fineMaterials(filled(1),air,3);
         return t;
@@ -36,13 +36,14 @@ public class HoleSpreadTest {
         return sb.toString();
     }
 
-    @Test public void holeCoolsWholeRoom(){
+    @Test public void floorSpread(){
         var t=room(true);
         var g=new AdaptiveThermalGraph(List.of(t));
         g.setRoomAirMixing(20);g.setMixingSweeps(12);
         int fire=AdaptiveThermalTile.index(3,1,3);
         for(int s=0;s<1800;s++){g.clearPower();g.addPower(t,fire,1500);g.step(.5,OUTSIDE);}
-        for(int minute=1;minute<=10;minute++){
+        System.out.println("HOLE start y1: "+row(t,1));
+        for(int minute=1;minute<=6;minute++){
             for(int s=0;s<120;s++){g.clearPower();g.step(.5,OUTSIDE);}
             System.out.println("HOLE min="+minute+" y1: "+row(t,1));
         }
