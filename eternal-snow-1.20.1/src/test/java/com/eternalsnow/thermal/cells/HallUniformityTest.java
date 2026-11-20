@@ -89,6 +89,17 @@ public class HallUniformityTest {
         }
         System.out.println(String.format(Locale.ROOT,
             "Hall 32 blocks: steepest neighbour step %.3f C at block %d",steepest,at));
+        // Is the mixing actually applied across tile borders in this graph?
+        var tiles2=hall();
+        var g2=new AdaptiveThermalGraph(tiles2);
+        g2.setRoomAirMixing(20);
+        var left=tiles2.get(5);      // tz=1, tx=1
+        var right=tiles2.get(6);     // tz=1, tx=2
+        int a=left.node+AdaptiveThermalTile.index(7,4,4);
+        int b=right.node+AdaptiveThermalTile.index(0,4,4);
+        System.out.println("CROSS g="+g2.solver.liveConductance(a,b)
+            +" leftAir="+(left.air==null?"null":left.air[AdaptiveThermalTile.index(7,4,4)])
+            +" rightAir="+(right.air==null?"null":right.air[AdaptiveThermalTile.index(0,4,4)]));
         assertTrue("neighbouring blocks must not jump by a degree, worst "+steepest+" at "+at,
                 steepest<1.0);
     }
