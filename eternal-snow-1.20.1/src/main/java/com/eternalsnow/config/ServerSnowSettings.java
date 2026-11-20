@@ -544,15 +544,9 @@ public final class ServerSnowSettings {
             heatTorch = mine[0]; heatLantern = mine[1]; heatFurnace = mine[2];
             heatBlastSmoker = mine[3]; heatCampfire = mine[4]; heatSoulCampfire = mine[5];
             heatFireplace = mine[6]; heatMagma = mine[7]; heatLava = mine[8];
-            // Old shipped defaults: wool, log, planks, snow, earth, brick, stone, glass, metal.
-            int[] oldConductivity = {5, 12, 24, 18, 38, 42, 72, 90, 95};   // x0.01
-            int[] oldCapacity = {80, 550, 250, 150, 400, 500, 800, 120, 600};  // x0.01
-            for (int i = 0; i < blockConductivity.length; i++) {
-                if (oldConductivity[i] <= 0) continue;
-                blockConductivity[i] *= 10F / oldConductivity[i];
-                blockCapacity[i] *= 1F / oldCapacity[i];
-                if (blockCapacity[i] < 0.25F) blockCapacity[i] = 0.25F;
-            }
+            // Every material conductivity was divided by ten in this revision, and no capacity
+            // changed. Rescaling by the same factor keeps a player's relative tuning intact.
+            for (int i = 0; i < blockConductivity.length; i++) blockConductivity[i] *= 0.1F;
             clamp();
         }
     }
