@@ -67,12 +67,20 @@ public class HallUniformityTest {
         var tiles=hall();
         var graph=new AdaptiveThermalGraph(tiles);
         int before=graph.solver.edgeCount();
-        double gBefore=graph.solver.edgeConductance(graph.solver.edgeA(0),graph.solver.edgeB(0));
+        int a0=graph.solver.edgeA(0),b0=graph.solver.edgeB(0);
+        double gBefore=graph.solver.edgeConductance(a0,b0);
         graph.setRoomAirMixing(40);
         int after=graph.solver.edgeCount();
-        double gAfter=graph.solver.edgeConductance(graph.solver.edgeA(0),graph.solver.edgeB(0));
+        double gAfter=graph.solver.edgeConductance(a0,b0);
         int air=0;for(var t:tiles)for(int i=0;i<512;i++)if(t.air!=null&&t.air[i])air++;
-        System.out.println("DEBUG edges="+before+"->"+after+" g0="+gBefore+"->"+gAfter+" airCells="+air+" nodes="+graph.solver.size());
+        // Find a genuine air-air face pair in the middle of the hall.
+        var tile=tiles.get(5);
+        int ia=AdaptiveThermalTile.index(4,4,4),ib=AdaptiveThermalTile.index(5,4,4);
+        double gAirBefore=graph.solver.edgeConductance(tile.node+ia,tile.node+ib);
+        graph.setRoomAirMixing(40);
+        double gAirAfter=graph.solver.edgeConductance(tile.node+ia,tile.node+ib);
+        System.out.println("DEBUG edges="+before+"->"+after+" g0="+gBefore+"->"+gAfter
+            +" airPair="+gAirBefore+"->"+gAirAfter+" airCells="+air+" nodes="+graph.solver.size());
     }
 
     @Test public void uniformMixingFlattensATileHall(){
