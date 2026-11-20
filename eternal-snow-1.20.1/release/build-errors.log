@@ -1,13 +1,8 @@
-56:    java.lang.AssertionError at BalanceMigrationTest.java:66
-
-HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
-    Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
-
-HallUniformityTest > noIsolatedStepAtTileBorders STANDARD_OUT
-    Border 8: step=0.40 C, neighbour steps 1.10/1.07
-    Border 16: step=0.25 C, neighbour steps 0.64/0.57
-    Border 24: step=0.07 C, neighbour steps 0.17/0.14
-
+56:    org.junit.runners.model.TestTimedOutException at AdaptiveThermalTest.java:139
+59:    java.lang.AssertionError at AdaptiveThermalTest.java:185
+62:    org.junit.runners.model.TestTimedOutException at AdaptiveThermalTest.java:106
+65:    java.lang.AssertionError at AdaptiveThermalTest.java:36
+71:    java.lang.AssertionError at AdaptiveThermalTest.java:96
 HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
     Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
 
@@ -15,7 +10,16 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=328.855643ms packed=205.153778ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=539.401763ms packed=356.670586ms; synthetic, not server TPS
+
+PlankRoomInWorldTest > fireInTheMiddleOfTheRoomWarmsIt STANDARD_OUT
+    Real fire in a real plank room (-15 C outside): inside=14.5 C after 15 min
+
+PlankRoomInWorldTest > theRoomDoesNotNeedToBeDetailed STANDARD_OUT
+    Detailed room mean=14.5 C, whole-tile mean=-4.6 C
+
+PlankRoomInWorldTest > aCoarseTileLosesTheRoom STANDARD_OUT
+    Room while detailed=14.5 C, after the tile went coarse=14.5 C
 
 RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
     Hole open 30 s: block under it=11.9 C, room mean=11.9 C (closed room 20.1 C)
@@ -38,7 +42,7 @@ SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
 SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
     Exposed ground coupling = 0.080
 
-107 tests completed, 1 failed
+110 tests completed, 5 failed
 
 > Task :test FAILED
 
@@ -57,5 +61,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 9s
+BUILD FAILED in 2m 53s
 13 actionable tasks: 13 executed
