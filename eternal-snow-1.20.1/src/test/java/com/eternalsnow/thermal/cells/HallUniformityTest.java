@@ -63,6 +63,20 @@ public class HallUniformityTest {
         return max-min;
     }
 
+    @Test public void setConnectionReachesTheSolver(){
+        var s=new CellHeatSolver(new double[]{0,0},new double[]{.02,.02},
+                new CellHeatSolver.Edge[]{new CellHeatSolver.Edge(0,1,3)});
+        s.setOutside(0,0,-20);s.setOutside(1,0,-20);
+        s.setConnection(0,1,40);
+        System.out.println("PROBE edges="+s.edgeCount()+" g="+s.edgeConductance(0,1));
+        s.setPower(0,10);
+        for(int i=0;i<100;i++)s.stepConservative(.5);
+        System.out.println(String.format(Locale.ROOT,"PROBE after steps T0=%.2f T1=%.2f",s.temperature(0),s.temperature(1)));
+        assertEquals(40,s.edgeConductance(0,1),1e-9);
+        assertEquals(1,s.edgeCount());
+        assertTrue("heat must travel",s.temperature(1)>-20);
+    }
+
     @Test public void debugEdges(){
         var tiles=hall();
         var graph=new AdaptiveThermalGraph(tiles);

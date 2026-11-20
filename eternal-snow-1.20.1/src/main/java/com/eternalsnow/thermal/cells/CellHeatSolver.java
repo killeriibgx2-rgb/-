@@ -33,6 +33,8 @@ public final class CellHeatSolver {
     private final it.unimi.dsi.fastutil.ints.IntOpenHashSet splitEdgesDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
     private final it.unimi.dsi.fastutil.ints.IntOpenHashSet externalDirty=new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
     public int edgeCount() { return edgeCount; }
+    /** Edge count, used by tests to prove a connection was updated rather than appended. */
+    public int activeEdgeCount() { return edgeCount; }
     public int lastSubsteps() { return lastSubsteps; }
     private int cellCount, edgeCount;
     private it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap edgeIndices;
