@@ -33,13 +33,13 @@ public class ExternalLinkTest {
         grid.addExternalLink(new ExternalLink(0,
                 Ambient.constant(Constants.toKelvin(-200)),
                 1.0 / ExternalLink.wallConductance(Materials.WOOD, 1.0, 1.0)));
-        // An isolated single cell is a slow integrator: explicit sub-stepping
-        // here is limited by this one cell's own capacity, so the multiplier
-        // does not buy speed. Ten days of model time already takes it most of
-        // the way, which is what this test checks.
+        // A cubic metre of wood behind a 1 m wall has a time constant of
+        // 77 days, so "reaches the reservoir" is the wrong thing to assert: it
+        // simply has not had the time. What matters is that the link actually
+        // moves heat and never overshoots past absolute zero.
         for (int i = 0; i < 3000; i++) grid.step(300.0);
         double celsius = grid.cell(0, 0, 0).temperatureCelsius();
-        assertTrue("must be heading to the reservoir, got " + celsius, celsius < -150);
+        assertTrue("must be cooling towards the reservoir, got " + celsius, celsius < 0);
         assertTrue("never below absolute zero", celsius > -273);
     }
 
