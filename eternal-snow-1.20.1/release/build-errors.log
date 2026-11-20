@@ -4,25 +4,25 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=210.791693ms packed=155.473055ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=270.773806ms packed=183.622998ms; synthetic, not server TPS
 
 RoomInertiaTest > diagnoseWhereTheHeatGoes STANDARD_OUT
-    DIAG over 10 s: E 51901 -> 37125 (lost 14776 = 1478 W); air 21.81->13.04 C; shell 7.68->6.99 C
+    DIAG over 10 s: E 22142 -> 7595 (lost 14547 = 1455 W); air 21.27->18.08 C; shell 7.29->7.07 C
 
 RoomInertiaTest > diagnoseWhereTheHeatGoes STANDARD_ERROR
     DIAG edges: air-air G=20.000 (k=?), air-plank G=-1.000 (kPlank=?), plank->weather G=0.0500
 
 RoomInertiaTest > diagnoseWhereTheHeatGoes STANDARD_OUT
-    DIAG capacities: air=1125.0 shell=9340.0  =>  G_room_to_out approx 43.7 W/K
+    DIAG capacities: air=4125.0 shell=9340.0  =>  G_room_to_out approx 43.7 W/K
 
 RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
-    Hole open 30 s: block under it=3.3 C, room mean=3.3 C (closed room 21.8 C)
+    Hole open 30 s: block under it=9.6 C, room mean=9.6 C (closed room 21.3 C)
 
 RoomInertiaTest > theRoomWarmsInMinutesNotHours STANDARD_OUT
-    Plank room 5x5x3, one campfire at -12 C outside: 1.5 min=10.9 C, 15 min=21.8 C
+    Plank room 5x5x3, one campfire at -12 C outside: 1.5 min=4.3 C, 15 min=21.3 C
 
 RoomInertiaTest > theRoomHoldsHeatWhenTheFireDies STANDARD_OUT
-    Fire out: 21.8 C, 10 s later=13.0 C, 2 min later=-4.6 C
+    Fire out: 21.3 C, 10 s later=18.1 C, 2 min later=0.4 C
 
 RoomInertiaTest > theRoomHoldsHeatWhenTheFireDies FAILED
     java.lang.AssertionError at RoomInertiaTest.java:140
