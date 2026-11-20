@@ -1,19 +1,19 @@
-142:    java.lang.AssertionError at RoomInertiaTest.java:114
-154:    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
+136:    java.lang.AssertionError at RoomInertiaTest.java:114
+148:    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
+    Border 24: step=0.07 C, neighbour steps 0.17/0.14
+
+HallUniformityTest > sweepsCarryHeatFurtherFromTheFire STANDARD_OUT
+    Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
+
+OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=-2.10 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=264.545867ms packed=186.404412ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=270.637287ms packed=299.931935ms; synthetic, not server TPS
 
 RoomInertiaSweepTest > sweep STANDARD_OUT
-    CURVE ts=60.0 P=680          1m=  -1.8 3m=   1.0 5m=   2.1 10m=   3.0 15m=   3.2 | off30s=  -7.0 off5m= -11.8 off10m= -12.0 off15m= -12.0
-    CURVE ts=15.0 P=680          1m=   1.8 3m=   3.2 5m=   3.3 10m=   3.3 15m=   3.3 | off30s= -10.4 off5m= -12.0 off10m= -12.0 off15m= -12.0
-    CURVE ts=5.0 P=680           1m=   3.7 3m=   3.8 5m=   3.8 10m=   3.8 15m=   3.8 | off30s= -11.9 off5m= -12.0 off10m= -12.0 off15m= -12.0
-    CURVE ts=1.0 P=680           1m=   6.6 3m=   6.6 5m=   6.6 10m=   6.6 15m=   6.6 | off30s= -12.0 off5m= -12.0 off10m= -12.0 off15m= -12.0
-    CURVE ts=15 P=300            1m=  -5.9 3m=  -5.3 5m=  -5.2 10m=  -5.2 15m=  -5.2 | off30s= -11.3 off5m= -12.0 off10m= -12.0 off15m= -12.0
-    CURVE ts=5 P=300             1m=  -5.1 3m=  -5.0 5m=  -5.0 10m=  -5.0 15m=  -5.0 | off30s= -12.0 off5m= -12.0 off10m= -12.0 off15m= -12.0
-    CURVE ts=5 P=150             1m=  -8.5 3m=  -8.5 5m=  -8.5 10m=  -8.5 15m=  -8.5 | off30s= -12.0 off5m= -12.0 off10m= -12.0 off15m= -12.0
-    CURVE ts=1 P=150             1m=  -7.9 3m=  -7.9 5m=  -7.9 10m=  -7.9 15m=  -7.9 | off30s= -12.0 off5m= -12.0 off10m= -12.0 off15m= -12.0
+    CURVE ts=60 P=680            1m=  -1.8 3m=   1.0 5m=   2.1 10m=   3.0 15m=   3.2 | off30s=  -7.0 off5m= -11.8 off10m= -12.0 off15m= -12.0 || now: airC=30.0 wallC=3000 soilC=9600 wallT=-12.0 soilT=-12.0
+    CURVE ts=60 P=400            1m=  -6.0 3m=  -4.3 5m=  -3.7 10m=  -3.2 15m=  -3.1 | off30s=  -9.1 off5m= -11.9 off10m= -12.0 off15m= -12.0 || now: airC=30.0 wallC=3000 soilC=9600 wallT=-12.0 soilT=-12.0
 
 RoomInertiaTest > oneHoleInTheCeilingDoesNotFreezeTheRoom STANDARD_OUT
     Hole open: block under it=-4.9 C, room mean=-5.0 C (closed room was 6.6 C)
@@ -58,5 +58,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m
+BUILD FAILED in 1m 26s
 13 actionable tasks: 13 executed
