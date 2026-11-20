@@ -46,7 +46,7 @@ public final class WorldCellThermal {
      */
     static final double THERMAL_TIME_SCALE=12;
     /** Air is a poor conductor: about twenty times worse than brick. See BlockThermalCategory. */
-    static final double AIR_CONDUCTIVITY=0.1;
+    static final double AIR_CONDUCTIVITY=0.02;
     private static final class Region {
         final AdaptiveThermalTile field;
         final IntArrayList sources=new IntArrayList();
