@@ -19,7 +19,7 @@ public class GroundAnchorTest {
 
     private static final double AIR_CAPACITY = 0.02;
     /** One torch as the world adapter injects it: heatTorch 7 x roomSourcePower 10. */
-    private static final double TORCH_POWER = 70;
+    private static final double TORCH_POWER = 21;   // heatTorch 2.1 x roomSourcePower 10
     /** A real cellar is small: 6x6 floor with four blocks of headroom inside one tile. */
     private static final int W = 8, H = 8, D = 8;
     /** Surface is far above the cellar: every block of it is deep rock. */
@@ -94,7 +94,7 @@ public class GroundAnchorTest {
         System.out.println(String.format(Locale.ROOT,
             "Fixed, 8 torches: air mean=%.1f C, peak=%.1f C, rock=%.1f C",
             now[0],now[1],now[2]));
-        assertTrue("a cellar must not reach +150 C, peak was "+now[1],now[1]<60);
+        assertTrue("a cellar must not reach +150 C, peak was "+now[1],now[1]<40);
         assertTrue("it must still be warmer than the weather, mean "+now[0],now[0]>-2.2);
         assertTrue("the rock must not be cooked either, rock "+now[2],now[2]<25);
     }
@@ -104,7 +104,7 @@ public class GroundAnchorTest {
         System.out.println(String.format(Locale.ROOT,
             "Fixed, 8 vs 11 torches: air mean %.1f vs %.1f C",eight,eleven));
         assertTrue("more torches must not be colder",eleven>=eight-0.01);
-        assertTrue("but must not explode either, "+eleven,eleven<120);
+        assertTrue("but must not explode either, "+eleven,eleven<60);
     }
 
     @Test public void buriedGroundAlwaysActsAsAReservoir(){
