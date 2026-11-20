@@ -282,6 +282,11 @@ public final class WorldCellThermal {
         for(var entry:w.regions.long2ObjectEntrySet()) {
             var region=entry.getValue();boolean wanted=w.wanted.contains(entry.getLongKey());
             if(wanted)region.detailedUntil=level.getGameTime()+DETAIL_HOLD_TICKS;
+            // A tile that contains an enclosure must never be collapsed into one uniform number:
+            // a 5x5x3 room is a small part of an 8^3 tile, and a coarse tile is stored as a
+            // single temperature, so the room would be replaced by the mean of the field around
+            // it. That is why a campfire inside a small house read as "not warming at all".
+            if(region.field.keepDetailed())region.detailedUntil=level.getGameTime()+DETAIL_HOLD_TICKS;
             if((wanted&&!region.field.detailed)||(!wanted&&region.field.detailed&&level.getGameTime()>=region.detailedUntil))
                 w.dirty.add(entry.getLongKey());
         }
@@ -299,6 +304,7 @@ public final class WorldCellThermal {
         for(long key:w.dirty.toLongArray()) {
             Region region=w.regions.get(key);if(region==null)continue;
             boolean detail=w.wanted.contains(key)||(region.field.detailed&&level.getGameTime()<region.detailedUntil);
+            if(w.wanted.contains(key))detail=true;
             initialize(level,w,data,key,detail);
         }
         w.dirty.clear();

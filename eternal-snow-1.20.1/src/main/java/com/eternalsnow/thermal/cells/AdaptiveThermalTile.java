@@ -2,12 +2,16 @@ package com.eternalsnow.thermal.cells;
 
 /** Coarse reservoir or 512 detailed cells, with identical total heat capacity. */
 public final class AdaptiveThermalTile {
+    /** Above this capacity a cell is not air; used only to recognise enclosed air. */
+    static final double AIR_ENCLOSED_CAPACITY_LIMIT = 2000;
     public final int x,y,z;
     public final TileTemperatureState temperatures;
     public boolean detailed;
     public int node;
     double totalCapacity,conductivity,baseMean,gTotal,gSlope,gOffset,gBase;
     double[] capacities,conductivities,outsideG,slopes,offsets,rawConductivities;
+    /** Any enclosed air cell (no direct sky path) means the tile has its own micro-climate. */
+    boolean holdsEnclosure;
     /** Capacities of the last configured state, kept for the coarse energy bookkeeping. */
     double[] lastCapacities=new double[512];
     boolean[] air;
@@ -34,6 +38,8 @@ public final class AdaptiveThermalTile {
         lastCapacities=c;
         capacities=detail?c:null;conductivities=detail?k:null;rawConductivities=detail?k:null;air=null;mixing=1;anchor=null;
         outsideG=detail?g:null;slopes=detail?slope:null;offsets=detail?offset:null;
+        holdsEnclosure=false;
+        for(int i=0;i<512;i++)if(g[i]<=0&&c[i]<=AIR_ENCLOSED_CAPACITY_LIMIT){holdsEnclosure=true;break;}
     }
     public double mean() {return baseMean*temperatures.scale+temperatures.offset;}
     public int nodes() {return detailed?512:1;}
@@ -56,6 +62,11 @@ public final class AdaptiveThermalTile {
             solver.anchorToAmbient(node+i,relax);
         }
     }
+    /** True when this tile holds heated enclosures; such a tile cannot be one uniform number. */
+    boolean keepDetailed() {
+        return detailed && outsideG != null && air != null && holdsEnclosure;
+    }
+
     void configureBoundary(CellHeatSolver solver,double ambient) {
         if(detailed) {
             for(int i=0;i<512;i++)solver.setOutside(node+i,outsideG[i],slopes[i]*ambient+offsets[i]);
