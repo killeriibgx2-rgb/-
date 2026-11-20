@@ -67,12 +67,12 @@ public class EnergyConservationTest {
 
     @Test
     public void equilibriumIsReachedAndStaysThere() {
-        // Equal heat capacities, so one cell at 100 C and three at 0 C settle
-        // at exactly 25 C. Using stone for all four also keeps the stability
-        // limit tiny, so this covers the sub-stepping path too.
+        // Air, not stone: a stone cell has C = 2 MJ/K and G = 1.7 W/K, so its
+        // time constant is about a fortnight and 4000 steps would prove nothing.
+        // Air settles in minutes, which is what this test is actually about.
         ThermalGrid grid = new ThermalGrid(4, 1, 1);
         for (int x = 0; x < 4; x++) {
-            grid.set(x, 0, 0, Materials.STONE, Constants.toKelvin(x == 0 ? 100 : 0));
+            grid.set(x, 0, 0, Materials.AIR, Constants.toKelvin(x == 0 ? 100 : 0));
         }
         for (int i = 0; i < 4000; i++) grid.step(1.0);
         assertEquals("cells should share the capacity-weighted mean",
