@@ -1,62 +1,59 @@
 Thermal build regression results (synthetic; not Minecraft TPS)
-com.eternalsnow.config.FoodSettingsTest: tests=4, failures=0, errors=0, seconds=0.639
-2026-11-20 12:55:28,817 Test worker WARN Advanced terminal features are not available in this environment
+com.eternalsnow.config.FoodSettingsTest: tests=4, failures=0, errors=0, seconds=0.801
+2026-11-20 12:57:37,788 Test worker WARN Advanced terminal features are not available in this environment
 com.eternalsnow.config.WinterPresetTest: tests=3, failures=0, errors=0, seconds=0.001
-com.eternalsnow.food.FoodCoolingTest: tests=8, failures=0, errors=0, seconds=0.001
-com.eternalsnow.thermal.RoomThermalBalanceTest: tests=5, failures=0, errors=0, seconds=0.001
-com.eternalsnow.thermal.cells.AdaptiveThermalTest: tests=15, failures=0, errors=0, seconds=2.752
-Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=1743.555955
-Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=445.004553
-Adaptive 4096 tiles: full rebuild x20=77.346356ms, in-place tile edit x20=4.596646ms
-com.eternalsnow.thermal.cells.AirHeatTransferTest: tests=4, failures=0, errors=0, seconds=0.226
+com.eternalsnow.food.FoodCoolingTest: tests=8, failures=0, errors=0, seconds=0.002
+com.eternalsnow.thermal.RoomThermalBalanceTest: tests=5, failures=0, errors=0, seconds=0.002
+com.eternalsnow.thermal.cells.AdaptiveThermalTest: tests=15, failures=0, errors=0, seconds=3.513
+Adaptive mixed 2M retained, 1471 sources, 12 rebuilds, 10 simulated minutes ms=2239.286805
+Adaptive 2M retained / 4096 nodes / 10 simulated minutes ms=584.495977
+Adaptive 4096 tiles: full rebuild x20=107.377004ms, in-place tile edit x20=6.135294ms
+com.eternalsnow.thermal.cells.AirHeatTransferTest: tests=4, failures=0, errors=0, seconds=0.254
 Closed-room model, distance 1: old=-12.823283450403874, new=-16.111113068807274
 Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
 Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
 Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
-com.eternalsnow.thermal.cells.CellHeatSolverScaleTest: tests=3, failures=0, errors=0, seconds=0.137
-Thermal regression: 3 x 262144 cells / 774144 edges + steps: 92 ms (CI, not Minecraft TPS)
-com.eternalsnow.thermal.cells.CellHeatSolverTest: tests=12, failures=0, errors=0, seconds=0.002
-com.eternalsnow.thermal.cells.CellTemperatureSnapshotTest: tests=6, failures=0, errors=0, seconds=0.001
-com.eternalsnow.thermal.cells.CellThermalSavedDataTest: tests=3, failures=0, errors=0, seconds=0.0
-com.eternalsnow.thermal.cells.ConservativeHeatSolverTest: tests=7, failures=0, errors=0, seconds=0.548
-Conservative million-cell test 10 steps ms=159.4571
-Conservative 64^3 G=3 20 steps ms=226.799021
-com.eternalsnow.thermal.cells.FloorHeatTest: tests=3, failures=0, errors=0, seconds=0.526
+com.eternalsnow.thermal.cells.CellHeatSolverScaleTest: tests=3, failures=0, errors=0, seconds=0.157
+Thermal regression: 3 x 262144 cells / 774144 edges + steps: 107 ms (CI, not Minecraft TPS)
+com.eternalsnow.thermal.cells.CellHeatSolverTest: tests=12, failures=0, errors=0, seconds=0.004
+com.eternalsnow.thermal.cells.CellTemperatureSnapshotTest: tests=6, failures=0, errors=0, seconds=0.002
+com.eternalsnow.thermal.cells.CellThermalSavedDataTest: tests=3, failures=0, errors=0, seconds=0.001
+com.eternalsnow.thermal.cells.ConservativeHeatSolverTest: tests=7, failures=0, errors=0, seconds=0.687
+Conservative million-cell test 10 steps ms=183.364152
+Conservative 64^3 G=3 20 steps ms=281.074918
+com.eternalsnow.thermal.cells.FloorHeatTest: tests=3, failures=0, errors=0, seconds=0.618
 Stone floor at -15 C outside, no fire: air mean=-15.00 C
 One campfire: stone floor=35.1 C, sealed floor=40.2 C
 Stone floor, one campfire: air mean=33.4 C, peak=34.2 C
-com.eternalsnow.thermal.cells.GroundAnchorTest: tests=6, failures=0, errors=0, seconds=1.915
+com.eternalsnow.thermal.cells.GroundAnchorTest: tests=6, failures=0, errors=0, seconds=2.266
 Fixed, 8 torches: air mean=11.4 C, peak=11.6 C, rock=-1.7 C
 Fixed, 8 vs 11 torches: air mean 11.4 vs 16.6 C
 Fixed, 8 torches: 30 min=11.4 C, 60 min=11.4 C (level)
 Weather coupling: buried stone=1.000 (was 0.000)
 Old rules, 8 torches: 30 min=18.2 C, 60 min=24.1 C (still climbing)
 Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
-com.eternalsnow.thermal.cells.HallUniformityTest: tests=3, failures=0, errors=0, seconds=9.284
+com.eternalsnow.thermal.cells.HallUniformityTest: tests=3, failures=0, errors=0, seconds=11.026
 Hall average air: no sweeps=-19.03 C, 12 sweeps=-16.91 C
 Border 8: step=0.40 C, neighbour steps 1.10/1.07
 Border 16: step=0.25 C, neighbour steps 0.64/0.57
 Border 24: step=0.07 C, neighbour steps 0.17/0.14
 Far end of the hall: no sweeps=-20.00 C, 12 sweeps=-19.97 C
-com.eternalsnow.thermal.cells.IncrementalHeatGraphTest: tests=4, failures=0, errors=0, seconds=0.039
-com.eternalsnow.thermal.cells.OutdoorTorchTest: tests=2, failures=0, errors=0, seconds=4.805
+com.eternalsnow.thermal.cells.IncrementalHeatGraphTest: tests=4, failures=0, errors=0, seconds=0.034
+com.eternalsnow.thermal.cells.OutdoorTorchTest: tests=2, failures=0, errors=0, seconds=5.585
 Outdoors, 8 torches: air at the torches=-2.10 C, ten blocks away=-2.20 C (outside -2.2)
-com.eternalsnow.thermal.cells.PackedHeatSolverTest: tests=3, failures=0, errors=0, seconds=0.596
-THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=262.938515ms packed=176.269234ms; synthetic, not server TPS
-com.eternalsnow.thermal.cells.RoomInertiaSweepTest: tests=1, failures=0, errors=0, seconds=2.381
-SWEEP shipped air .02 mul20 g1 soil1 P680  2m=  73.6 5m=  74.0 15m=  74.1 | +10s=  -7.7 10m= -12.0 30m= -12.0
-SWEEP air .12 mul20 g1 soil1 P680          2m=   8.9 5m=   9.3 15m=   9.4 | +10s=  -8.4 10m= -12.0 30m= -12.0
-SWEEP air .12 mul20 g.1 soil.1 P680        2m=  12.5 5m=  16.6 15m=  22.9 | +10s=   5.0 10m=  -6.8 30m= -10.4
-SWEEP air .12 mul20 g.03 soil.03 P680      2m=  12.9 5m=  18.0 15m=  27.7 | +10s=   9.9 10m=  -1.5 30m=  -5.8
-SWEEP air .12 mul20 g.1 soil.1 P150        2m=  -6.6 5m=  -5.7 15m=  -4.3 | +10s=  -8.3 10m= -10.8 30m= -11.6
-SWEEP air .12 mul20 g.1 soil.1 P100        2m=  -8.4 5m=  -7.8 15m=  -6.9 | +10s=  -9.5 10m= -11.2 30m= -11.8
-SWEEP air .12 mul20 g.03 soil.1 P150       2m=  -6.5 5m=  -5.4 15m=  -3.6 | +10s=  -7.5 10m= -10.3 30m= -11.4
-SWEEP air .30 mul20 g.1 soil.1 P150        2m=  -8.3 5m=  -7.5 15m=  -6.2 | +10s=  -8.7 10m= -10.9 30m= -11.6
-SWEEP air .12 mul8  g.1 soil.1 P150        2m=  -5.7 5m=  -4.6 15m=  -3.3 | +10s=  -7.5 10m= -11.3 30m= -11.9
-SWEEP air .12 mul20 g.05 soil.05 P150      2m=  -6.5 5m=  -5.5 15m=  -3.6 | +10s=  -7.5 10m= -10.1 30m= -11.1
-com.eternalsnow.thermal.cells.RoomWarmingTest: tests=4, failures=0, errors=0, seconds=0.429
+com.eternalsnow.thermal.cells.PackedHeatSolverTest: tests=3, failures=0, errors=0, seconds=0.613
+THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=289.221472ms packed=167.668227ms; synthetic, not server TPS
+com.eternalsnow.thermal.cells.RoomInertiaSweepTest: tests=1, failures=0, errors=0, seconds=2.644
+SWEEP shipped .02/1.0 mul20 g1 s1 P680 2m=  73.6 5m=  74.0 15m=  74.1 | +10s=  -7.7 5m= -11.9 30m= -12.0 | under hole=  -9.5
+SWEEP .5/.5 mul20 g.08 s.08 P680     2m=   3.0 5m=   6.6 15m=  12.9 | +10s=   3.3 5m=  -3.9 30m=  -9.6 | under hole=   1.4
+SWEEP .5/.5 mul20 g.05 s.05 P680     2m=   3.2 5m=   7.1 15m=  14.6 | +10s=   5.0 5m=  -2.1 30m=  -7.8 | under hole=   3.1
+SWEEP .5/.5 mul20 g.05 s.05 P400     2m=  -3.1 5m=  -0.8 15m=   3.6 | +10s=  -2.0 5m=  -6.2 30m=  -9.5 | under hole=  -3.1
+SWEEP 1.0/1.0 mul20 g.05 s.05 P680   2m=   1.6 5m=   5.4 15m=  12.6 | +10s=   4.4 5m=  -2.3 30m=  -7.8 | under hole=   2.5
+SWEEP 1.0/1.0 mul20 g.05 s.05 P400   2m=  -4.0 5m=  -1.8 15m=   2.5 | +10s=  -2.4 5m=  -6.3 30m=  -9.5 | under hole=  -3.5
+SWEEP .5/.5 mul60 g.05 s.05 P680     2m=   0.0 5m=   2.6 15m=   7.1 | +10s=  -1.8 5m=  -5.9 30m=  -8.8 | under hole=  -2.6
+com.eternalsnow.thermal.cells.RoomWarmingTest: tests=4, failures=0, errors=0, seconds=0.495
 8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=4.08 C peak=70.97 C
 brick mean=4.08 C, wool mean=42.40 C
-com.eternalsnow.thermal.cells.SurfaceHeatSpillTest: tests=3, failures=0, errors=0, seconds=4.814
+com.eternalsnow.thermal.cells.SurfaceHeatSpillTest: tests=3, failures=0, errors=0, seconds=5.566
 Ground: at the torches=-2.19 C, eight blocks away=-2.19 C, air at torch=-2.01 C (outside -2.2)
-com.eternalsnow.village.ConfectionerPolicyTest: tests=3, failures=0, errors=0, seconds=0.0
+com.eternalsnow.village.ConfectionerPolicyTest: tests=3, failures=0, errors=0, seconds=0.001
