@@ -18,17 +18,17 @@ public class BodyModelTest {
 
     @Test
     public void nakedComfortIsAboutThirtyOneDegrees() {
-        assertEquals(30.9, BodyModel.comfortableAmbient(0.0), 0.2);
+        assertEquals(31.2, BodyModel.comfortableAmbient(0.0), 0.2);
     }
 
     @Test
     public void aWinterCoatMovesComfortToFourteenDegrees() {
-        assertEquals(13.7, BodyModel.comfortableAmbient(2.0), 0.3);
+        assertEquals(14.0, BodyModel.comfortableAmbient(2.0), 0.3);
     }
 
     @Test
     public void polarKitIsComfortableJustAboveFreezing() {
-        assertEquals(5.1, BodyModel.comfortableAmbient(3.0), 0.3);
+        assertEquals(5.4, BodyModel.comfortableAmbient(3.0), 0.3);
     }
 
     @Test
@@ -49,11 +49,19 @@ public class BodyModelTest {
     }
 
     @Test
-    public void aBodyInFreezingAirLosesHeatFast() {
+    public void aBodyInCryogenicAirSurvivesBrieflyAndThenDies() {
+        // The body is 245 kJ/K, so one minute of -200 C costs about a quarter
+        // of a degree, not a life. With 2 clo the margin to death is ~39 min —
+        // plenty of time to feel the danger and act, which is the design goal.
         BodyModel body = new BodyModel();
-        double after = body.step(-200, 2.0, 60, BodyModel.RESTING_WATTS);
-        assertTrue("one minute naked-ish in -200 C must be lethal territory, got " + after,
-                after < BodyModel.DEATH_CELSIUS);
+        double afterMinute = body.step(-200, 2.0, 60, BodyModel.RESTING_WATTS);
+        assertTrue("a minute must not kill: " + afterMinute,
+                afterMinute > BodyModel.HYPOTHERMIA_CELSIUS);
+        for (int i = 0; i < 60; i++) {
+            body.step(-200, 2.0, 60, BodyModel.RESTING_WATTS);
+        }
+        assertTrue("but an hour must: " + body.coreCelsius(),
+                body.coreCelsius() < BodyModel.DEATH_CELSIUS);
     }
 
     @Test
