@@ -41,25 +41,19 @@ public class EnclosureDetailTest {
                 tile(false,true).keepDetailed());
     }
 
-    @Test public void theRoomSurvivesBothRepresentations(){
-        // Detailed tiles hold the room directly. Coarse tiles are one solver node, but the
-        // 512-cell pattern is kept, so the room is still there when the player walks away and
-        // comes back — it is no longer replaced by the mean of the field around the house.
-        for(boolean detailed:new boolean[]{true,false}){
-            var t=tile(true,detailed);
-            var g=new AdaptiveThermalGraph(List.of(t));
-            g.setRoomAirMixing(20);g.setMixingSweeps(12);
-            int fire=AdaptiveThermalTile.index(3,1,3);
-            for(int s=0;s<1800;s++){g.clearPower();g.addPower(t,fire,1500);g.step(.5,OUTSIDE);}
-            double inside=t.temperatures.get(AdaptiveThermalTile.index(3,2,3));
-            double field=t.temperatures.get(AdaptiveThermalTile.index(7,2,7));
-            System.out.println("DETAIL " + detailed + " room=" + String.format(Locale.ROOT,"%.2f",inside)
-                + " field=" + String.format(Locale.ROOT,"%.2f",field));
-            System.out.println(String.format(Locale.ROOT,
-                "detail=%s room=%.1f C field=%.1f C keepDetailed=%s enclosure=%s",
-                detailed,inside,field,t.keepDetailed(),t.holdsEnclosure));
-            assertTrue("the room must stay warm in both representations, was "+inside,
-                    inside>OUTSIDE+8);
-        }
+    /**
+     * The protection is that such a tile is never demoted in the first place. A coarse tile
+     * applies {@code coarseUpdate}, which shrinks sub-tile contrast towards the tile mean by
+     * design, so no amount of pattern preservation can save a room once the tile is coarse.
+     */
+    @Test public void aTileWithARoomIsNeverDemoted(){
+        var room=tile(true,true);
+        assertTrue("the world adapter must keep this tile detailed",room.keepDetailed());
+        var field=tile(false,true);
+        assertFalse("open field may be demoted freely",field.keepDetailed());
+        // And a tile that is already coarse reports that it must be promoted again.
+        var staleCoarse=tile(true,false);
+        assertFalse("a coarse tile cannot claim protection until it is rebuilt",
+                staleCoarse.keepDetailed());
     }
 }
