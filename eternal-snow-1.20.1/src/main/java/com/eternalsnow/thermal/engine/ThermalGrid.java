@@ -163,37 +163,44 @@ public final class ThermalGrid {
     /**
      * Advances the simulation by {@code seconds} of model time.
      *
-     * <p>Explicit forward Euler with sub-stepping capped at
-     * {@code 0.9·C/G} per cell, which is the standard stability limit for this
-     * stencil. Sub-stepping is not an approximation of physics, it is exactly
-     * the same integration with a smaller Δt — so a stable result is
-     * trustworthy at any step size.
+     * <p>Neighbour-to-neighbour conduction/convection uses explicit Euler with
+     * sub-stepping capped at {@code 0.9·C/G}. Reservoir links are integrated
+     * analytically as exponential exchange, so an open door cannot force the
+     * entire 15,000-cell zone into thousands of tiny global steps.
      *
-     * @return number of sub-steps taken
+     * <p>Power is constant over this whole call and is consumed once at the
+     * end. This matters when internal transfer requires several sub-steps: a
+     * fire rated at 5 kW must still deliver 5 kW for every model second.
+     *
+     * @return number of internal-transfer sub-steps taken
      */
     public int step(double seconds) {
         if (!(seconds > 0) || !Double.isFinite(seconds)) {
             throw new IllegalArgumentException("seconds must be finite and > 0");
         }
-        if (speedMultiplier == 0) return 0;
-        // Scaling fluxes by N is identical to letting N times more time pass,
-        // and it leaves the stability limit unchanged (§5.3).
+        if (speedMultiplier == 0) {
+            clearPower();
+            return 0;
+        }
+
+        // Multiplying model time by N is equivalent to scaling all fluxes by N.
         double dt = seconds * speedMultiplier;
         List<Face> faces = faces();
         double stable = stableStep(faces);
         int substeps = Math.max(1, (int) Math.ceil(dt / stable));
         double sub = dt / substeps;
-
         double[] delta = new double[cells.length];
+
         for (int iteration = 0; iteration < substeps; iteration++) {
             java.util.Arrays.fill(delta, 0.0);
             for (int i = 0; i < cells.length; i++) {
                 ThermalCell cell = cells[i];
-                if (cell == null) continue;
-                // External power is the only non-conservative term kept out of
-                // the face loop, so the audit stays exact.
-                delta[i] += cell.externalPowerWatts() * sub;
+                if (cell != null) {
+                    delta[i] += cell.externalPowerWatts() * sub;
+                }
             }
+
+            // Internal faces are conservative: every joule leaving a is added to b.
             for (Face face : faces) {
                 double flow = face.conductance()
                         * (cells[face.b()].temperatureKelvin() - cells[face.a()].temperatureKelvin())
@@ -201,38 +208,64 @@ public final class ThermalGrid {
                 delta[face.a()] += flow;
                 delta[face.b()] -= flow;
             }
+
+            for (int i = 0; i < cells.length; i++) {
+                ThermalCell cell = cells[i];
+                if (cell != null) {
+                    cell.setTemperatureKelvin(
+                            cell.temperatureKelvin() + delta[i] / cell.heatCapacity());
+                }
+            }
+
+            // Fixed-temperature reservoirs are one-way external energy paths.
+            // Integrating dT/dt = G(Toutside-T)/C exactly prevents overshoot
+            // even when a large opening has much greater G than the room air.
             for (ExternalLink link : externalLinks) {
                 ThermalCell cell = cells[link.cellIndex()];
                 if (cell == null) continue;
                 double outside = link.ambient().temperatureKelvin(0, 0, 0);
-                delta[link.cellIndex()] += link.conductance()
-                        * (outside - cell.temperatureKelvin()) * sub;
+                exchangeWithReservoir(cell, outside, link.conductance(), sub);
             }
             for (InfiltrationPath path : infiltrations) {
-                double conductance = Infiltration.conductance(path.apertureAreaM2(), path.heightM(),
-                        cells[path.cellIndex()].temperatureKelvin(),
-                        path.ambient().temperatureKelvin(0, 0, 0));
-                double outside = path.ambient().temperatureKelvin(0, 0, 0);
-                delta[path.cellIndex()] += conductance
-                        * (outside - cells[path.cellIndex()].temperatureKelvin()) * sub;
-            }
-            for (int i = 0; i < cells.length; i++) {
-                ThermalCell cell = cells[i];
+                ThermalCell cell = cells[path.cellIndex()];
                 if (cell == null) continue;
-                cell.setTemperatureKelvin(cell.temperatureKelvin() + delta[i] / cell.heatCapacity());
-                cell.consumePower();
+                double outside = path.ambient().temperatureKelvin(0, 0, 0);
+                double conductance = Infiltration.conductance(path.apertureAreaM2(), path.heightM(),
+                        cell.temperatureKelvin(), outside);
+                exchangeWithReservoir(cell, outside, conductance, sub);
             }
         }
+
+        clearPower();
         return substeps;
+    }
+
+    private static void exchangeWithReservoir(ThermalCell cell, double outsideKelvin,
+                                              double conductance, double seconds) {
+        if (conductance <= 0) return;
+        double fractionRemaining = Math.exp(-conductance * seconds / cell.heatCapacity());
+        double next = outsideKelvin
+                + (cell.temperatureKelvin() - outsideKelvin) * fractionRemaining;
+        cell.setTemperatureKelvin(next);
+    }
+
+    private void clearPower() {
+        for (ThermalCell cell : cells) {
+            if (cell != null) cell.consumePower();
+        }
     }
 
     /** Adds a fixed-temperature reservoir outside the grid. */
     public void addExternalLink(ExternalLink link) {
+        if (link == null) throw new NullPointerException("link");
+        if (link.cellIndex() >= cells.length) throw new IndexOutOfBoundsException("external cell index");
         externalLinks.add(link);
     }
 
     /** Adds a gap that leaks outside air into this cell (spec §3.7). */
     public void addInfiltration(InfiltrationPath path) {
+        if (path == null) throw new NullPointerException("path");
+        if (path.cellIndex() >= cells.length) throw new IndexOutOfBoundsException("infiltration cell index");
         infiltrations.add(path);
     }
 
@@ -259,7 +292,7 @@ public final class ThermalGrid {
             if (cells[i] == null || rate[i] <= 0) continue;
             stable = Math.min(stable, 0.9 * cells[i].heatCapacity() / rate[i]);
         }
-        return stable == Double.MAX_VALUE ? Double.MAX_VALUE : stable;
+        return stable;
     }
 
     /** Public wrapper used by tests and the adapter. */

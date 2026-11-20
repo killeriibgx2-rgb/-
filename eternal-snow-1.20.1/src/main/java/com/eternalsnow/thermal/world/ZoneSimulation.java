@@ -1,8 +1,10 @@
 package com.eternalsnow.thermal.world;
 
+import com.eternalsnow.config.ThermalConfig;
+import com.eternalsnow.thermal.engine.Ambient;
 import com.eternalsnow.thermal.engine.Constants;
+import com.eternalsnow.thermal.engine.Devices;
 import com.eternalsnow.thermal.engine.ExternalLink;
-import com.eternalsnow.thermal.engine.Infiltration;
 import com.eternalsnow.thermal.engine.InfiltrationPath;
 import com.eternalsnow.thermal.engine.Material;
 import com.eternalsnow.thermal.engine.Materials;
@@ -11,22 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/**
- * A cube of world simulated honestly by the engine.
- *
- * <p>Built fresh from the world, stepped, and written back. There is no stored
- * cell state in this class: the world is the source of truth for materials and
- * for which block is where, and only the temperature travels through the grid.
- *
- * <p>Temperature persistence: the grid is seeded from the block temperatures
- * that the world adapter stores per block position, so a frozen zone resumes
- * exactly where it stopped.
- */
+/** A fresh, local thermal grid around one active player. */
 public final class ZoneSimulation {
     private final ServerLevel level;
     private final BlockPos origin;
@@ -38,6 +30,7 @@ public final class ZoneSimulation {
     }
 
     public ZoneSimulation(ServerLevel level, BlockPos centre, int radius) {
+        if (radius < 1) throw new IllegalArgumentException("radius must be positive");
         this.level = level;
         this.origin = centre.offset(-radius, -radius, -radius);
         this.radius = radius;
@@ -56,11 +49,13 @@ public final class ZoneSimulation {
         return grid;
     }
 
-    /** Rebuilds the grid from the world, keeping temperatures where possible. */
+    /** Rebuilds materials and temperatures from the Minecraft world plus sparse saved state. */
     public void capture(TemperatureStore store, double ambientKelvin) {
         int side = side();
         grid = new ThermalGrid(side, side, side);
         sources.clear();
+        boolean[] airCells = new boolean[grid.cellCount()];
+        boolean[] openDoorCells = new boolean[grid.cellCount()];
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
         for (int y = 0; y < side; y++) {
@@ -69,58 +64,65 @@ public final class ZoneSimulation {
                     cursor.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
                     BlockState state = level.getBlockState(cursor);
                     Material material = MaterialMapper.of(state, level, cursor);
-                    double temperature = store.temperatureAt(cursor, ambientKelvin);
-                    grid.set(x, y, z, material, temperature);
+                    int index = grid.index(x, y, z);
+                    grid.set(x, y, z, material, store.temperatureAt(cursor, ambientKelvin));
+                    airCells[index] = material == Materials.AIR;
+                    openDoorCells[index] = MaterialMapper.isOpenDoor(state);
 
                     double watts = sourceWatts(state);
-                    if (watts > 0) {
-                        sources.add(new HeatSourceBinding(grid.index(x, y, z), watts));
-                    }
+                    if (watts > 0) sources.add(new HeatSourceBinding(index, watts));
                 }
             }
         }
-        attachBoundaries(ambientKelvin, store);
+
+        Ambient ambient = Ambient.constant(ambientKelvin);
+        attachBoundaries(ambient);
+        attachOpenDoorLeaks(ambient, airCells, openDoorCells);
     }
 
     private double sourceWatts(BlockState state) {
-        if (state.is(Blocks.CAMPFIRE) && state.getValue(CampfireBlock.LIT)) {
-            return com.eternalsnow.thermal.engine.Devices.CAMPFIRE_WATTS;
+        if ((state.is(Blocks.CAMPFIRE) || state.is(Blocks.SOUL_CAMPFIRE))
+                && state.getValue(CampfireBlock.LIT)) {
+            return state.is(Blocks.SOUL_CAMPFIRE)
+                    ? Devices.SOUL_CAMPFIRE_WATTS : Devices.CAMPFIRE_WATTS;
         }
-        if (state.is(Blocks.SOUL_CAMPFIRE) && state.getValue(CampfireBlock.LIT)) {
-            return com.eternalsnow.thermal.engine.Devices.SOUL_CAMPFIRE_WATTS;
-        }
-        if (state.is(Blocks.FURNACE) && state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.LIT)
-                && state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.LIT)) {
-            // Vanilla furnace: heat only while it is actually smelting.
-            return com.eternalsnow.thermal.engine.Devices.FURNACE_WATTS;
+        if (state.is(Blocks.FURNACE) && state.getValue(BlockStateProperties.LIT)) {
+            // The vanilla furnace is untouched: it simply radiates while lit.
+            return Devices.FURNACE_WATTS;
         }
         return 0;
     }
 
-    /**
-     * Faces of the zone that touch the outside world become external links to
-     * the ambient reservoir, so heat can leave the box instead of piling up on
-     * the border.
-     */
-    private void attachBoundaries(double ambientKelvin, TemperatureStore store) {
+    /** The box edge sees the local material half-cell plus an outside film. */
+    private void attachBoundaries(Ambient ambient) {
         int side = side();
-        double conductance = ExternalLink.wallConductance(Materials.STONE, 1.0, 1.0);
         for (int y = 0; y < side; y++) {
             for (int z = 0; z < side; z++) {
                 for (int x = 0; x < side; x++) {
-                    boolean border = x == 0 || y == 0 || z == 0
-                            || x == side - 1 || y == side - 1 || z == side - 1;
-                    if (!border) continue;
+                    if (x != 0 && y != 0 && z != 0
+                            && x != side - 1 && y != side - 1 && z != side - 1) continue;
                     int index = grid.index(x, y, z);
-                    grid.addExternalLink(new ExternalLink(index,
-                            com.eternalsnow.thermal.engine.Ambient.constant(ambientKelvin),
-                            1.0 / conductance));
+                    Material material = grid.cell(index).material();
+                    double conductance = material == Materials.AIR
+                            ? Constants.FREE_CONVECTION
+                            : ExternalLink.outsideSurfaceConductance(material, 1.0, 0.5);
+                    grid.addExternalLink(new ExternalLink(index, ambient, 1.0 / conductance));
                 }
             }
         }
     }
 
-    /** Steps the model once by {@code realSeconds}; returns sub-steps taken. */
+    private void attachOpenDoorLeaks(Ambient ambient,
+                                    boolean[] airCells, boolean[] openDoorCells) {
+        if (!ThermalConfig.DOOR_INFILTRATION.get()) return;
+        for (DoorLeakDetector.Leak leak : DoorLeakDetector.detect(
+                side(), side(), side(), airCells, openDoorCells)) {
+            grid.addInfiltration(new InfiltrationPath(leak.insideCellIndex(), leak.areaM2(),
+                    leak.pressureHeadM(), ambient));
+        }
+    }
+
+    /** Steps once, with device watts applied for the full model interval. */
     public int step(double realSeconds) {
         for (HeatSourceBinding source : sources) {
             grid.cell(source.cellIndex()).addPower(source.watts());
@@ -128,35 +130,32 @@ public final class ZoneSimulation {
         return grid.step(realSeconds);
     }
 
-    /** Writes temperatures back to the store, excluding the outer shell. */
-    public void writeBack(TemperatureStore store) {
+    /** Saves only cells that differ meaningfully from the outside field. */
+    public void writeBack(TemperatureStore store, double ambientKelvin) {
         int side = side();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (int y = 0; y < side; y++) {
             for (int z = 0; z < side; z++) {
                 for (int x = 0; x < side; x++) {
                     cursor.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
-                    store.setTemperature(cursor, grid.cell(x, y, z).temperatureKelvin());
+                    store.setTemperature(cursor, grid.cell(x, y, z).temperatureKelvin(), ambientKelvin);
                 }
             }
         }
     }
 
-    /** Air temperature at the zone centre, °C, for the HUD and the panel. */
     public double centreCelsius() {
-        int c = radius;
-        return grid.cell(c, c, c).temperatureCelsius();
+        return grid.cell(radius, radius, radius).temperatureCelsius();
     }
 
-    /** Mean air temperature over the zone, °C. */
-    public double meanAirCelsius() {
-        double sum = 0;
-        int count = 0;
-        for (int i = 0; i < grid.cellCount(); i++) {
-            if (grid.cell(i).material() != Materials.AIR) continue;
-            sum += grid.cell(i).temperatureCelsius();
-            count++;
+    /** Air temperature at the body/head cell, with a safe fallback for solids. */
+    public double airCelsiusAt(BlockPos worldPos, double ambientCelsius) {
+        int x = worldPos.getX() - origin.getX();
+        int y = worldPos.getY() - origin.getY();
+        int z = worldPos.getZ() - origin.getZ();
+        if (x < 0 || x >= side() || y < 0 || y >= side() || z < 0 || z >= side()) {
+            return ambientCelsius;
         }
-        return count == 0 ? centreCelsius() : sum / count;
+        return grid.cell(x, y, z).temperatureCelsius();
     }
 }

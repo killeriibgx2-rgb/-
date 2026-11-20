@@ -88,6 +88,21 @@ public class InfiltrationTest {
     }
 
     @Test
+    public void aLargeDoorLeakIsIntegratedWithoutOvershootOrTinyGlobalSteps() {
+        ThermalGrid grid = new ThermalGrid(1, 1, 1);
+        grid.set(0, 0, 0, Materials.AIR, WARM);
+        grid.addInfiltration(new InfiltrationPath(0, 2.0, 2.0,
+                Ambient.constant(FREEZING)));
+
+        int substeps = grid.step(0.5);
+        double result = grid.cell(0, 0, 0).temperatureKelvin();
+
+        assertEquals("reservoir exchange is local and analytic", 1, substeps);
+        assertTrue("air must not cool past outside temperature", result >= FREEZING);
+        assertTrue("a door must exchange heat", result < WARM);
+    }
+
+    @Test
     public void aLeakCoolsARoomThatWouldOtherwiseHoldHeat() {
         // The awkward fact this fixes: a sealed timber room holds +20 C against
         // -200 C for months (shell mass 94 MJ/K). A 100 cm² gap dumps ~21 kW

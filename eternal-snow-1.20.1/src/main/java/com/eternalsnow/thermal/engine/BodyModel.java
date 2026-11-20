@@ -77,6 +77,9 @@ public final class BodyModel {
         if (!(seconds > 0) || !Double.isFinite(seconds)) {
             throw new IllegalArgumentException("seconds must be finite and > 0");
         }
+        if (!Double.isFinite(ambientCelsius)) {
+            throw new IllegalArgumentException("ambient must be finite");
+        }
         if (!Double.isFinite(activityWatts)) {
             throw new IllegalArgumentException("activity must be finite");
         }

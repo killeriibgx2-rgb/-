@@ -1,4 +1,6 @@
 {
   "item.eternalsnow.thermal_scanner": "Thermal Scanner",
-  "item.eternalsnow.thermal_scanner.desc": "Right-click: thermal state"
+  "item.eternalsnow.thermal_scanner.desc": "Right-click: thermal state",
+  "eternalsnow.hud.body_core": "Body %s",
+  "eternalsnow.hud.air": "Air %s"
 }

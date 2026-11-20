@@ -31,6 +31,9 @@ public final class Constants {
      */
     public static final double SURFACE_FILM_RESISTANCE = 0.165;
 
+    /** Exterior air-film resistance only, 1 / 25 W/(m²·K), m²·K/W. */
+    public static final double OUTSIDE_SURFACE_FILM_RESISTANCE = 0.04;
+
     /** Free-convection coefficient from a solid surface to still air, W/(m²·K). */
     public static final double FREE_CONVECTION = 10.0;
 

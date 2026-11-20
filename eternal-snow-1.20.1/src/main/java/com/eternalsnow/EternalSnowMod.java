@@ -2,11 +2,14 @@ package com.eternalsnow;
 
 import com.eternalsnow.config.ThermalConfig;
 import com.eternalsnow.registry.ModItems;
+import com.eternalsnow.network.ThermalNetwork;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
@@ -26,9 +29,15 @@ public final class EternalSnowMod {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ThermalConfig.SPEC,
                 "eternalsnow-thermal.toml");
 
-        ModItems.register(FMLJavaModLoadingContext.get().getModEventBus());
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ModItems.register(modBus);
+        modBus.addListener(this::onCommonSetup);
         MinecraftForge.EVENT_BUS.register(this);
 
         LOGGER.info("Eternal Snow 3.0 — thermal engine starting");
+    }
+
+    private void onCommonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(ThermalNetwork::register);
     }
 }

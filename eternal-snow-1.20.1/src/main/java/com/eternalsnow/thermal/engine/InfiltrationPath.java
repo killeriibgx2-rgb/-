@@ -16,6 +16,7 @@ package com.eternalsnow.thermal.engine;
 public record InfiltrationPath(int cellIndex, double apertureAreaM2, double heightM, Ambient ambient) {
     public InfiltrationPath {
         if (cellIndex < 0) throw new IllegalArgumentException("cellIndex must be >= 0");
+        if (ambient == null) throw new NullPointerException("ambient");
         if (!(apertureAreaM2 >= 0) || !Double.isFinite(apertureAreaM2)) {
             throw new IllegalArgumentException("apertureAreaM2 must be finite and >= 0");
         }

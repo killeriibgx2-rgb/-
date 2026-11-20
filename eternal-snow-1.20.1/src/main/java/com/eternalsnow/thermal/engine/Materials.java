@@ -37,6 +37,9 @@ public final class Materials {
     /** Stone: a heat sink, not an insulator. */
     public static final Material STONE = new Material("stone", 1.7, 2400, 840, 0.9);
 
+    /** Liquid water near room temperature; phase change is a later model stage. */
+    public static final Material WATER = new Material("water", 0.6, 1000, 4182, 0.96);
+
     /** Ice: conducts well, holds a lot of cold mass. */
     public static final Material ICE = new Material("ice", 2.2, 917, 2050, 0.97);
 

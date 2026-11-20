@@ -55,6 +55,23 @@ public class HeatSourceTest {
     }
 
     @Test
+    public void aRunningFireDeliversPowerDuringEverySolverSubstep() {
+        ThermalGrid grid = new ThermalGrid(2, 1, 1);
+        grid.set(0, 0, 0, Materials.AIR, Constants.toKelvin(0));
+        grid.set(1, 0, 0, Materials.AIR, Constants.toKelvin(0));
+        grid.setSpeedMultiplier(1000.0); // forces multiple stable sub-steps
+        HeatSource fire = new HeatSource("campfire", 0, Devices.CAMPFIRE_WATTS);
+        double before = grid.totalEnergy();
+
+        fire.apply(grid, true);
+        int substeps = grid.step(0.5);
+
+        assertTrue("test must exercise multiple substeps", substeps > 1);
+        assertEquals("5 kW for 500 model seconds", 5_000.0 * 500.0,
+                grid.totalEnergy() - before, 1e-5);
+    }
+
+    @Test
     public void invalidSourcesAreRejected() {
         assertRejected(() -> new HeatSource("", 0, 100));
         assertRejected(() -> new HeatSource("x", -1, 100));
