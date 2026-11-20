@@ -4,7 +4,10 @@ import static org.junit.Assert.*;
 public class WinterPresetTest {
     @Test public void mediumUsesApprovedTorchAndManualEditsRemainPossible() {
         var s=new ServerSnowSettings();WinterPreset.MEDIUM.apply(s);
-        assertEquals(7,s.heatTorch,0);assertEquals(-34,s.minWorldTempC);
+        // The preset must scale the current balanced default, not a hard-coded wattage from an
+        // older build — hard-coded numbers silently undid every heat rebalance on world load.
+        assertEquals(new ServerSnowSettings().heatTorch,s.heatTorch,0);
+        assertEquals(-34,s.minWorldTempC);
         s.heatTorch=11;assertEquals(11,s.heatTorch,0);
     }
     @Test public void difficultiesIncreaseColdFoodAndThirstPressure() {
