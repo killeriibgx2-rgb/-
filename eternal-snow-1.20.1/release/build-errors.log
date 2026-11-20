@@ -1,55 +1,55 @@
-89:    java.lang.AssertionError at HallUniformityTest.java:106
-92:    java.lang.AssertionError at HallUniformityTest.java:115
-    Closed-room model, distance 2: old=-16.560756595943836, new=-17.55718271583063
-    Closed-room model, distance 3: old=-18.02729076037286, new=-18.195810024864148
-    Closed-room model, distance 4: old=-18.744028169025427, new=-18.550361321751865
+47:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/HallUniformityTest.java:75: error: constructor AdaptiveThermalTile in class AdaptiveThermalTile cannot be applied to given types;
+53:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/HallUniformityTest.java:76: error: constructor AdaptiveThermalTile in class AdaptiveThermalTile cannot be applied to given types;
+> Task :createMcpToSrg
 
-CellHeatSolverScaleTest > repeatedLargeGridRebuildsPreserveTemperaturesAndEnergy STANDARD_OUT
-    Thermal regression: 3 x 262144 cells / 774144 edges + steps: 100 ms (CI, not Minecraft TPS)
+> Task :compileJava
+Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
+Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
+Note: Loading searge mappings from /home/runner/work/-/-/eternal-snow-1.20.1/build/createMcpToSrg/output.tsrg
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
 
-ConservativeHeatSolverTest > millionCellGraphPreservesEnergyWithFourSweeps STANDARD_OUT
-    Conservative million-cell test 10 steps ms=201.781479
+> Task :addMixinsToJar
+> Task :processResources
+> Task :classes
+> Task :jar
+> Task :configureReobfTaskForReobfJar
+> Task :reobfJar
+> Task :configureReobfTaskForReobfJarJar
+> Task :addMixinsToJarJar
+> Task :jarJar SKIPPED
+> Task :reobfJarJar SKIPPED
+> Task :assemble
 
-ConservativeHeatSolverTest > threeDimensionalMixingGridConservesInjectedPower STANDARD_OUT
-    Conservative 64^3 G=3 20 steps ms=224.837973
-
-HallUniformityTest > debugEdges STANDARD_OUT
-    DEBUG edges=23040->29880 g0=-1.0->1.0 airPair=40.0->40.0 airCells=5400 nodes=8192
-
-HallUniformityTest > setConnectionReachesTheSolver STANDARD_OUT
-    PROBE edges=1 g=40.0
-    PROBE after steps T0=12531.25 T1=12468.75
-
-HallUniformityTest > uniformMixingFlattensATileHall STANDARD_OUT
-    32-block hall: mixing=3 spread=8.59 C, mixing=40 spread=8.59 C (left end -18.98, right end -20.00)
-
-HallUniformityTest > uniformMixingFlattensATileHall FAILED
-    java.lang.AssertionError at HallUniformityTest.java:106
-
-HallUniformityTest > noEightBlockStepsAtTileBorders FAILED
-    java.lang.AssertionError at HallUniformityTest.java:115
-
-PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=285.009919ms packed=192.653307ms; synthetic, not server TPS
-
-RoomWarmingTest > oneCampfireMakesABrickRoomHabitable STANDARD_OUT
-    MAXCHECK peak=56.49381263743422
-    8x8x8 closed brick room, one campfire, -20 C outside: after 15 min mean=1.25 C peak=56.49 C
-
-RoomWarmingTest > insulationMattersMoreThanRoomSize STANDARD_OUT
-    brick mean=1.25 C, wool mean=39.61 C
-
-88 tests completed, 2 failed
-
-> Task :test FAILED
+> Task :compileTestJava FAILED
+/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/HallUniformityTest.java:75: error: constructor AdaptiveThermalTile in class AdaptiveThermalTile cannot be applied to given types;
+        var cold=new AdaptiveThermalTile(0,0,0,-20,true);
+                 ^
+  required: int,int,int,TileTemperatureState
+  found:    int,int,int,int,boolean
+  reason: actual and formal argument lists differ in length
+/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/thermal/cells/HallUniformityTest.java:76: error: constructor AdaptiveThermalTile in class AdaptiveThermalTile cannot be applied to given types;
+        var hot=new AdaptiveThermalTile(8,0,0,-20,true);
+                ^
+  required: int,int,int,TileTemperatureState
+  found:    int,int,int,int,boolean
+  reason: actual and formal argument lists differ in length
+2 errors
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':test'.
-> There were failing tests. See the report at: file:///home/runner/work/-/-/eternal-snow-1.20.1/build/reports/tests/test/index.html
+Execution failed for task ':compileTestJava'.
+> Compilation failed; see the compiler error output for details.
 
 * Try:
+> Run with --info option to get more log output.
 > Run with --scan to get full insights.
 
 Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
@@ -58,5 +58,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 45s
-13 actionable tasks: 13 executed
+BUILD FAILED in 39s
+12 actionable tasks: 12 executed
