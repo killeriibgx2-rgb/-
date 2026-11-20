@@ -83,50 +83,6 @@ public class RoomInertiaTest {
         assertTrue("but a campfire must not cook the room, was "+at15min,at15min<40);
     }
 
-    @Test public void diagnoseWhereTheHeatGoes(){
-        var t=house(false);var g=graph(t);
-        for(int s=0;s<1800;s++){g.clearPower();g.addPower(t,fireCell(),CAMPFIRE);g.step(.5,OUTSIDE);}
-        double e0=energy(t),a0=air(t),w0=shell(t);
-        for(int s=0;s<20;s++){g.clearPower();g.step(.5,OUTSIDE);}
-        double e1=energy(t),a1=air(t),w1=shell(t);
-        System.out.println(String.format(Locale.ROOT,
-            "DIAG over 10 s: E %.0f -> %.0f (lost %.0f = %.0f W); air %.2f->%.2f C; shell %.2f->%.2f C",
-            e0,e1,e0-e1,(e0-e1)/10,a0,a1,w0,w1));
-        double cAir=0,cShell=0;
-        for(int y=1;y<=3;y++)for(int z=1;z<=5;z++)for(int x=1;x<=5;x++)
-            cAir+=t.capacities[AdaptiveThermalTile.index(x,y,z)];
-        for(int y=0;y<=4;y++)for(int z=0;z<=6;z++)for(int x=0;x<=6;x++){
-            int i=AdaptiveThermalTile.index(x,y,z);
-            if(t.air!=null&&!t.air[i])cShell+=t.capacities[i];
-        }
-        var sol=g.solver;
-        int airC=AdaptiveThermalTile.index(3,2,3), plankC=AdaptiveThermalTile.index(0,2,3);
-        double gAirAir=sol.liveConductance(airC,AdaptiveThermalTile.index(4,2,3));
-        double gAirPlank=sol.liveConductance(airC,plankC);
-        double gPlankOut=sol.outsideConductance(plankC);
-        double kAir=t.conductivities[airC],kPlank=t.conductivities[plankC];
-        System.err.println(String.format(Locale.ROOT,
-            "DIAG edges: air-air G=%.3f (k=%s), air-plank G=%.3f (kPlank=%s), plank->weather G=%.4f",
-            gAirAir,"?",gAirPlank,"?",gPlankOut));
-        System.out.println(String.format(Locale.ROOT,
-            "DIAG capacities: air=%.1f shell=%.1f  =>  G_room_to_out approx %.1f W/K",
-            cAir,cShell,(e0-e1)/10/Math.max(0.1,a0-OUTSIDE)));
-    }
-
-    private static double energy(AdaptiveThermalTile t){
-        double e=0;
-        for(int i=0;i<512;i++)e+=t.capacities[i]*t.temperatures.get(i);
-        return e;
-    }
-    private static double shell(AdaptiveThermalTile t){
-        double s=0;int n=0;
-        for(int y=0;y<=4;y++)for(int z=0;z<=6;z++)for(int x=0;x<=6;x++){
-            int i=AdaptiveThermalTile.index(x,y,z);
-            if(t.air!=null&&!t.air[i]){s+=t.temperatures.get(i);n++;}
-        }
-        return n==0?0:s/n;
-    }
-
     @Test public void theRoomHoldsHeatWhenTheFireDies(){
         var t=house(false);var g=graph(t);
         for(int s=0;s<1800;s++){g.clearPower();g.addPower(t,fireCell(),CAMPFIRE);g.step(.5,OUTSIDE);}
