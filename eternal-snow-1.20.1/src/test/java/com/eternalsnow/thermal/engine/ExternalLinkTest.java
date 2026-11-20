@@ -29,7 +29,9 @@ public class ExternalLinkTest {
         grid.addExternalLink(new ExternalLink(0,
                 Ambient.constant(Constants.toKelvin(-200)),
                 1.0 / ExternalLink.wallConductance(Materials.WOOD, 1.0, 1.0)));
-        for (int i = 0; i < 200000; i++) grid.step(1.0);
+        // Wood has C = 850 kJ/K and this wall only 6.9 W/K, so the time constant
+        // is about 3.4 hours. Five time constants is ~2.4e6 s.
+        for (int i = 0; i < 2_500_000; i++) grid.step(1.0);
         double celsius = grid.cell(0, 0, 0).temperatureCelsius();
         assertEquals("must settle on the reservoir", -200, celsius, 1.0);
         assertTrue("never below absolute zero", celsius > -273);

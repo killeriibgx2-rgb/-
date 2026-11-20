@@ -42,10 +42,18 @@ public class InfiltrationTest {
     }
 
     @Test
-    public void aHundredSquareCentimetreGapLeaksAboutTwoKilowatts() {
-        // 0.01 m² at 3 m of stack against a 220 K difference.
-        double watts = Infiltration.conductance(0.01, 3.0, WARM, FREEZING) * 220;
+    public void aTenSquareCentimetreGapLeaksAboutTwoKilowatts() {
+        // 0.001 m² at 3 m of stack against a 220 K difference: ~2.1 kW.
+        double watts = Infiltration.conductance(0.001, 3.0, WARM, FREEZING) * 220;
         assertEquals("expected ~2.1 kW, got " + watts, 2.1, watts / 1000, 0.3);
+    }
+
+    @Test
+    public void aHundredSquareCentimetreGapLeaksAboutTwentyKilowatts() {
+        // Ten times the area, ten times the leak. At cryogenic temperatures this
+        // is why a door left open is catastrophic and a 5 kW fire is hopeless.
+        double watts = Infiltration.conductance(0.01, 3.0, WARM, FREEZING) * 220;
+        assertEquals("expected ~21 kW, got " + watts, 21.3, watts / 1000, 1.0);
     }
 
     @Test
@@ -108,7 +116,7 @@ public class InfiltrationTest {
             }
         }
         if (leakApertureHundredths > 0) {
-            grid.addInfiltration(new InfiltrationPath(grid.index(2, 2, 2),
+            grid.addInfiltration(new InfiltrationPath(grid.index(2, 1, 2),
                     0.01, 2.0, Ambient.constant(Constants.toKelvin(-200))));
         }
         return grid;
