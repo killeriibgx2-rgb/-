@@ -1,5 +1,6 @@
 package com.eternalsnow.config;
 
+import com.eternalsnow.thermal.BlockThermalCategory;
 import net.minecraft.nbt.CompoundTag;
 import org.junit.Test;
 import static org.junit.Assert.*;
