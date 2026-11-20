@@ -8,6 +8,8 @@ public final class AdaptiveThermalTile {
     public int node;
     double totalCapacity,conductivity,baseMean,gTotal,gSlope,gOffset,gBase;
     double[] capacities,conductivities,outsideG,slopes,offsets,rawConductivities;
+    /** Capacities of the last configured state, kept for the coarse energy bookkeeping. */
+    double[] lastCapacities=new double[512];
     boolean[] air;
     double mixing=1;
     /** Per-cell ground anchor (0..1); only solid cells that are weakly coupled get it. */
@@ -29,6 +31,7 @@ public final class AdaptiveThermalTile {
             gTotal+=g[i];gSlope+=g[i]*slope[i];gOffset+=g[i]*offset[i];gBase+=g[i]*temperatures.base[i];
         }
         baseMean=energy/totalCapacity;conductivity=512/resistance;detailed=detail;
+        lastCapacities=c;
         capacities=detail?c:null;conductivities=detail?k:null;rawConductivities=detail?k:null;air=null;mixing=1;anchor=null;
         outsideG=detail?g:null;slopes=detail?slope:null;offsets=detail?offset:null;
     }
@@ -68,9 +71,18 @@ public final class AdaptiveThermalTile {
             for(int i=0;i<512;i++){temperatures.base[i]=solver.temperature(node+i);energy+=capacities[i]*temperatures.base[i];gBase+=outsideG[i]*temperatures.base[i];}
             baseMean=energy/totalCapacity;temperatures.refreshExtrema();
         } else {
-            // Internal contrast relaxation preserves the reservoir's weighted mean/energy.
-            double decay=Math.exp(-seconds*8*conductivity/totalCapacity);
-            temperatures.coarseUpdate(solver.temperature(node),baseMean,decay);
+            // A coarse tile is one reservoir, so the solver sees a single temperature. The full
+            // 512-cell pattern is kept as it was: without that, a player's room is erased the
+            // moment they walk away (the "hole in the ceiling shows outdoor temperature" report),
+            // because every cell of the tile collapses onto the mean of the field around it.
+            // Only the overall energy is taken from the solver.
+            double energy=0,total=0;
+            for(int i=0;i<512;i++){energy+=lastCapacities[i]*temperatures.get(i);total+=lastCapacities[i];}
+            double mean=total>0?energy/total:solver.temperature(node);
+            double target=solver.temperature(node);
+            double shift=target-mean;
+            if(Double.isFinite(shift)&&Math.abs(shift)>1e-9)
+                for(int i=0;i<512;i++)temperatures.set(i,temperatures.get(i)+shift);
         }
     }
 }

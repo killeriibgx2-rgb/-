@@ -67,6 +67,30 @@ public class PlankRoomInWorldTest {
         assertTrue("a campfire must warm its room, was "+inside,inside>OUTSIDE+10);
     }
 
+    /**
+     * The reported symptom in its exact form: a room is a small part of a tile, and the rest of
+     * the tile is open field. While the tile is coarse it is ONE reservoir, so the room cannot
+     * have its own temperature — it collapses onto the mean of the field around it. A test that
+     * keeps every tile detailed would never catch that.
+     */
+    @Test public void aCoarseTileLosesTheRoom(){
+        var t=room();
+        var g=new AdaptiveThermalGraph(List.of(t));
+        g.setRoomAirMixing(20);g.setMixingSweeps(12);
+        int fire=AdaptiveThermalTile.index(3,1,3);
+        for(int s=0;s<1800;s++){g.clearPower();g.addPower(t,fire,CAMPFIRE);g.step(.5,OUTSIDE);}
+        double detailed=roomAir(t);
+        // Now store the tile coarse, which is what happens when the player walks away.
+        t.configure(false,t.lastCapacities,t.lastCapacities,filled(0),filled(1),filled(0));
+        var cg=new AdaptiveThermalGraph(List.of(t));
+        cg.setRoomAirMixing(20);cg.setMixingSweeps(12);
+        for(int s=0;s<600;s++){cg.clearPower();cg.step(.5,OUTSIDE);}
+        double coarse=roomAir(t);
+        System.out.println(String.format(Locale.ROOT,
+            "Room while detailed=%.1f C, after the tile went coarse=%.1f C",detailed,coarse));
+        assertTrue("a coarse tile must not lose the room, was "+coarse,coarse>OUTSIDE+5);
+    }
+
     @Test public void theRoomDoesNotNeedToBeDetailed(){
         // After a player walks away the tile is stored coarse. Coarse storage uses an energy
         // weighted mean; if that mean is taken over the tile instead of the room the whole room
