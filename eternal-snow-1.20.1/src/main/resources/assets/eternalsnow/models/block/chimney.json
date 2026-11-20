@@ -1,7 +1,0 @@
-{
-  "parent": "minecraft:block/cube_top",
-  "textures": {
-    "top": "eternalsnow:block/chimney_top",
-    "side": "eternalsnow:block/chimney_bricks"
-  }
-}
