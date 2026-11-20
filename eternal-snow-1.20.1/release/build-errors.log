@@ -1,5 +1,4 @@
 55:    java.lang.AssertionError at WinterPresetTest.java:25
-143:    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
     Cooled back after the fire is out: air mean=-2.2 C, rock=-2.2 C
 
 HallUniformityTest > sweepsWarmTheWholeHall STANDARD_OUT
@@ -17,7 +16,7 @@ OutdoorTorchTest > aTorchDoesNotWarmTheWholeField STANDARD_OUT
     Outdoors, 8 torches: air at the torches=1.99 C, ten blocks away=-2.20 C (outside -2.2)
 
 PackedHeatSolverTest > benchmarkMixedAirGridAtConvection100Percent STANDARD_OUT
-    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=312.521326ms packed=204.834817ms; synthetic, not server TPS
+    THERMAL BENCHMARK 64000 cells, G=3, 30 steps: old=305.018743ms packed=213.807693ms; synthetic, not server TPS
 
 RoomInertiaSweepTest > sweep STANDARD_OUT
     CAL wall0.024 ts60 P680        1m=  -1.5 3m=   1.0 5m=   1.6 10m=   2.0 15m=   2.0 | off10s=  -5.2 1m=  -8.5 5m= -11.6 15m= -12.0
@@ -36,10 +35,10 @@ RoomWarmingTest > insulationMattersMoreThanRoomSize STANDARD_OUT
 SurfaceHeatSpillTest > groundFarFromTorchesStaysCold STANDARD_OUT
     Ground: at the torches=-1.92 C, eight blocks away=-2.20 C, air at torch=-2.20 C (outside -2.2)
 
-SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature FAILED
-    java.lang.AssertionError at SurfaceHeatSpillTest.java:77
+SurfaceHeatSpillTest > exposedGroundStaysAtTheAirTemperature STANDARD_OUT
+    Exposed ground coupling = 0.080
 
-102 tests completed, 2 failed
+102 tests completed, 1 failed
 
 > Task :test FAILED
 
@@ -58,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 2m 12s
+BUILD FAILED in 2m 13s
 13 actionable tasks: 13 executed
