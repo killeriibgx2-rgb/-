@@ -36,7 +36,7 @@ public final class WorldCellThermal {
      * instant it was relit. At 0.5 the same room warms over minutes and keeps heat for half an
      * hour after the fire dies, which is what a room with a mass of wooden walls should do.
      */
-    static final double AIR_HEAT_CAPACITY=15.0;
+    static final double AIR_HEAT_CAPACITY=55.0;
     /**
      * Everything in this model was reaching equilibrium in seconds, so a room behaved as if it
      * had no mass: a campfire out, outdoor temperature ten seconds later. Scaling every heat
