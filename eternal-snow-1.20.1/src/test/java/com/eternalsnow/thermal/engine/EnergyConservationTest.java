@@ -67,8 +67,9 @@ public class EnergyConservationTest {
 
     @Test
     public void equilibriumIsReachedAndStaysThere() {
-        // 100 -> 0 degrees averaged by heat capacity gives 50, not 0. Asserting
-        // "mean is zero" here would have encoded the wrong arithmetic.
+        // Equal heat capacities, so one cell at 100 C and three at 0 C settle
+        // at exactly 25 C. Using stone for all four also keeps the stability
+        // limit tiny, so this covers the sub-stepping path too.
         ThermalGrid grid = new ThermalGrid(4, 1, 1);
         for (int x = 0; x < 4; x++) {
             grid.set(x, 0, 0, Materials.STONE, Constants.toKelvin(x == 0 ? 100 : 0));
