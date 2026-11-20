@@ -25,6 +25,9 @@ public class RoomInertiaSweepTest {
         double[] cap=filled(1),k=filled(1),g=filled(0);
         boolean[] air=new boolean[512];
         for(int i=0;i<512;i++){air[i]=true;cap[i]=WorldCellThermal.AIR_HEAT_CAPACITY*ts;k[i]=AIR_K;g[i]=1;}
+        for(int y=1;y<=3;y++)for(int z=1;z<=5;z++)for(int x=1;x<=5;x++){
+            int i=AdaptiveThermalTile.index(x,y,z);g[i]=0;k[i]=AIR_K;
+        }
         // Inner air must NOT be coupled to the weather directly; the whole point of a wall.
         for(int y=1;y<=3;y++)for(int z=1;z<=5;z++)for(int x=1;x<=5;x++)g[AdaptiveThermalTile.index(x,y,z)]=0;
         for(int z=0;z<8;z++)for(int x=0;x<8;x++){
