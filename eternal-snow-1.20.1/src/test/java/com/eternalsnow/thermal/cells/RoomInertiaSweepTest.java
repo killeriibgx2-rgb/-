@@ -21,6 +21,7 @@ public class RoomInertiaSweepTest {
     static double WALL_K=2.5;
     /** A second room: 24x8x24 brick hall, for cross-checking against the big room tests. */
     static AdaptiveThermalTile house(double ts){
+        System.err.println("CALCHECK house ts="+ts);
         var tile=new AdaptiveThermalTile(0,0,0,new TileTemperatureState(filled(OUTSIDE)));
         double[] cap=filled(1),k=filled(1),g=filled(0);
         boolean[] air=new boolean[512];
@@ -64,6 +65,9 @@ public class RoomInertiaSweepTest {
         var g=new AdaptiveThermalGraph(List.of(t));
         g.setRoomAirMixing(20);g.setMixingSweeps(12);
         int cell=AdaptiveThermalTile.index(3,1,3);
+        System.err.println("CALCHECK g(3,2,3)="+t.outsideG[AdaptiveThermalTile.index(3,2,3)]
+            +" k(0,2,3)="+t.conductivities[AdaptiveThermalTile.index(0,2,3)]
+            +" capAir="+t.capacities[AdaptiveThermalTile.index(3,2,3)]);
         double[] warm=new double[5];
         int[] marks={60,180,300,600,900};
         int s=0;
