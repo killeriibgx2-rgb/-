@@ -191,6 +191,19 @@ public final class WorldCellThermal {
         return Math.min(1,surface*(depth<=8?3.0:10.0));
     }
 
+    /**
+     * A hole vents the room: enclosed air with open air directly above or below it is connected
+     * to the weather through that hole. Without this, breaking one roof block only chilled the
+     * block under it and the rest of the room stayed warm forever, which was the report.
+     */
+    static void applyVents(boolean[] air,double[] g) {
+        for(int y=1;y<7;y++)for(int z=0;z<8;z++)for(int x=0;x<8;x++){
+            int i=AdaptiveThermalTile.index(x,y,z);
+            if(!air[i]||g[i]>0)continue;
+            if(g[AdaptiveThermalTile.index(x,y-1,z)]>0||g[AdaptiveThermalTile.index(x,y+1,z)]>0)
+                g[i]=VENT_COUPLING;
+        }
+    }
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
         return w.materials.computeIfAbsent(state,s->{
             boolean air=ThermalEngine.isAirOrOpenPassage(s);
