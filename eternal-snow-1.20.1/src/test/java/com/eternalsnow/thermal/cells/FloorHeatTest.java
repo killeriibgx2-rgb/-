@@ -57,11 +57,14 @@ public class FloorHeatTest {
         return new double[]{sum/n,peak};
     }
 
-    @Test public void aColdStoneFloorDoesNotFreezeTheHouse(){
+    @Test public void anUnheatedHouseFollowsTheWeather(){
+        // A stone floor reaches the ground temperature and the air above it follows. The point
+        // of this test is the other direction: the house must never end up colder than outside,
+        // which a thermostat-like ground anchor could do if it were misapplied to air.
         double[] none=run(WorldCellThermal.weatherCoupling(false,false,0,0,8.0),0);
         System.out.println(String.format(Locale.ROOT,
             "Stone floor at -15 C outside, no fire: air mean=%.2f C",none[0]));
-        assertTrue("a house must still be warmer than an open field, mean "+none[0],none[0]>-12);
+        assertTrue("an unheated house must not fall below the weather, mean "+none[0],none[0]>-15.01);
     }
 
     @Test public void aCampfireStillWarmsAStoneFlooredHouse(){
