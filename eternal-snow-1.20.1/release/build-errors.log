@@ -1,57 +1,45 @@
-47:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:30: error: cannot find symbol
-52:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:46: error: package BlockThermalCategory does not exist
-55:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:47: error: package BlockThermalCategory does not exist
-58:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:50: error: package BlockThermalCategory does not exist
-61:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:51: error: package BlockThermalCategory does not exist
-64:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:52: error: package BlockThermalCategory does not exist
-67:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:53: error: package BlockThermalCategory does not exist
-70:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:60: error: package BlockThermalCategory does not exist
-73:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:67: error: package BlockThermalCategory does not exist
-76:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:68: error: package BlockThermalCategory does not exist
-79:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:73: error: incompatible types: void cannot be converted to CompoundTag
-82:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:78: error: package BlockThermalCategory does not exist
-85:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:79: error: package BlockThermalCategory does not exist
-        for (var cat : BlockThermalCategory.VALUES) {
-                       ^
-  symbol:   variable BlockThermalCategory
-  location: class BalanceMigrationTest
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:46: error: package BlockThermalCategory does not exist
-            s.blockConductivity[BlockThermalCategory.BRICK.ordinal()],
-                                                    ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:47: error: package BlockThermalCategory does not exist
-            now.blockConductivity[BlockThermalCategory.BRICK.ordinal()]));
-                                                      ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:50: error: package BlockThermalCategory does not exist
-        assertEquals("brick must get the new resistance", now.blockConductivity[BlockThermalCategory.BRICK.ordinal()],
-                                                                                                    ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:51: error: package BlockThermalCategory does not exist
-                s.blockConductivity[BlockThermalCategory.BRICK.ordinal()], 0.001F);
-                                                        ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:52: error: package BlockThermalCategory does not exist
-        assertEquals("brick must keep its capacity", now.blockCapacity[BlockThermalCategory.BRICK.ordinal()],
-                                                                                           ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:53: error: package BlockThermalCategory does not exist
-                s.blockCapacity[BlockThermalCategory.BRICK.ordinal()], 0.001F);
-                                                    ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:60: error: package BlockThermalCategory does not exist
-        cond.putFloat(BlockThermalCategory.BRICK.id, .84F);   // and made brick a leak
-                                          ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:67: error: package BlockThermalCategory does not exist
-                now.blockConductivity[BlockThermalCategory.BRICK.ordinal()] * 2,
-                                                          ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:68: error: package BlockThermalCategory does not exist
-                s.blockConductivity[BlockThermalCategory.BRICK.ordinal()], 0.001F);
-                                                        ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:73: error: incompatible types: void cannot be converted to CompoundTag
+47:/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:74: error: incompatible types: void cannot be converted to CompoundTag
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
+MixinGradle did not locate the diffplug APT plugin, skipping eclipse task configuration
+
+> Task :downloadMcpConfig
+> Task :extractSrg
+> Task :createMcpToSrg
+
+> Task :compileJava
+Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
+Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
+Note: Loading searge mappings from /home/runner/work/-/-/eternal-snow-1.20.1/build/createMcpToSrg/output.tsrg
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing refmap to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-refmap.json
+Note: Writing searge composite mappings to /home/runner/work/-/-/eternal-snow-1.20.1/build/tmp/compileJava/compileJava-mappings.tsrg
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :addMixinsToJar
+> Task :processResources
+> Task :classes
+> Task :jar
+> Task :configureReobfTaskForReobfJar
+> Task :reobfJar
+> Task :configureReobfTaskForReobfJarJar
+> Task :addMixinsToJarJar
+> Task :jarJar SKIPPED
+> Task :reobfJarJar SKIPPED
+> Task :assemble
+
+> Task :compileTestJava FAILED
+/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:74: error: incompatible types: void cannot be converted to CompoundTag
         CompoundTag tag = fresh.saveToTag(new CompoundTag());
                                          ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:78: error: package BlockThermalCategory does not exist
-        assertEquals(fresh.blockConductivity[BlockThermalCategory.BRICK.ordinal()],
-                                                                 ^
-/home/runner/work/-/-/eternal-snow-1.20.1/src/test/java/com/eternalsnow/config/BalanceMigrationTest.java:79: error: package BlockThermalCategory does not exist
-                loaded.blockConductivity[BlockThermalCategory.BRICK.ordinal()], 0.0001F);
-                                                             ^
-13 errors
+1 error
 
 FAILURE: Build failed with an exception.
 
@@ -69,5 +57,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 27s
+BUILD FAILED in 38s
 12 actionable tasks: 12 executed
