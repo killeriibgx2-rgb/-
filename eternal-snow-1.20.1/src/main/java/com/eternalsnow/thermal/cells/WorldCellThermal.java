@@ -153,7 +153,7 @@ public final class WorldCellThermal {
         return leak*Math.max(0.05,Math.min(1,conductivity));
     }
     /** Time constant of one buried solid cell, in seconds; deeper means slower. */
-    static double groundTimeSeconds(int depth){return depth<=8?400:depth<=32?2400:9600;}
+    static double groundTimeSeconds(int depth){return depth<=32?2400:9600;}
 
     private static Material material(Workspace w,BlockState state,ServerSnowSettings settings) {
         return w.materials.computeIfAbsent(state,s->{
@@ -190,8 +190,9 @@ public final class WorldCellThermal {
             boolean sky=level.canSeeSky(p);
             int surfaceY=columnHeight[(i&7)|(((i>>3)&7)<<3)];
             g[i]=weatherCoupling(m.air,sky,p.getY(),surfaceY,m.conductivity);
-            // Solid, buried, and not directly weather-coupled: give the ground its own anchor.
-            if(!m.air&&!sky&&p.getY()<surfaceY-1)anchor[i]=groundTimeSeconds(surfaceY-p.getY());
+            // Only genuinely deep ground needs the anchor; anything touching the surface is
+            // already tied to the weather and must keep its ability to store heat.
+            if(!m.air&&!sky&&surfaceY-p.getY()>8)anchor[i]=groundTimeSeconds(surfaceY-p.getY());
             double blend=p.getY()<52&&!sky?Math.max(0,Math.min(.85,(surfaceY-p.getY()-8)/36.0)):0;
             slope[i]=1-blend;offset[i]=(p.getY()>85?-(p.getY()-85)*.12:0)*(1-blend)+6*blend;
             if(fresh) {
