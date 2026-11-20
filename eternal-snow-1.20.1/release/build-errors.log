@@ -1,0 +1,64 @@
+43:    java.lang.AssertionError at EnergyConservationTest.java:76
+46:    java.lang.AssertionError at MaterialPropertiesTest.java:41
+49:    java.lang.AssertionError at RoomPhysicsTest.java:65
+52:    java.lang.AssertionError at RoomPhysicsTest.java:78
+MixinGradle did not locate the diffplug APT plugin, skipping eclipse task configuration
+
+> Task :downloadMcpConfig
+> Task :extractSrg
+> Task :createMcpToSrg
+
+> Task :compileJava
+Note: SpongePowered MIXIN Annotation Processor Version=0.8.5 (MixinGradle Version=0.7.38)
+Note: Supported obfuscation types: ObfuscationServiceMCP supports [notch] ObfuscationServiceFG3 supports [searge]
+
+> Task :addMixinsToJar
+> Task :processResources
+> Task :classes
+> Task :jar
+> Task :configureReobfTaskForReobfJar
+> Task :reobfJar
+> Task :configureReobfTaskForReobfJarJar
+> Task :addMixinsToJarJar
+> Task :jarJar SKIPPED
+> Task :reobfJarJar SKIPPED
+> Task :assemble
+> Task :compileTestJava
+> Task :processTestResources NO-SOURCE
+> Task :testClasses
+
+> Task :test
+
+EnergyConservationTest > equilibriumIsReachedAndStaysThere FAILED
+    java.lang.AssertionError at EnergyConservationTest.java:76
+
+MaterialPropertiesTest > oneMetreWallTransmittancesMatchBuildingPhysics FAILED
+    java.lang.AssertionError at MaterialPropertiesTest.java:41
+
+RoomPhysicsTest > aFiveKilowattFireHoldsARoomAboveFreezing FAILED
+    java.lang.AssertionError at RoomPhysicsTest.java:65
+
+RoomPhysicsTest > airHeatsMuchFasterThanTheWalls FAILED
+    java.lang.AssertionError at RoomPhysicsTest.java:78
+
+23 tests completed, 4 failed
+
+> Task :test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///home/runner/work/-/-/eternal-snow-1.20.1/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 35s
+13 actionable tasks: 13 executed
