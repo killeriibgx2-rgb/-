@@ -53,6 +53,8 @@ public class EnclosureDetailTest {
             for(int s=0;s<1800;s++){g.clearPower();g.addPower(t,fire,1500);g.step(.5,OUTSIDE);}
             double inside=t.temperatures.get(AdaptiveThermalTile.index(3,2,3));
             double field=t.temperatures.get(AdaptiveThermalTile.index(7,2,7));
+            System.out.println("DETAIL " + detailed + " room=" + String.format(Locale.ROOT,"%.2f",inside)
+                + " field=" + String.format(Locale.ROOT,"%.2f",field));
             System.out.println(String.format(Locale.ROOT,
                 "detail=%s room=%.1f C field=%.1f C keepDetailed=%s enclosure=%s",
                 detailed,inside,field,t.keepDetailed(),t.holdsEnclosure));
