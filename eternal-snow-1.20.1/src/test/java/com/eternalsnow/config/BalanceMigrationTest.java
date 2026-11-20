@@ -71,7 +71,8 @@ public class BalanceMigrationTest {
 
     @Test public void aNewWorldIsLeftAlone() {
         var fresh = new ServerSnowSettings();
-        CompoundTag tag = fresh.saveToTag(new CompoundTag());
+        CompoundTag tag = new CompoundTag();
+        fresh.saveToTag(tag);
         var loaded = new ServerSnowSettings();
         loaded.loadFromTag(tag);
         assertEquals(fresh.heatCampfire, loaded.heatCampfire, 0.001F);
