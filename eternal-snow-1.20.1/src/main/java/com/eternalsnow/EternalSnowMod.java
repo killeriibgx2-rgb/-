@@ -1,13 +1,21 @@
 package com.eternalsnow;
 
+import com.eternalsnow.config.ThermalConfig;
+import com.eternalsnow.registry.ModItems;
 import com.mojang.logging.LogUtils;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
 /**
- * Entry point. Intentionally almost empty: the thermal engine (package
- * {@code com.eternalsnow.thermal.engine}) has no Minecraft dependencies and is
- * covered by plain JUnit tests, so the mod class only has to wire it up.
+ * Entry point.
+ *
+ * <p>The thermal engine itself has no Minecraft dependencies and is covered by
+ * plain JUnit tests. This class only wires it up: config, the item registry and
+ * the server tick hook.
  */
 @Mod(EternalSnowMod.MOD_ID)
 public final class EternalSnowMod {
@@ -15,6 +23,12 @@ public final class EternalSnowMod {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public EternalSnowMod() {
-        LOGGER.info("Eternal Snow 3.0 — thermal engine loading");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ThermalConfig.SPEC,
+                "eternalsnow-thermal.toml");
+
+        ModItems.register(FMLJavaModLoadingContext.get().getModEventBus());
+        MinecraftForge.EVENT_BUS.register(this);
+
+        LOGGER.info("Eternal Snow 3.0 — thermal engine starting");
     }
 }
