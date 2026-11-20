@@ -55,18 +55,17 @@ public class RoomInertiaSweepTest {
             while(prev<target){g.clearPower();g.step(.5,OUTSIDE);prev++;}
             cool[m]=air(t);
         }
+        int wallIdx=AdaptiveThermalTile.index(3,4,3), soilIdx=AdaptiveThermalTile.index(7,7,7);
         System.out.println(String.format(Locale.ROOT,
-            "CURVE %-22s 1m=%6.1f 3m=%6.1f 5m=%6.1f 10m=%6.1f 15m=%6.1f | off30s=%6.1f off5m=%6.1f off10m=%6.1f off15m=%6.1f",
-            label,warm[0],warm[1],warm[2],warm[3],warm[4],cool[0],cool[1],cool[2],cool[3]));
+            "CURVE %-22s 1m=%6.1f 3m=%6.1f 5m=%6.1f 10m=%6.1f 15m=%6.1f | off30s=%6.1f off5m=%6.1f off10m=%6.1f off15m=%6.1f"
+            +" || now: airC=%.1f wallC=%.0f soilC=%.0f wallT=%.1f soilT=%.1f",
+            label,warm[0],warm[1],warm[2],warm[3],warm[4],cool[0],cool[1],cool[2],cool[3],
+            t.capacities[AdaptiveThermalTile.index(3,1,3)],t.capacities[wallIdx],t.capacities[soilIdx],
+            t.temperatures.get(wallIdx),t.temperatures.get(soilIdx)));
     }
 
     @Test public void sweep(){
-        for(double ts:new double[]{60,15,5,1}){
-            curve("ts="+ts+" P=680",ts,680);
-        }
-        curve("ts=15 P=300",15,300);
-        curve("ts=5 P=300",5,300);
-        curve("ts=5 P=150",5,150);
-        curve("ts=1 P=150",1,150);
+        curve("ts=60 P=680",60,680);
+        curve("ts=60 P=400",60,400);
     }
 }
