@@ -89,13 +89,11 @@ public class RoomInertiaSweepTest {
 
     @Test public void sweep(){
         int[] room={1,5,1,3,1,5};
-        for(double wk:new double[]{0.024,0.08}){
-            WALL_K=wk;
-            curve("wall"+wk+" ts60 P680",house(60),room,680);
-            curve("wall"+wk+" ts60 P300",house(60),room,300);
-        }
+        WALL_K=0.08;
+        curve("ts30 P680",house(30),room,680);
+        curve("ts30 P1500",house(30),room,1500);
+        curve("ts30 P3000",house(30),room,3000);
         WALL_K=0.024;
-        curve("wall.024 ts60 P1200",house(60),room,1200);
-        curve("wall.024 ts120 P680",house(120),room,680);
+        curve("ts30 P1500 wall.024",house(30),room,1500);
     }
 }
