@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "eternalsnow:block/food_shelf", "y": 0 },
-    "facing=east": { "model": "eternalsnow:block/food_shelf", "y": 90 },
-    "facing=south": { "model": "eternalsnow:block/food_shelf", "y": 180 },
-    "facing=west": { "model": "eternalsnow:block/food_shelf", "y": 270 }
-  }
-}

@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:smoking",
-  "ingredient": {
-    "item": "minecraft:sugar"
-  },
-  "result": "eternalsnow:caramel",
-  "experience": 0.15,
-  "cookingtime": 80
-}
