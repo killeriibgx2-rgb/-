@@ -1,14 +1,14 @@
 Thermal build regression results (synthetic; not Minecraft TPS)
-com.eternalsnow.thermal.engine.BodyModelTest: tests=11, failures=0, errors=0, seconds=0.012
-com.eternalsnow.thermal.engine.EnergyConservationTest: tests=5, failures=0, errors=0, seconds=0.009
-com.eternalsnow.thermal.engine.ExternalLinkTest: tests=5, failures=0, errors=0, seconds=0.004
-com.eternalsnow.thermal.engine.FrozenRegionTest: tests=6, failures=0, errors=0, seconds=0.026
-com.eternalsnow.thermal.engine.HeatSourceTest: tests=6, failures=0, errors=0, seconds=0.002
-com.eternalsnow.thermal.engine.HeatTransferTest: tests=7, failures=0, errors=0, seconds=0.001
-com.eternalsnow.thermal.engine.InfiltrationTest: tests=10, failures=0, errors=0, seconds=0.027
-com.eternalsnow.thermal.engine.LodTest: tests=7, failures=0, errors=0, seconds=0.003
-com.eternalsnow.thermal.engine.MaterialPropertiesTest: tests=5, failures=0, errors=0, seconds=0.004
-com.eternalsnow.thermal.engine.RoomPhysicsTest: tests=5, failures=0, errors=0, seconds=3.43
-com.eternalsnow.thermal.engine.SimulationSpeedTest: tests=6, failures=0, errors=0, seconds=0.007
+com.eternalsnow.thermal.engine.BodyModelTest: tests=11, failures=0, errors=0, seconds=0.021
+com.eternalsnow.thermal.engine.EnergyConservationTest: tests=5, failures=0, errors=0, seconds=0.024
+com.eternalsnow.thermal.engine.ExternalLinkTest: tests=5, failures=0, errors=0, seconds=0.008
+com.eternalsnow.thermal.engine.FrozenRegionTest: tests=6, failures=0, errors=0, seconds=0.13
+com.eternalsnow.thermal.engine.HeatSourceTest: tests=6, failures=0, errors=0, seconds=0.005
+com.eternalsnow.thermal.engine.HeatTransferTest: tests=10, failures=0, errors=0, seconds=0.005
+com.eternalsnow.thermal.engine.InfiltrationTest: tests=10, failures=0, errors=0, seconds=0.035
+com.eternalsnow.thermal.engine.LodTest: tests=7, failures=0, errors=0, seconds=0.006
+com.eternalsnow.thermal.engine.MaterialPropertiesTest: tests=5, failures=0, errors=0, seconds=0.006
+com.eternalsnow.thermal.engine.RoomPhysicsTest: tests=6, failures=0, errors=0, seconds=5.245
+com.eternalsnow.thermal.engine.SimulationSpeedTest: tests=6, failures=0, errors=0, seconds=0.009
 com.eternalsnow.thermal.engine.StabilityTest: tests=2, failures=0, errors=0, seconds=0.0
 com.eternalsnow.thermal.world.DoorLeakDetectorTest: tests=4, failures=0, errors=0, seconds=0.006
