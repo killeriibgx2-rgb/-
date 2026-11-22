@@ -1,5 +1,6 @@
 package com.eternalsnow.item;
 
+import com.eternalsnow.client.ThermalClientEvents;
 import com.eternalsnow.config.ThermalConfig;
 import com.eternalsnow.thermal.world.ThermalWorldEvents;
 import com.eternalsnow.thermal.world.ZoneManager;
@@ -16,6 +17,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 /**
  * The debug panel as an item: right-click reads the thermal state around you.
@@ -32,9 +35,14 @@ public final class ThermalScannerItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!level.isClientSide && level instanceof ServerLevel serverLevel
-                && player instanceof ServerPlayer serverPlayer) {
-            report(serverLevel, serverPlayer);
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide && level instanceof ServerLevel serverLevel
+                    && player instanceof ServerPlayer serverPlayer) {
+                report(serverLevel, serverPlayer);
+            }
+        } else if (level.isClientSide) {
+            DistExecutor.safeRunWhenOn(Dist.CLIENT,
+                    () -> ThermalClientEvents::openSettingsScreen);
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
@@ -60,6 +68,7 @@ public final class ThermalScannerItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("ПКМ: состояние тепла").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("item.eternalsnow.thermal_scanner.desc")
+                .withStyle(ChatFormatting.GRAY));
     }
 }

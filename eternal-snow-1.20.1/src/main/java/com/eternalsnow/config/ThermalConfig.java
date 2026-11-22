@@ -54,6 +54,27 @@ public final class ThermalConfig {
         SPEC = b.build();
     }
 
+    public static boolean isValid(double ambientCelsius, double speedMultiplier, int zoneRadius) {
+        return Double.isFinite(ambientCelsius) && ambientCelsius >= -273.0 && ambientCelsius <= 200.0
+                && Double.isFinite(speedMultiplier) && speedMultiplier >= 0.0 && speedMultiplier <= 1000.0
+                && zoneRadius >= 4 && zoneRadius <= 16;
+    }
+
+    /** Applies and persists administrator-edited values on the logical server. */
+    public static void applyFromPanel(boolean enabled, double ambientCelsius, double speedMultiplier,
+                                      int zoneRadius, boolean bodyEnabled, boolean doorInfiltration) {
+        if (!isValid(ambientCelsius, speedMultiplier, zoneRadius)) {
+            throw new IllegalArgumentException("Thermal settings are outside their allowed ranges");
+        }
+        ENABLED.set(enabled);
+        AMBIENT_CELSIUS.set(ambientCelsius);
+        SPEED_MULTIPLIER.set(speedMultiplier);
+        ZONE_RADIUS.set(zoneRadius);
+        BODY_ENABLED.set(bodyEnabled);
+        DOOR_INFILTRATION.set(doorInfiltration);
+        SPEED_MULTIPLIER.save();
+    }
+
     /** Safe accessor used by the engine: works even before configs load. */
     public static boolean enabled() {
         try {
