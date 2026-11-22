@@ -13,8 +13,8 @@ import net.minecraft.network.chat.Component;
 
 /** A compact, server-authoritative admin panel for the first single-player milestone. */
 public final class ThermalSettingsScreen extends Screen {
-    private static final int PANEL_WIDTH = 430;
-    private static final int PANEL_HEIGHT = 350;
+    private static final int PANEL_WIDTH = 360;
+    private static final int PANEL_HEIGHT = 240;
 
     private final Screen parent;
     private EditBox ambientInput;
@@ -44,19 +44,19 @@ public final class ThermalSettingsScreen extends Screen {
         int left = (this.width - PANEL_WIDTH) / 2;
         int top = (this.height - PANEL_HEIGHT) / 2;
 
-        ambientInput = new EditBox(this.font, left + 306, top + 57, 78, 20, Component.empty());
+        ambientInput = new EditBox(this.font, left + 242, top + 37, 72, 20, Component.empty());
         ambientInput.setMaxLength(12);
         ambientInput.setFilter(value -> value.matches("-?\\d{0,3}(?:[.,]\\d{0,2})?"));
         ambientInput.setHint(Component.literal("−30"));
         addRenderableWidget(ambientInput);
 
-        speedInput = new EditBox(this.font, left + 306, top + 94, 78, 20, Component.empty());
+        speedInput = new EditBox(this.font, left + 242, top + 63, 72, 20, Component.empty());
         speedInput.setMaxLength(12);
         speedInput.setFilter(value -> value.matches("\\d{0,4}(?:[.,]\\d{0,2})?"));
         speedInput.setHint(Component.literal("1.00"));
         addRenderableWidget(speedInput);
 
-        radiusInput = new EditBox(this.font, left + 306, top + 131, 78, 20, Component.empty());
+        radiusInput = new EditBox(this.font, left + 242, top + 89, 72, 20, Component.empty());
         radiusInput.setMaxLength(2);
         radiusInput.setFilter(value -> value.matches("\\d{0,2}"));
         radiusInput.setHint(Component.literal("8"));
@@ -65,23 +65,23 @@ public final class ThermalSettingsScreen extends Screen {
         enabledButton = addRenderableWidget(Button.builder(toggleMessage("enabled", enabled), button -> {
             enabled = !enabled;
             refreshToggleMessages();
-        }).bounds(left + 20, top + 171, 190, 22).build());
+        }).bounds(left + 14, top + 117, 160, 20).build());
 
         bodyButton = addRenderableWidget(Button.builder(toggleMessage("body", bodyEnabled), button -> {
             bodyEnabled = !bodyEnabled;
             refreshToggleMessages();
-        }).bounds(left + 220, top + 171, 190, 22).build());
+        }).bounds(left + 182, top + 117, 164, 20).build());
 
         doorsButton = addRenderableWidget(Button.builder(toggleMessage("doors", doorInfiltration), button -> {
             doorInfiltration = !doorInfiltration;
             refreshToggleMessages();
-        }).bounds(left + 20, top + 201, 390, 22).build());
+        }).bounds(left + 14, top + 140, 332, 20).build());
 
         applyButton = addRenderableWidget(Button.builder(
                 Component.translatable("eternalsnow.settings.apply"), button -> applySettings())
-                .bounds(left + 20, top + 305, 188, 24).build());
+                .bounds(left + 14, top + 212, 160, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("eternalsnow.settings.close"),
-                button -> onClose()).bounds(left + 222, top + 305, 188, 24).build());
+                button -> onClose()).bounds(left + 186, top + 212, 160, 20).build());
 
         if (settingsLoaded && canEdit) {
             ClientThermalSettings.Snapshot snapshot = ClientThermalSettings.snapshot();
@@ -188,30 +188,30 @@ public final class ThermalSettingsScreen extends Screen {
         graphics.fill(left, top, right, bottom, 0xF0151C24);
         graphics.fill(left, top, right, top + 3, 0xFF65D7E8);
         graphics.fill(left, top + 3, left + 4, bottom, 0xFF2F7D91);
-        graphics.fill(left + 20, top + 49, right - 20, top + 50, 0xFF34444F);
-        graphics.fill(left + 20, top + 161, right - 20, top + 162, 0xFF34444F);
+        graphics.fill(left + 14, top + 34, right - 14, top + 35, 0xFF34444F);
+        graphics.fill(left + 14, top + 111, right - 14, top + 112, 0xFF34444F);
 
         graphics.drawString(font, Component.translatable("eternalsnow.settings.title"),
-                left + 22, top + 15, 0xFFF0F5F7, true);
+                left + 16, top + 8, 0xFFF0F5F7, true);
         graphics.drawString(font, Component.translatable("eternalsnow.settings.subtitle"),
-                left + 22, top + 33, 0xFF8FA8B5, false);
+                left + 16, top + 22, 0xFF8FA8B5, false);
 
-        drawFieldLabel(graphics, "ambient", left + 22, top + 64);
-        drawFieldLabel(graphics, "speed", left + 22, top + 101);
-        drawFieldLabel(graphics, "radius", left + 22, top + 138);
-        graphics.drawString(font, "°C", left + 390, top + 64, 0xFFB3C5CF, false);
-        graphics.drawString(font, "×", left + 390, top + 101, 0xFFB3C5CF, false);
+        drawFieldLabel(graphics, "ambient", left + 16, top + 44);
+        drawFieldLabel(graphics, "speed", left + 16, top + 70);
+        drawFieldLabel(graphics, "radius", left + 16, top + 96);
+        graphics.drawString(font, "°C", left + 320, top + 44, 0xFFB3C5CF, false);
+        graphics.drawString(font, "×", left + 320, top + 70, 0xFFB3C5CF, false);
         graphics.drawString(font, Component.translatable("eternalsnow.settings.blocks"),
-                left + 390, top + 138, 0xFFB3C5CF, false);
+                left + 320, top + 96, 0xFFB3C5CF, false);
 
         graphics.drawString(font, Component.translatable("eternalsnow.settings.speed_note"),
-                left + 22, top + 239, 0xFF8FA8B5, false);
+                left + 16, top + 186, 0xFF8FA8B5, false);
         if (feedback != null) {
-            graphics.drawCenteredString(font, feedback, this.width / 2, top + 270,
+            graphics.drawCenteredString(font, feedback, this.width / 2, top + 201,
                     waitingForSave ? 0xFF84DDEE : 0xFFFFC66D);
         } else if (!settingsLoaded) {
             graphics.drawCenteredString(font, Component.translatable("eternalsnow.settings.loading"),
-                    this.width / 2, top + 270, 0xFFB3C5CF);
+                    this.width / 2, top + 201, 0xFFB3C5CF);
         }
 
         super.render(graphics, mouseX, mouseY, partialTick);
