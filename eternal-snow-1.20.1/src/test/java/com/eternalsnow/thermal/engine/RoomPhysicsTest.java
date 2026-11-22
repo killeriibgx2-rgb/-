@@ -140,12 +140,15 @@ public class RoomPhysicsTest {
     }
 
     @Test
-    public void stoneShellCannotBeWarmedByFiveKilowattsAtAll() {
-        // Not a bug: it is the mass. 46.6 GJ of stone needs 2587 h at 5 kW.
+    public void stoneRoomAirRespondsEvenThoughTheShellIsHeavy() {
+        // The 5 kW source heats the small air volume long before it can warm
+        // the massive stone shell. The air must still rise measurably above
+        // outside; confusing wall-core temperature with room-air temperature
+        // is exactly the error this assertion guards against.
         ThermalGrid grid = room(Materials.STONE, -200);
         run(grid, Materials.STONE, 12 * 3600, 5000);
-        assertTrue("stone air stays near the shell, got " + airMeanCelsius(grid),
-                airMeanCelsius(grid) < -190);
+        assertTrue("heated room air should rise above outside, got " + airMeanCelsius(grid),
+                airMeanCelsius(grid) > -190);
     }
 
     @Test
