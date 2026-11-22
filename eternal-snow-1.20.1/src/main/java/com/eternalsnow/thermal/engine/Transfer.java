@@ -9,9 +9,10 @@ package com.eternalsnow.thermal.engine;
  * energy conserved; computing each side independently is how models drift.
  */
 public final class Transfer {
-    /** Effective bulk-air exchange speeds used between neighbouring air voxels, m/s. */
-    private static final double HORIZONTAL_AIR_EXCHANGE_SPEED = 0.015;
-    private static final double VERTICAL_AIR_UPDRAFT_SPEED = 0.03;
+    /** Room-scale circulation exchange speeds between neighbouring air voxels, m/s. */
+    private static final double HORIZONTAL_AIR_EXCHANGE_SPEED = 0.4;
+    private static final double VERTICAL_AIR_RETURN_SPEED = 0.4;
+    private static final double VERTICAL_AIR_UPDRAFT_SPEED = 0.8;
 
     private Transfer() {
     }
@@ -57,23 +58,21 @@ public final class Transfer {
 
     /**
      * Effective horizontal exchange between adjacent air voxels, W/K. This is
-     * bulk air circulation (rho·cp·A·v), not the molecular conductivity of air.
+     * room-scale bulk circulation (rho·cp·A·v), not molecular conductivity.
      */
     public static double horizontalAirMixingConductance() {
         return airExchangeConductance(HORIZONTAL_AIR_EXCHANGE_SPEED);
     }
 
     /**
-     * Effective vertical exchange between adjacent air voxels, W/K. The lower
-     * cell is {@code lowerKelvin}; a warmer lower cell is buoyantly unstable and
-     * mixes upward. A stable temperature inversion exchanges only by still-air
-     * conduction.
+     * Effective vertical exchange between adjacent air voxels, W/K. A baseline
+     * return circulation keeps room air from remaining stratified; a warmer
+     * lower cell doubles the exchange speed to model the rising plume.
      */
     public static double verticalAirMixingConductance(double lowerKelvin, double upperKelvin) {
-        if (lowerKelvin <= upperKelvin) {
-            return Materials.AIR.conductivity() * Constants.FACE_AREA / Constants.CELL_SIZE;
-        }
-        return airExchangeConductance(VERTICAL_AIR_UPDRAFT_SPEED);
+        double speed = lowerKelvin > upperKelvin
+                ? VERTICAL_AIR_UPDRAFT_SPEED : VERTICAL_AIR_RETURN_SPEED;
+        return airExchangeConductance(speed);
     }
 
     /** Maximum vertical conductance, used to choose a safe explicit time step. */

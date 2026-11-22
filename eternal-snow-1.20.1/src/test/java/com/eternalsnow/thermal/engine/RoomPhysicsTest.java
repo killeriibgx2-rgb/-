@@ -79,6 +79,17 @@ public class RoomPhysicsTest {
         return min;
     }
 
+    private double maximumAirCelsius(ThermalGrid grid) {
+        double max = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < grid.cellCount(); i++) {
+            ThermalCell cell = grid.cell(i);
+            if (cell.material() == Materials.AIR) {
+                max = Math.max(max, cell.temperatureCelsius());
+            }
+        }
+        return max;
+    }
+
     /** Runs {@code seconds} of model time with a constant source in the floor cell. */
     private void run(ThermalGrid grid, Material wall, double seconds, double watts) {
         int steps = (int) Math.ceil(seconds);
@@ -103,11 +114,12 @@ public class RoomPhysicsTest {
     }
 
     @Test
-    public void aCampfireWarmsAirAcrossASealedWoodenRoom() {
+    public void aCampfireKeepsTheRoomAirNearlyUniformWhileHeatingIt() {
         ThermalGrid grid = room(Materials.WOOD, -3);
 
         // The room's air volume is 5x3x5 cells. Heat the lowest central voxel,
         // as a campfire on the floor would, while the outside stays at -3 C.
+        // After five model minutes no voxel may remain a hot spot or cold pocket.
         for (int second = 0; second < 5 * 60; second++) {
             clampWorld(grid, -3);
             grid.cell(4, 2, 4).addPower(Devices.CAMPFIRE_WATTS);
@@ -117,13 +129,16 @@ public class RoomPhysicsTest {
         double aboveFire = grid.cell(4, 3, 4).temperatureCelsius();
         double besideFire = grid.cell(4, 2, 5).temperatureCelsius();
         double coldestRoomAir = minimumAirCelsius(grid);
-        assertTrue("the updraft must warm the air over the fire, got " + aboveFire,
-                aboveFire > 20);
-        assertTrue("heat must spread at least one block sideways, got " + besideFire,
-                besideFire > 5);
-        assertTrue("the sealed room must not remain at outside temperature; coldest air was "
-                        + coldestRoomAir,
-                coldestRoomAir > 0);
+        double hottestRoomAir = maximumAirCelsius(grid);
+        double roomMean = airMeanCelsius(grid);
+        assertTrue("the sealed room should warm above outside, mean was " + roomMean,
+                roomMean > 10);
+        assertTrue("room air should equalize instead of keeping a hot spot: "
+                        + coldestRoomAir + " .. " + hottestRoomAir,
+                hottestRoomAir - coldestRoomAir <= 3.0);
+        assertTrue("air above and beside the fire should be nearly the same: "
+                        + aboveFire + " vs " + besideFire,
+                Math.abs(aboveFire - besideFire) <= 2.0);
     }
 
     @Test
