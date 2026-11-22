@@ -55,13 +55,14 @@ public class HeatTransferTest {
     }
 
     @Test
-    public void stableAirInversionDoesNotTriggerAnUpdraft() {
+    public void aStableInversionKeepsReturnFlowButReceivesNoExtraUpdraft() {
         ThermalGrid grid = new ThermalGrid(1, 2, 1);
         grid.set(0, 0, 0, Materials.AIR, Constants.toKelvin(-3));
         grid.set(0, 1, 0, Materials.AIR, Constants.toKelvin(30));
 
-        assertEquals(Materials.AIR.conductivity() * Constants.FACE_AREA / Constants.CELL_SIZE,
-                grid.faceConductance(0, 0, 0, ThermalGrid.Axis.Y), 1e-12);
+        double returnFlow = grid.faceConductance(0, 0, 0, ThermalGrid.Axis.Y);
+        assertEquals(Transfer.horizontalAirMixingConductance(), returnFlow, 1e-12);
+        assertTrue(returnFlow < Transfer.maximumVerticalAirMixingConductance());
     }
 
     @Test
