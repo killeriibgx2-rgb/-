@@ -1,6 +1,25 @@
 {
   "item.eternalsnow.thermal_scanner": "Тепловой сканер",
-  "item.eternalsnow.thermal_scanner.desc": "ПКМ: состояние тепла",
+  "item.eternalsnow.thermal_scanner.desc": "ПКМ: настройки тепла · Shift+ПКМ: замер",
   "eternalsnow.hud.body_core": "Тело %s",
-  "eternalsnow.hud.air": "Воздух %s"
+  "eternalsnow.hud.air": "Воздух %s",
+  "eternalsnow.settings.title": "Настройки теплового ядра",
+  "eternalsnow.settings.subtitle": "АДМИНИСТРИРОВАНИЕ · ОДИНОЧНЫЙ МИР",
+  "eternalsnow.settings.ambient": "Температура снаружи",
+  "eternalsnow.settings.speed": "Скорость симуляции",
+  "eternalsnow.settings.radius": "Радиус зоны",
+  "eternalsnow.settings.blocks": "бл.",
+  "eternalsnow.settings.toggle.enabled": "Тепловое ядро: %s",
+  "eternalsnow.settings.toggle.body": "Температура тела: %s",
+  "eternalsnow.settings.toggle.doors": "Утечки через двери: %s",
+  "eternalsnow.settings.on": "Вкл.",
+  "eternalsnow.settings.off": "Выкл.",
+  "eternalsnow.settings.apply": "Применить",
+  "eternalsnow.settings.close": "Закрыть",
+  "eternalsnow.settings.loading": "Получаем настройки мира…",
+  "eternalsnow.settings.denied": "Нужны права администратора одиночного мира",
+  "eternalsnow.settings.saved": "Настройки сохранены",
+  "eternalsnow.settings.saving": "Сохраняем настройки…",
+  "eternalsnow.settings.invalid": "Диапазоны: −273…200 °C · 0…1000× · радиус 4…16",
+  "eternalsnow.settings.speed_note": "Множитель масштабирует потоки тепла, не дробит шаг."
 }

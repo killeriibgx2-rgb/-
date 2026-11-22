@@ -67,6 +67,35 @@ class MainSourcesTest(unittest.TestCase):
 
 
 class ResourcesTest(unittest.TestCase):
+    def test_settings_panel_has_russian_and_english_text(self):
+        import json
+
+        required = {
+            "eternalsnow.settings.title",
+            "eternalsnow.settings.subtitle",
+            "eternalsnow.settings.ambient",
+            "eternalsnow.settings.speed",
+            "eternalsnow.settings.radius",
+            "eternalsnow.settings.toggle.enabled",
+            "eternalsnow.settings.toggle.body",
+            "eternalsnow.settings.toggle.doors",
+            "eternalsnow.settings.on",
+            "eternalsnow.settings.off",
+            "eternalsnow.settings.apply",
+            "eternalsnow.settings.close",
+            "eternalsnow.settings.loading",
+            "eternalsnow.settings.denied",
+            "eternalsnow.settings.saved",
+            "eternalsnow.settings.saving",
+            "eternalsnow.settings.invalid",
+            "eternalsnow.settings.speed_note",
+        }
+        for locale in ("en_us", "ru_ru"):
+            with self.subTest(locale=locale):
+                path = MOD_ROOT / f"src/main/resources/assets/eternalsnow/lang/{locale}.json"
+                lang = json.loads(path.read_text(encoding="utf-8"))
+                self.assertTrue(required.issubset(lang), f"{locale} is missing settings strings")
+
     def test_mods_toml_uses_placeholder_for_mod_id(self):
         toml = (MOD_ROOT / "src/main/resources/META-INF/mods.toml").read_text(encoding="utf-8")
         self.assertIn('modId="${mod_id}"', toml)

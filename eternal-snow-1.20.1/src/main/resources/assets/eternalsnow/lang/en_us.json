@@ -1,6 +1,25 @@
 {
   "item.eternalsnow.thermal_scanner": "Thermal Scanner",
-  "item.eternalsnow.thermal_scanner.desc": "Right-click: thermal state",
+  "item.eternalsnow.thermal_scanner.desc": "Right-click: thermal settings · Shift+right-click: scan",
   "eternalsnow.hud.body_core": "Body %s",
-  "eternalsnow.hud.air": "Air %s"
+  "eternalsnow.hud.air": "Air %s",
+  "eternalsnow.settings.title": "Thermal Core Settings",
+  "eternalsnow.settings.subtitle": "ADMINISTRATION · SINGLE-PLAYER WORLD",
+  "eternalsnow.settings.ambient": "Outside temperature",
+  "eternalsnow.settings.speed": "Simulation speed",
+  "eternalsnow.settings.radius": "Zone radius",
+  "eternalsnow.settings.blocks": "bl.",
+  "eternalsnow.settings.toggle.enabled": "Thermal engine: %s",
+  "eternalsnow.settings.toggle.body": "Body temperature: %s",
+  "eternalsnow.settings.toggle.doors": "Door leaks: %s",
+  "eternalsnow.settings.on": "On",
+  "eternalsnow.settings.off": "Off",
+  "eternalsnow.settings.apply": "Apply",
+  "eternalsnow.settings.close": "Close",
+  "eternalsnow.settings.loading": "Requesting world settings…",
+  "eternalsnow.settings.denied": "Single-player world administrator permission required",
+  "eternalsnow.settings.saved": "Settings saved",
+  "eternalsnow.settings.saving": "Saving settings…",
+  "eternalsnow.settings.invalid": "Ranges: −273…200 °C · 0…1000× · radius 4…16",
+  "eternalsnow.settings.speed_note": "The multiplier scales heat flows; it does not split the step."
 }
