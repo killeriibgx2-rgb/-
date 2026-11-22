@@ -111,33 +111,37 @@ public final class ThermalGrid {
                 for (int x = 0; x < sizeX; x++) {
                     int a = index(x, y, z);
                     if (cells[a] == null) continue;
-                    if (x + 1 < sizeX) addFace(faces, a, index(x + 1, y, z));
-                    if (y + 1 < sizeY) addFace(faces, a, index(x, y + 1, z));
-                    if (z + 1 < sizeZ) addFace(faces, a, index(x, y, z + 1));
+                    if (x + 1 < sizeX) addFace(faces, a, index(x + 1, y, z), false);
+                    if (y + 1 < sizeY) addFace(faces, a, index(x, y + 1, z), true);
+                    if (z + 1 < sizeZ) addFace(faces, a, index(x, y, z + 1), false);
                 }
             }
         }
         return faces;
     }
 
-    private void addFace(List<Face> into, int a, int b) {
+    private void addFace(List<Face> into, int a, int b, boolean vertical) {
         if (cells[b] == null) return;
         Material ma = cells[a].material();
         Material mb = cells[b].material();
         boolean airA = ma == Materials.AIR;
         boolean airB = mb == Materials.AIR;
-        double conductance;
-        if (airA && airB) {
-            // Air-to-air through a 1 m cell gap: treat as a convective link
-            // rather than a solid contact, otherwise open air would conduct
-            // like a solid of λ=0.026 with no mixing at all.
-            conductance = Transfer.convectionConductance();
-        } else if (airA || airB) {
-            conductance = Transfer.convectionConductance();
-        } else {
-            conductance = Transfer.conductionConductance(ma, mb);
+        if (airA && airB && vertical) {
+            // Faces are added in +Y order, so a is below b. The conductance is
+            // recalculated during each sub-step as the buoyancy gradient changes.
+            into.add(new Face(a, b, Transfer.maximumVerticalAirMixingConductance(), true));
+            return;
         }
-        into.add(new Face(a, b, conductance));
+        if (airA && airB) {
+            into.add(new Face(a, b, Transfer.horizontalAirMixingConductance(), false));
+            return;
+        }
+        if (airA || airB) {
+            Material solid = airA ? mb : ma;
+            into.add(new Face(a, b, Transfer.airSolidConductance(solid), false));
+            return;
+        }
+        into.add(new Face(a, b, Transfer.conductionConductance(ma, mb), false));
     }
 
     /** Conductance, W/K, between two adjacent cells. */
@@ -147,17 +151,32 @@ public final class ThermalGrid {
         int dz = axis == Axis.Z ? 1 : 0;
         int a = index(x, y, z);
         int b = index(x + dx, y + dy, z + dz);
-        Material ma = cell(a).material();
-        Material mb = cell(b).material();
-        if (ma == Materials.AIR || mb == Materials.AIR) {
-            return Transfer.convectionConductance();
+        ThermalCell cellA = cell(a);
+        ThermalCell cellB = cell(b);
+        Material ma = cellA.material();
+        Material mb = cellB.material();
+        boolean airA = ma == Materials.AIR;
+        boolean airB = mb == Materials.AIR;
+        if (airA && airB) {
+            return axis == Axis.Y
+                    ? Transfer.verticalAirMixingConductance(
+                            cellA.temperatureKelvin(), cellB.temperatureKelvin())
+                    : Transfer.horizontalAirMixingConductance();
+        }
+        if (airA || airB) {
+            return Transfer.airSolidConductance(airA ? mb : ma);
         }
         return Transfer.conductionConductance(ma, mb);
     }
 
     public enum Axis { X, Y, Z }
 
-    private record Face(int a, int b, double conductance) {
+    private record Face(int a, int b, double maximumConductance, boolean buoyantVerticalAir) {
+        double conductance(ThermalCell[] cells) {
+            if (!buoyantVerticalAir) return maximumConductance;
+            return Transfer.verticalAirMixingConductance(
+                    cells[a].temperatureKelvin(), cells[b].temperatureKelvin());
+        }
     }
 
     /**
@@ -202,7 +221,7 @@ public final class ThermalGrid {
 
             // Internal faces are conservative: every joule leaving a is added to b.
             for (Face face : faces) {
-                double flow = face.conductance()
+                double flow = face.conductance(cells)
                         * (cells[face.b()].temperatureKelvin() - cells[face.a()].temperatureKelvin())
                         * sub;
                 delta[face.a()] += flow;
@@ -284,8 +303,8 @@ public final class ThermalGrid {
     private double stableStep(List<Face> faces) {
         double[] rate = new double[cells.length];
         for (Face face : faces) {
-            rate[face.a()] += face.conductance();
-            rate[face.b()] += face.conductance();
+            rate[face.a()] += face.maximumConductance();
+            rate[face.b()] += face.maximumConductance();
         }
         double stable = Double.MAX_VALUE;
         for (int i = 0; i < cells.length; i++) {

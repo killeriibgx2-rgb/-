@@ -9,6 +9,10 @@ package com.eternalsnow.thermal.engine;
  * energy conserved; computing each side independently is how models drift.
  */
 public final class Transfer {
+    /** Effective bulk-air exchange speeds used between neighbouring air voxels, m/s. */
+    private static final double HORIZONTAL_AIR_EXCHANGE_SPEED = 0.015;
+    private static final double VERTICAL_AIR_UPDRAFT_SPEED = 0.03;
+
     private Transfer() {
     }
 
@@ -33,6 +37,53 @@ public final class Transfer {
         double resistance = Constants.CELL_SIZE / material.conductivity()
                 + Constants.SURFACE_FILM_RESISTANCE;
         return 1.0 / resistance;
+    }
+
+    /**
+     * Heat exchange from a well-mixed air voxel to the centre of an adjacent
+     * solid voxel, W/K. The air-side film and the solid half-cell are in series:
+     * coupling the air directly to the full block heat capacity would make a
+     * one-metre wooden wall absorb heat as if its whole mass were at the
+     * surface temperature.
+     */
+    public static double airSolidConductance(Material solid) {
+        if (solid == null) throw new NullPointerException("solid");
+        double area = Constants.FACE_AREA;
+        double airFilmResistance = 1.0 / (Constants.FREE_CONVECTION * area);
+        double solidHalfCellResistance = (Constants.CELL_SIZE / 2.0)
+                / (solid.conductivity() * area);
+        return 1.0 / (airFilmResistance + solidHalfCellResistance);
+    }
+
+    /**
+     * Effective horizontal exchange between adjacent air voxels, W/K. This is
+     * bulk air circulation (rho·cp·A·v), not the molecular conductivity of air.
+     */
+    public static double horizontalAirMixingConductance() {
+        return airExchangeConductance(HORIZONTAL_AIR_EXCHANGE_SPEED);
+    }
+
+    /**
+     * Effective vertical exchange between adjacent air voxels, W/K. The lower
+     * cell is {@code lowerKelvin}; a warmer lower cell is buoyantly unstable and
+     * mixes upward. A stable temperature inversion exchanges only by still-air
+     * conduction.
+     */
+    public static double verticalAirMixingConductance(double lowerKelvin, double upperKelvin) {
+        if (lowerKelvin <= upperKelvin) {
+            return Materials.AIR.conductivity() * Constants.FACE_AREA / Constants.CELL_SIZE;
+        }
+        return airExchangeConductance(VERTICAL_AIR_UPDRAFT_SPEED);
+    }
+
+    /** Maximum vertical conductance, used to choose a safe explicit time step. */
+    public static double maximumVerticalAirMixingConductance() {
+        return airExchangeConductance(VERTICAL_AIR_UPDRAFT_SPEED);
+    }
+
+    private static double airExchangeConductance(double speedMetresPerSecond) {
+        return Materials.AIR.density() * Constants.SPECIFIC_HEAT_AIR
+                * Constants.FACE_AREA * speedMetresPerSecond;
     }
 
     /** Free convection between a solid face and still air, W/K. */

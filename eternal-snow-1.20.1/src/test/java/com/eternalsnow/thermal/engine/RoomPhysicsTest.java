@@ -68,6 +68,17 @@ public class RoomPhysicsTest {
         return sum / count;
     }
 
+    private double minimumAirCelsius(ThermalGrid grid) {
+        double min = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < grid.cellCount(); i++) {
+            ThermalCell cell = grid.cell(i);
+            if (cell.material() == Materials.AIR) {
+                min = Math.min(min, cell.temperatureCelsius());
+            }
+        }
+        return min;
+    }
+
     /** Runs {@code seconds} of model time with a constant source in the floor cell. */
     private void run(ThermalGrid grid, Material wall, double seconds, double watts) {
         int steps = (int) Math.ceil(seconds);
@@ -89,6 +100,30 @@ public class RoomPhysicsTest {
             double air = airMeanCelsius(grid);
             assertTrue(wall.id() + " air should be warming, got " + air, air > -199.5);
         }
+    }
+
+    @Test
+    public void aCampfireWarmsAirAcrossASealedWoodenRoom() {
+        ThermalGrid grid = room(Materials.WOOD, -3);
+
+        // The room's air volume is 5x3x5 cells. Heat the lowest central voxel,
+        // as a campfire on the floor would, while the outside stays at -3 C.
+        for (int second = 0; second < 5 * 60; second++) {
+            clampWorld(grid, -3);
+            grid.cell(4, 2, 4).addPower(Devices.CAMPFIRE_WATTS);
+            grid.step(1.0);
+        }
+
+        double aboveFire = grid.cell(4, 3, 4).temperatureCelsius();
+        double besideFire = grid.cell(4, 2, 5).temperatureCelsius();
+        double coldestRoomAir = minimumAirCelsius(grid);
+        assertTrue("the updraft must warm the air over the fire, got " + aboveFire,
+                aboveFire > 20);
+        assertTrue("heat must spread at least one block sideways, got " + besideFire,
+                besideFire > 5);
+        assertTrue("the sealed room must not remain at outside temperature; coldest air was "
+                        + coldestRoomAir,
+                coldestRoomAir > 0);
     }
 
     @Test

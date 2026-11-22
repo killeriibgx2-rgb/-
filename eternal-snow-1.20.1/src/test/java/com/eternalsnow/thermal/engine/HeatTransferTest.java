@@ -24,6 +24,47 @@ public class HeatTransferTest {
     }
 
     @Test
+    public void airToSolidTransferIncludesTheSolidHalfCellResistance() {
+        double expectedWood = 1.0 / (1.0 / Constants.FREE_CONVECTION
+                + (Constants.CELL_SIZE / 2.0) / Materials.WOOD.conductivity());
+        assertEquals(expectedWood, Transfer.airSolidConductance(Materials.WOOD), 1e-12);
+        assertTrue("a whole wooden block must not instantly absorb heat at its surface",
+                Transfer.airSolidConductance(Materials.WOOD) < Transfer.convectionConductance());
+        assertTrue("wool insulates the air from the block core",
+                Transfer.airSolidConductance(Materials.WOOL)
+                        < Transfer.airSolidConductance(Materials.WOOD));
+    }
+
+    @Test
+    public void buoyancyCarriesHeatFromTheLowerAirCellUpward() {
+        ThermalGrid grid = new ThermalGrid(1, 2, 1);
+        grid.set(0, 0, 0, Materials.AIR, Constants.toKelvin(30));
+        grid.set(0, 1, 0, Materials.AIR, Constants.toKelvin(-3));
+        double before = grid.totalEnergy();
+        double lowerBefore = grid.cell(0, 0, 0).temperatureKelvin();
+        double upperBefore = grid.cell(0, 1, 0).temperatureKelvin();
+
+        assertTrue("a warm lower layer should trigger an updraft",
+                grid.faceConductance(0, 0, 0, ThermalGrid.Axis.Y)
+                        > Transfer.horizontalAirMixingConductance());
+        grid.step(1.0);
+
+        assertTrue("lower air should lose heat", grid.cell(0, 0, 0).temperatureKelvin() < lowerBefore);
+        assertTrue("the voxel above should gain heat", grid.cell(0, 1, 0).temperatureKelvin() > upperBefore);
+        assertEquals("air mixing must conserve energy", before, grid.totalEnergy(), Math.abs(before) * 1e-12);
+    }
+
+    @Test
+    public void stableAirInversionDoesNotTriggerAnUpdraft() {
+        ThermalGrid grid = new ThermalGrid(1, 2, 1);
+        grid.set(0, 0, 0, Materials.AIR, Constants.toKelvin(-3));
+        grid.set(0, 1, 0, Materials.AIR, Constants.toKelvin(30));
+
+        assertEquals(Materials.AIR.conductivity() * Constants.FACE_AREA / Constants.CELL_SIZE,
+                grid.faceConductance(0, 0, 0, ThermalGrid.Axis.Y), 1e-12);
+    }
+
+    @Test
     public void aSteelBoltThroughAWallLeaksFarMoreThanTheWall() {
         double wood = Transfer.conductionConductance(Materials.WOOD, Materials.WOOD);
         double steel = Transfer.conductionConductance(Materials.STEEL, Materials.STEEL);
