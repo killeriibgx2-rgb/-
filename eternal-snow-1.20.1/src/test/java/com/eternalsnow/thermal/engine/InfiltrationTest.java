@@ -103,6 +103,30 @@ public class InfiltrationTest {
     }
 
     @Test
+    public void doorOpeningUsesOneInfiltrationPathWithoutBulkMixingThroughTheAperture() {
+        double outside = Constants.toKelvin(-3);
+        ThermalGrid grid = new ThermalGrid(3, 1, 1);
+        grid.set(0, 0, 0, Materials.AIR, Constants.toKelvin(20));
+        grid.set(1, 0, 0, Materials.AIR, outside); // open doorway voxel
+        grid.set(2, 0, 0, Materials.AIR, outside); // outdoor side
+        grid.blockAirMixingThroughCell(1);
+        grid.addInfiltration(new InfiltrationPath(0, 1.0, 1.0, Ambient.constant(outside)));
+
+        assertEquals("the doorway's inside face is not counted as ordinary mixing", 0.0,
+                grid.faceConductance(0, 0, 0, ThermalGrid.Axis.X), 0.0);
+        assertEquals("nor is its outside face", 0.0,
+                grid.faceConductance(1, 0, 0, ThermalGrid.Axis.X), 0.0);
+        grid.step(1.0);
+
+        assertTrue("the explicit opening flow should cool the room-side air",
+                grid.cell(0, 0, 0).temperatureCelsius() < 20.0);
+        assertTrue("the doorway cell must remain exterior air, not an insulated warm pocket",
+                grid.cell(1, 0, 0).temperatureKelvin() < Constants.toKelvin(0.0));
+        assertEquals("outside stays at its set point", outside,
+                grid.cell(2, 0, 0).temperatureKelvin(), 0.0);
+    }
+
+    @Test
     public void aLeakCoolsARoomThatWouldOtherwiseHoldHeat() {
         // The awkward fact this fixes: a sealed timber room holds +20 C against
         // -200 C for months (shell mass 94 MJ/K). A 100 cm² gap dumps ~21 kW
