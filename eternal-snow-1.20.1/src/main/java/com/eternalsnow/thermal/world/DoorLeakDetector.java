@@ -12,7 +12,8 @@ public final class DoorLeakDetector {
     private DoorLeakDetector() {
     }
 
-    public record Leak(int insideCellIndex, double areaM2, double pressureHeadM) {
+    public record Leak(int openingCellIndex, int insideCellIndex,
+                       double areaM2, double pressureHeadM) {
     }
 
     /**
@@ -68,11 +69,11 @@ public final class DoorLeakDetector {
             if (!openDoorCells[index] || !airCells[index]) continue;
             int x = index % sizeX;
             int z = (index / sizeX) % sizeZ;
-            Leak leak = sideLeak(x > 0 ? index - 1 : -1,
+            Leak leak = sideLeak(index, x > 0 ? index - 1 : -1,
                     x + 1 < sizeX ? index + 1 : -1,
                     airCells, openDoorCells, outside);
             if (leak == null) {
-                leak = sideLeak(z > 0 ? index - sizeX : -1,
+                leak = sideLeak(index, z > 0 ? index - sizeX : -1,
                         z + 1 < sizeZ ? index + sizeX : -1,
                         airCells, openDoorCells, outside);
             }
@@ -81,7 +82,7 @@ public final class DoorLeakDetector {
         return List.copyOf(leaks);
     }
 
-    private static Leak sideLeak(int negative, int positive,
+    private static Leak sideLeak(int openingCellIndex, int negative, int positive,
                                  boolean[] airCells, boolean[] openDoorCells,
                                  boolean[] outside) {
         if (negative < 0 || positive < 0
@@ -91,7 +92,7 @@ public final class DoorLeakDetector {
             return null;
         }
         int inside = outside[negative] ? positive : negative;
-        return new Leak(inside, AREA_PER_DOOR_BLOCK_M2, DOOR_PRESSURE_HEAD_M);
+        return new Leak(openingCellIndex, inside, AREA_PER_DOOR_BLOCK_M2, DOOR_PRESSURE_HEAD_M);
     }
 
     private static int visit(int index, boolean[] airCells, boolean[] openDoorCells,

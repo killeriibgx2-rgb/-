@@ -27,6 +27,7 @@ public class DoorLeakDetectorTest {
         List<DoorLeakDetector.Leak> leaks = DoorLeakDetector.detect(X, Y, Z, air, doors);
 
         assertEquals(1, leaks.size());
+        assertEquals(door, leaks.get(0).openingCellIndex());
         assertEquals(roomAir, leaks.get(0).insideCellIndex());
         assertEquals(1.0, leaks.get(0).areaM2(), 0.0);
         assertEquals(1.0, leaks.get(0).pressureHeadM(), 0.0);
@@ -47,6 +48,8 @@ public class DoorLeakDetectorTest {
 
         assertEquals(2, leaks.size());
         assertEquals(2.0, leaks.stream().mapToDouble(DoorLeakDetector.Leak::areaM2).sum(), 0.0);
+        assertEquals(List.of(index(1, 1, 2), index(1, 2, 2)),
+                leaks.stream().map(DoorLeakDetector.Leak::openingCellIndex).toList());
         assertEquals(List.of(index(2, 1, 2), index(2, 2, 2)),
                 leaks.stream().map(DoorLeakDetector.Leak::insideCellIndex).toList());
     }

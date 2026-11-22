@@ -65,9 +65,12 @@ public final class ZoneSimulation {
                     BlockState state = level.getBlockState(cursor);
                     Material material = MaterialMapper.of(state, level, cursor);
                     int index = grid.index(x, y, z);
-                    grid.set(x, y, z, material, store.temperatureAt(cursor, ambientKelvin));
+                    boolean openDoor = MaterialMapper.isOpenDoor(state);
+                    double temperatureKelvin = openDoor
+                            ? ambientKelvin : store.temperatureAt(cursor, ambientKelvin);
+                    grid.set(x, y, z, material, temperatureKelvin);
                     airCells[index] = material == Materials.AIR;
-                    openDoorCells[index] = MaterialMapper.isOpenDoor(state);
+                    openDoorCells[index] = openDoor;
 
                     double watts = sourceWatts(state);
                     if (watts > 0) sources.add(new HeatSourceBinding(index, watts));
@@ -114,11 +117,16 @@ public final class ZoneSimulation {
 
     private void attachOpenDoorLeaks(Ambient ambient,
                                     boolean[] airCells, boolean[] openDoorCells) {
-        if (!ThermalConfig.DOOR_INFILTRATION.get()) return;
+        boolean infiltrationEnabled = ThermalConfig.DOOR_INFILTRATION.get();
         for (DoorLeakDetector.Leak leak : DoorLeakDetector.detect(
                 side(), side(), side(), airCells, openDoorCells)) {
-            grid.addInfiltration(new InfiltrationPath(leak.insideCellIndex(), leak.areaM2(),
-                    leak.pressureHeadM(), ambient));
+            // The doorway is an opening, but not a normal air-mixing face. Its
+            // exchange is handled once by the stack-flow path below.
+            grid.blockAirMixingThroughCell(leak.openingCellIndex());
+            if (infiltrationEnabled) {
+                grid.addInfiltration(new InfiltrationPath(leak.insideCellIndex(), leak.areaM2(),
+                        leak.pressureHeadM(), ambient));
+            }
         }
     }
 

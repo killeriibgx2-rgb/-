@@ -10,9 +10,9 @@ package com.eternalsnow.thermal.engine;
  */
 public final class Transfer {
     /** Room-scale circulation exchange speeds between neighbouring air voxels, m/s. */
-    private static final double HORIZONTAL_AIR_EXCHANGE_SPEED = 0.4;
-    private static final double VERTICAL_AIR_RETURN_SPEED = 0.4;
-    private static final double VERTICAL_AIR_UPDRAFT_SPEED = 0.8;
+    private static final double HORIZONTAL_AIR_EXCHANGE_SPEED = 0.8;
+    private static final double VERTICAL_AIR_RETURN_SPEED = 0.8;
+    private static final double VERTICAL_AIR_UPDRAFT_SPEED = 1.6;
 
     private Transfer() {
     }

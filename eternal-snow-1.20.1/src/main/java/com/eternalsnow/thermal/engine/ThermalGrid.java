@@ -22,6 +22,7 @@ public final class ThermalGrid {
     private final int sizeY;
     private final int sizeZ;
     private final ThermalCell[] cells;
+    private final boolean[] airMixingBlockedCells;
     private final List<ExternalLink> externalLinks = new ArrayList<>();
     private final List<InfiltrationPath> infiltrations = new ArrayList<>();
     private double speedMultiplier = 1.0;
@@ -34,6 +35,7 @@ public final class ThermalGrid {
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
         this.cells = new ThermalCell[sizeX * sizeY * sizeZ];
+        this.airMixingBlockedCells = new boolean[this.cells.length];
     }
 
     public int sizeX() {
@@ -126,6 +128,11 @@ public final class ThermalGrid {
         Material mb = cells[b].material();
         boolean airA = ma == Materials.AIR;
         boolean airB = mb == Materials.AIR;
+        if (airA && airB && (airMixingBlockedCells[a] || airMixingBlockedCells[b])) {
+            // Exterior door openings use their explicit infiltration path; do
+            // not count the same opening again as ordinary room-air mixing.
+            return;
+        }
         if (airA && airB && vertical) {
             // Faces are added in +Y order, so a is below b. The conductance is
             // recalculated during each sub-step as the buoyancy gradient changes.
@@ -158,6 +165,7 @@ public final class ThermalGrid {
         boolean airA = ma == Materials.AIR;
         boolean airB = mb == Materials.AIR;
         if (airA && airB) {
+            if (airMixingBlockedCells[a] || airMixingBlockedCells[b]) return 0.0;
             return axis == Axis.Y
                     ? Transfer.verticalAirMixingConductance(
                             cellA.temperatureKelvin(), cellB.temperatureKelvin())
@@ -272,6 +280,20 @@ public final class ThermalGrid {
         for (ThermalCell cell : cells) {
             if (cell != null) cell.consumePower();
         }
+    }
+
+    /**
+     * Prevents ordinary air-mixing links through an aperture voxel. The opening
+     * can then be modelled exactly once by an explicit infiltration path.
+     */
+    public void blockAirMixingThroughCell(int cellIndex) {
+        if (cellIndex < 0 || cellIndex >= cells.length) {
+            throw new IndexOutOfBoundsException("air-mixing barrier cell index");
+        }
+        if (cell(cellIndex).material() != Materials.AIR) {
+            throw new IllegalArgumentException("air-mixing barrier must be an air cell");
+        }
+        airMixingBlockedCells[cellIndex] = true;
     }
 
     /** Adds a fixed-temperature reservoir outside the grid. */
