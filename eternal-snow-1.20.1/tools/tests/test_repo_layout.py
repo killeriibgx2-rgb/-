@@ -42,6 +42,13 @@ class GradlePropertiesTest(unittest.TestCase):
         self.assertRegex(mod_id, r"^[a-z][a-z0-9_]*$")
 
 
+class BuildConfigurationTest(unittest.TestCase):
+    def test_manifest_does_not_reference_removed_mixin_config(self):
+        build_gradle = (MOD_ROOT / "build.gradle").read_text(encoding="utf-8")
+        self.assertNotIn("eternalsnow.mixins.json", build_gradle)
+        self.assertNotIn("MixinConfigs", build_gradle)
+
+
 class MainSourcesTest(unittest.TestCase):
     def test_every_java_file_declares_the_package_it_lives_in(self):
         source_root = MOD_ROOT / "src/main/java"
